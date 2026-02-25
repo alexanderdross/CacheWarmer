@@ -108,23 +108,20 @@ linkedin:
   delayBetweenRequests: 5000             # ms
 ```
 
-### 2.5 Twitter/X Card Validator
+### 2.5 Twitter/X Cache Warming (Tweet Composer)
 
-- Twitter/X hat den öffentlichen Card Validator abgeschaltet
-- **Ansatz A:** Tweet Composer URL aufrufen und OG-Tags erzwingen:
-  `https://twitter.com/intent/tweet?url={encoded_url}` — triggert Card-Scraping
-- **Ansatz B:** Twitter API v2 verwenden, um eine URL-Preview anzufragen (erfordert API-Key)
-- **Ansatz C:** Puppeteer öffnet `https://cards-dev.twitter.com/validator` (falls verfügbar) oder nutzt den Composer
+- Nutzt den **Tweet Composer** um das Card-Scraping zu triggern
+- Puppeteer öffnet `https://twitter.com/intent/tweet?url={encoded_url}` für jede URL
+- Beim Laden der Composer-Seite ruft Twitter automatisch die OG-/Twitter-Card-Meta-Tags ab und cached sie
+- Kein Twitter API-Key nötig — funktioniert rein über den öffentlichen Composer-Endpoint
 
 **Konfiguration:**
 ```yaml
 twitter:
   enabled: true
-  method: "composer"        # "composer" | "api"
-  apiKey: "YOUR_TWITTER_API_KEY"       # nur bei method: api
-  apiSecret: "YOUR_TWITTER_API_SECRET"
   concurrency: 2
-  delayBetweenRequests: 3000
+  delayBetweenRequests: 3000  # ms — konservativ wegen Rate-Limits
+  timeout: 15000              # ms
 ```
 
 ### 2.6 Suchmaschinen-Indexierung
