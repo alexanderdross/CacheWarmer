@@ -1,0 +1,23 @@
+services:
+  cachewarmer:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./credentials:/app/credentials:ro
+      - ./config.yaml:/app/config.yaml:ro
+    depends_on:
+      - redis
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:

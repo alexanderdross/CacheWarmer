@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
+import { authenticateRequest } from "@/lib/auth";
+import { getDb } from "@/lib/db/database";
+
+export async function GET(request: NextRequest) {
+  const authError = authenticateRequest(request);
+  if (authError) return authError;
+
+  const db = getDb();
+  const sitemaps = db.prepare("SELECT * FROM sitemaps ORDER BY created_at DESC").all();
+  return NextResponse.json({ sitemaps });
+}
+
+export async function POST(request: NextRequest) {
+  const authError = authenticateRequest(request);
+  if (authError) return authError;
+
+  try {
+    const body = await request.json();
+    const { url, cronExpression } = body;
+
+    if (!url || typeof url !== "string") {
+      return NextResponse.json({ error: "url is required" }, { status: 400 });
+    }
+
+    let domain: string;
+    try {
+      domain = new URL(url).hostname;
+    } catch {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    }
+
+    const db = getDb();
+    const id = uuidv4();
+
+    db.prepare(`
+      INSERT INTO sitemaps (id, url, domain, cron_expression)
+      VALUES (?, ?, ?, ?)
+    `).run(id, url, domain, cronExpression || null);
+
+    const sitemap = db.prepare("SELECT * FROM sitemaps WHERE id = ?").get(id);
+    return NextResponse.json(sitemap, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
