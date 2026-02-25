@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // "standalone" for Docker self-hosting; remove for Vercel
+  output: process.env.STANDALONE === "true" ? "standalone" : undefined,
   serverExternalPackages: ["better-sqlite3", "puppeteer-core", "pino", "bullmq"],
 };
 
