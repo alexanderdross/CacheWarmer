@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { createTestDb } from "../helpers";
+import { createTestDb, resetTestConfig } from "../helpers";
 import type Database from "better-sqlite3";
 
 /**
@@ -18,17 +18,15 @@ import type Database from "better-sqlite3";
 let testDb: Database.Database;
 
 vi.mock("@/lib/db/database", () => ({
-  getDb: vi.fn(() => testDb),
+  getDb: () => testDb,
   closeDb: vi.fn(),
 }));
 
-vi.mock("@/lib/config", () => {
-  const { createMockConfig } = require("../helpers");
-  let config = createMockConfig();
+vi.mock("@/lib/config", async () => {
+  const helpers = await import("../helpers");
   return {
-    getConfig: vi.fn(() => config),
-    loadConfig: vi.fn(() => config),
-    __setConfig: (c: ReturnType<typeof createMockConfig>) => { config = c; },
+    getConfig: () => helpers.testConfig,
+    loadConfig: () => helpers.testConfig,
   };
 });
 
@@ -84,7 +82,7 @@ const AUTH_HEADER = { Authorization: "Bearer test-api-key-12345" };
 describe("UAT: Complete User Workflow", () => {
   beforeEach(() => {
     testDb = createTestDb();
-    vi.clearAllMocks();
+    resetTestConfig();
   });
 
   it("Workflow 1: Register sitemap -> Start warming -> Check status -> View results", async () => {

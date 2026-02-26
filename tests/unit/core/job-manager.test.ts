@@ -1,22 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createTestDb } from "../../helpers";
+import { createTestDb, resetTestConfig } from "../../helpers";
 import type Database from "better-sqlite3";
 
 let testDb: Database.Database;
 
 // Mock the database module to use in-memory db
 vi.mock("@/lib/db/database", () => ({
-  getDb: vi.fn(() => testDb),
+  getDb: () => testDb,
   closeDb: vi.fn(),
 }));
 
-vi.mock("@/lib/config", () => {
-  const { createMockConfig } = require("../../helpers");
-  let config = createMockConfig();
+vi.mock("@/lib/config", async () => {
+  const helpers = await import("../../helpers");
   return {
-    getConfig: vi.fn(() => config),
-    loadConfig: vi.fn(() => config),
-    __setConfig: (c: ReturnType<typeof createMockConfig>) => { config = c; },
+    getConfig: () => helpers.testConfig,
+    loadConfig: () => helpers.testConfig,
   };
 });
 
@@ -77,7 +75,7 @@ vi.mock("@/lib/services/bing-indexer", () => ({
 describe("Job Manager", () => {
   beforeEach(() => {
     testDb = createTestDb();
-    vi.clearAllMocks();
+    resetTestConfig();
   });
 
   describe("createJob", () => {

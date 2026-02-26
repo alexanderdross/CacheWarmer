@@ -1,30 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { createTestDb } from "../helpers";
+import { createTestDb, resetTestConfig } from "../helpers";
 import { v4 as uuidv4 } from "uuid";
 import type Database from "better-sqlite3";
 
 let testDb: Database.Database;
 
 vi.mock("@/lib/db/database", () => ({
-  getDb: vi.fn(() => testDb),
+  getDb: () => testDb,
   closeDb: vi.fn(),
 }));
 
-vi.mock("@/lib/config", () => {
-  const { createMockConfig } = require("../helpers");
-  let config = createMockConfig();
+vi.mock("@/lib/config", async () => {
+  const helpers = await import("../helpers");
   return {
-    getConfig: vi.fn(() => config),
-    loadConfig: vi.fn(() => config),
-    __setConfig: (c: ReturnType<typeof createMockConfig>) => { config = c; },
+    getConfig: () => helpers.testConfig,
+    loadConfig: () => helpers.testConfig,
   };
 });
 
 describe("GET /api/logs", () => {
   beforeEach(() => {
     testDb = createTestDb();
-    vi.clearAllMocks();
+    resetTestConfig();
   });
 
   it("should return url_results as logs", async () => {

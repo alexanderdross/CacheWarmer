@@ -60,6 +60,8 @@ export function listJobs(limit = 50, offset = 0): Job[] {
 
 export function deleteJob(jobId: string): boolean {
   const db = getDb();
+  // Delete associated url_results first to avoid FK constraint violation
+  db.prepare("DELETE FROM url_results WHERE job_id = ?").run(jobId);
   const result = db.prepare("DELETE FROM jobs WHERE id = ?").run(jobId);
   return result.changes > 0;
 }

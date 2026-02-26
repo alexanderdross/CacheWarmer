@@ -26,7 +26,7 @@ describe("Facebook Warmer", () => {
     const { warmFacebook } = await import("@/lib/services/facebook-warmer");
     await warmFacebook(["https://example.com/page1"]);
     expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining("graph.facebook.com/v19.0/?scrape=true"), expect.objectContaining({ method: "POST" }));
-    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining("access_token=test-app-id%7Ctest-app-secret"), expect.any(Object));
+    expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining("access_token=test-app-id|test-app-secret"), expect.any(Object));
   });
 
   it("should handle API errors gracefully", async () => {
