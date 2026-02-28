@@ -17,8 +17,22 @@
       <input type="url" id="cachewarmer-new-sitemap-url" name="url" placeholder="https://example.com/sitemap.xml" required class="form-url" />
     </div>
     <div class="cachewarmer-form-row">
-      <label for="cachewarmer-new-sitemap-cron">{{ 'Cron Expression (optional)'|t }}</label>
-      <input type="text" id="cachewarmer-new-sitemap-cron" name="cron_expression" placeholder="0 3 * * *" class="form-text" />
+      <label for="cachewarmer-new-sitemap-frequency">{{ 'Interval (optional)'|t }}</label>
+      <select id="cachewarmer-new-sitemap-frequency" name="cron_frequency" class="form-select">
+        <option value="none">{{ 'No schedule'|t }}</option>
+        <option value="hourly">{{ 'Hourly'|t }}</option>
+        <option value="every_6_hours">{{ 'Every 6 Hours'|t }}</option>
+        <option value="every_12_hours">{{ 'Every 12 Hours'|t }}</option>
+        <option value="daily">{{ 'Daily'|t }}</option>
+      </select>
+    </div>
+    <div class="cachewarmer-form-row" id="cachewarmer-start-time-wrap" style="display:none;">
+      <label for="cachewarmer-new-sitemap-hour">{{ 'Start Time'|t }}</label>
+      <select id="cachewarmer-new-sitemap-hour" name="cron_hour" class="form-select">
+        {% for h in 0..23 %}
+          <option value="{{ h }}"{% if h == 3 %} selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+        {% endfor %}
+      </select>
     </div>
     <div class="cachewarmer-form-row">
       <button type="button" id="cachewarmer-add-sitemap" class="button button--primary">{{ 'Add Sitemap'|t }}</button>

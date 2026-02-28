@@ -27,9 +27,24 @@ $sitemaps = $db->get_all_sitemaps();
                            placeholder="https://example.com/sitemap.xml" required>
                 </div>
                 <div>
-                    <label for="cw-new-sitemap-cron"><?php esc_html_e( 'Cron Expression (optional)', 'cachewarmer' ); ?></label>
-                    <input type="text" id="cw-new-sitemap-cron" name="cronExpression" class="regular-text"
-                           placeholder="0 3 * * *">
+                    <label for="cw-new-sitemap-frequency"><?php esc_html_e( 'Interval (optional)', 'cachewarmer' ); ?></label>
+                    <select id="cw-new-sitemap-frequency" name="cronFrequency" class="regular-text">
+                        <option value="none"><?php esc_html_e( 'No schedule', 'cachewarmer' ); ?></option>
+                        <option value="hourly"><?php esc_html_e( 'Hourly', 'cachewarmer' ); ?></option>
+                        <option value="every_6_hours"><?php esc_html_e( 'Every 6 Hours', 'cachewarmer' ); ?></option>
+                        <option value="every_12_hours"><?php esc_html_e( 'Every 12 Hours', 'cachewarmer' ); ?></option>
+                        <option value="daily"><?php esc_html_e( 'Daily', 'cachewarmer' ); ?></option>
+                    </select>
+                </div>
+                <div id="cw-start-time-wrap" style="display:none;">
+                    <label for="cw-new-sitemap-hour"><?php esc_html_e( 'Start Time', 'cachewarmer' ); ?></label>
+                    <select id="cw-new-sitemap-hour" name="cronHour" class="regular-text">
+                        <?php for ( $h = 0; $h < 24; $h++ ) : ?>
+                            <option value="<?php echo $h; ?>" <?php selected( $h, 3 ); ?>>
+                                <?php echo str_pad( $h, 2, '0', STR_PAD_LEFT ) . ':00'; ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
                 </div>
                 <div>
                     <button type="submit" class="button button-primary">

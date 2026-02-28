@@ -14,7 +14,8 @@ interface Sitemap {
 export default function SitemapManager() {
   const [sitemaps, setSitemaps] = useState<Sitemap[]>([]);
   const [newUrl, setNewUrl] = useState("");
-  const [newCron, setNewCron] = useState("");
+  const [cronFrequency, setCronFrequency] = useState("none");
+  const [cronHour, setCronHour] = useState(3);
   const [adding, setAdding] = useState(false);
 
   // Bulk import state
@@ -27,6 +28,38 @@ export default function SitemapManager() {
   const [detectDomain, setDetectDomain] = useState("");
   const [detecting, setDetecting] = useState(false);
   const [detectedSitemaps, setDetectedSitemaps] = useState<string[]>([]);
+
+  function buildCronExpression(frequency: string, hour: number): string | undefined {
+    switch (frequency) {
+      case "hourly":
+        return "0 * * * *";
+      case "every_6_hours": {
+        const hours = [hour, (hour + 6) % 24, (hour + 12) % 24, (hour + 18) % 24].sort((a, b) => a - b);
+        return `0 ${hours.join(",")} * * *`;
+      }
+      case "every_12_hours": {
+        const hours = [hour, (hour + 12) % 24].sort((a, b) => a - b);
+        return `0 ${hours.join(",")} * * *`;
+      }
+      case "daily":
+        return `0 ${hour} * * *`;
+      default:
+        return undefined;
+    }
+  }
+
+  function formatCronLabel(cron: string | null): string {
+    if (!cron) return "-";
+    if (cron === "0 * * * *") return "Stuendlich";
+    const match = cron.match(/^0 (\S+) \* \* \*$/);
+    if (match) {
+      const hours = match[1].split(",").map(Number);
+      if (hours.length === 1) return `Taeglich um ${hours[0].toString().padStart(2, "0")}:00`;
+      if (hours.length === 2) return `Alle 12 Std. (ab ${Math.min(...hours).toString().padStart(2, "0")}:00)`;
+      if (hours.length === 4) return `Alle 6 Std. (ab ${Math.min(...hours).toString().padStart(2, "0")}:00)`;
+    }
+    return cron;
+  }
 
   const fetchSitemaps = useCallback(async () => {
     try {
@@ -53,13 +86,14 @@ export default function SitemapManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: newUrl,
-          cronExpression: newCron || undefined,
+          cronExpression: buildCronExpression(cronFrequency, cronHour),
         }),
       });
 
       if (res.ok) {
         setNewUrl("");
-        setNewCron("");
+        setCronFrequency("none");
+        setCronHour(3);
         await fetchSitemaps();
       }
     } finally {
@@ -157,16 +191,38 @@ export default function SitemapManager() {
           </div>
           <div className="w-48">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Cron <span className="text-gray-500">(optional)</span>
+              Intervall <span className="text-gray-500">(optional)</span>
             </label>
-            <input
-              type="text"
-              value={newCron}
-              onChange={(e) => setNewCron(e.target.value)}
-              placeholder="0 3 * * *"
-              className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <select
+              value={cronFrequency}
+              onChange={(e) => setCronFrequency(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="none">Kein Zeitplan</option>
+              <option value="hourly">Stuendlich</option>
+              <option value="every_6_hours">Alle 6 Stunden</option>
+              <option value="every_12_hours">Alle 12 Stunden</option>
+              <option value="daily">Taeglich</option>
+            </select>
           </div>
+          {cronFrequency !== "none" && cronFrequency !== "hourly" && (
+            <div className="w-32">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Startzeit
+              </label>
+              <select
+                value={cronHour}
+                onChange={(e) => setCronHour(Number(e.target.value))}
+                className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i.toString().padStart(2, "0")}:00
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="submit"
             disabled={adding || !newUrl}
@@ -284,7 +340,7 @@ export default function SitemapManager() {
                     {sm.url}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400">
-                    {sm.cron_expression || <span className="text-gray-600">-</span>}
+                    {formatCronLabel(sm.cron_expression)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-400">
                     {sm.last_warmed_at ? new Date(sm.last_warmed_at).toLocaleString("de-DE") : "-"}

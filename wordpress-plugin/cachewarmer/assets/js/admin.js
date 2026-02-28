@@ -240,6 +240,54 @@
     });
 
     // ──────────────────────────────────────────────
+    // Sitemaps – cron helpers
+    // ──────────────────────────────────────────────
+
+    function buildCronExpression(frequency, hour) {
+        hour = parseInt(hour, 10) || 0;
+        switch (frequency) {
+            case 'hourly':
+                return '0 * * * *';
+            case 'every_6_hours': {
+                var h6 = [hour, (hour + 6) % 24, (hour + 12) % 24, (hour + 18) % 24].sort(function (a, b) { return a - b; });
+                return '0 ' + h6.join(',') + ' * * *';
+            }
+            case 'every_12_hours': {
+                var h12 = [hour, (hour + 12) % 24].sort(function (a, b) { return a - b; });
+                return '0 ' + h12.join(',') + ' * * *';
+            }
+            case 'daily':
+                return '0 ' + hour + ' * * *';
+            default:
+                return '';
+        }
+    }
+
+    function formatCronLabel(cron) {
+        if (!cron) return '<em>None</em>';
+        if (cron === '0 * * * *') return 'Hourly';
+        var m = cron.match(/^0 (\S+) \* \* \*$/);
+        if (m) {
+            var parts = m[1].split(',');
+            var pad = function (n) { return ('0' + n).slice(-2); };
+            if (parts.length === 1) return 'Daily at ' + pad(parts[0]) + ':00';
+            if (parts.length === 2) return 'Every 12h (from ' + pad(Math.min.apply(null, parts)) + ':00)';
+            if (parts.length === 4) return 'Every 6h (from ' + pad(Math.min.apply(null, parts)) + ':00)';
+        }
+        return escHtml(cron);
+    }
+
+    // Show/hide time dropdown based on frequency selection.
+    $(document).on('change', '#cw-new-sitemap-frequency', function () {
+        var freq = $(this).val();
+        if (freq !== 'none' && freq !== 'hourly') {
+            $('#cw-start-time-wrap').show();
+        } else {
+            $('#cw-start-time-wrap').hide();
+        }
+    });
+
+    // ──────────────────────────────────────────────
     // Sitemaps
     // ──────────────────────────────────────────────
 
@@ -250,7 +298,9 @@
         var $spinner = $form.find('#cw-sitemap-spinner');
         var $msg     = $form.find('#cw-sitemap-message');
         var url      = $form.find('#cw-new-sitemap-url').val();
-        var cron     = $form.find('#cw-new-sitemap-cron').val();
+        var freq     = $form.find('#cw-new-sitemap-frequency').val();
+        var hour     = $form.find('#cw-new-sitemap-hour').val();
+        var cron     = buildCronExpression(freq, hour);
 
         $spinner.addClass('is-active');
         $msg.hide();
@@ -267,7 +317,7 @@
             success: function (response) {
                 if (response.success) {
                     var s = response.data;
-                    var cronDisplay = s.cron_expression || '<em>None</em>';
+                    var cronDisplay = formatCronLabel(s.cron_expression);
 
                     $('#cw-no-sitemaps-row').remove();
 
@@ -283,7 +333,9 @@
 
                     $('#cw-sitemaps-table tbody').append(row);
                     $form.find('#cw-new-sitemap-url').val('');
-                    $form.find('#cw-new-sitemap-cron').val('');
+                    $form.find('#cw-new-sitemap-frequency').val('none');
+                    $form.find('#cw-new-sitemap-hour').val('3');
+                    $('#cw-start-time-wrap').hide();
 
                     $msg.removeClass('error').addClass('success').text('Sitemap registered.').show();
                 } else {

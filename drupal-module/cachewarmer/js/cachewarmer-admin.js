@@ -185,6 +185,52 @@
     });
   });
 
+  // --- Sitemaps – cron helpers ---
+
+  function buildCronExpression(frequency, hour) {
+    hour = parseInt(hour, 10) || 0;
+    switch (frequency) {
+      case 'hourly':
+        return '0 * * * *';
+      case 'every_6_hours': {
+        var h6 = [hour, (hour + 6) % 24, (hour + 12) % 24, (hour + 18) % 24].sort(function (a, b) { return a - b; });
+        return '0 ' + h6.join(',') + ' * * *';
+      }
+      case 'every_12_hours': {
+        var h12 = [hour, (hour + 12) % 24].sort(function (a, b) { return a - b; });
+        return '0 ' + h12.join(',') + ' * * *';
+      }
+      case 'daily':
+        return '0 ' + hour + ' * * *';
+      default:
+        return '';
+    }
+  }
+
+  function formatCronLabel(cron) {
+    if (!cron) return 'None';
+    if (cron === '0 * * * *') return 'Hourly';
+    var m = cron.match(/^0 (\S+) \* \* \*$/);
+    if (m) {
+      var parts = m[1].split(',');
+      var pad = function (n) { return ('0' + n).slice(-2); };
+      if (parts.length === 1) return 'Daily at ' + pad(parts[0]) + ':00';
+      if (parts.length === 2) return 'Every 12h (from ' + pad(Math.min.apply(null, parts)) + ':00)';
+      if (parts.length === 4) return 'Every 6h (from ' + pad(Math.min.apply(null, parts)) + ':00)';
+    }
+    return cron;
+  }
+
+  // Show/hide time dropdown based on frequency selection.
+  $(document).on('change', '#cachewarmer-new-sitemap-frequency', function () {
+    var freq = $(this).val();
+    if (freq !== 'none' && freq !== 'hourly') {
+      $('#cachewarmer-start-time-wrap').show();
+    } else {
+      $('#cachewarmer-start-time-wrap').hide();
+    }
+  });
+
   // --- Sitemaps ---
 
   // Add sitemap
@@ -196,7 +242,9 @@
       return;
     }
 
-    var cronExpr = $('#cachewarmer-new-sitemap-cron').val().trim();
+    var freq = $('#cachewarmer-new-sitemap-frequency').val();
+    var hour = $('#cachewarmer-new-sitemap-hour').val();
+    var cronExpr = buildCronExpression(freq, hour);
     btn.prop('disabled', true);
     $('#cachewarmer-sitemap-status').text(Drupal.t('Adding...'));
 
@@ -208,17 +256,20 @@
       success: function (response) {
         if (response.success) {
           var s = response.data;
+          var cronDisplay = formatCronLabel(s.cron_expression);
           var row = '<tr data-sitemap-id="' + escHtml(s.id) + '">' +
             '<td>' + escHtml(s.domain) + '</td>' +
             '<td><a href="' + escHtml(s.url) + '" target="_blank" rel="noopener">' + escHtml(s.url) + '</a></td>' +
-            '<td>' + escHtml(s.cron_expression || 'None') + '</td>' +
+            '<td>' + escHtml(cronDisplay) + '</td>' +
             '<td>' + escHtml(s.last_warmed_at || 'Never') + '</td>' +
             '<td><button class="button button--small button--primary cachewarmer-btn-warm-sitemap" data-sitemap-id="' + escHtml(s.id) + '">' + Drupal.t('Warm Now') + '</button> ' +
             '<button class="button button--small button--danger cachewarmer-btn-delete-sitemap" data-sitemap-id="' + escHtml(s.id) + '">' + Drupal.t('Delete') + '</button></td>' +
             '</tr>';
           $('#cachewarmer-sitemaps-tbody').append(row);
           $('#cachewarmer-new-sitemap-url').val('');
-          $('#cachewarmer-new-sitemap-cron').val('');
+          $('#cachewarmer-new-sitemap-frequency').val('none');
+          $('#cachewarmer-new-sitemap-hour').val('3');
+          $('#cachewarmer-start-time-wrap').hide();
           $('#cachewarmer-sitemap-status').text(Drupal.t('Sitemap added!'));
         } else {
           $('#cachewarmer-sitemap-status').text(response.error || Drupal.t('Failed to add sitemap.'));
