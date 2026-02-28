@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Stat {
   target: string;
   status: string;
   count: number;
+}
+
+interface UrlResult {
+  id: string;
+  url: string;
+  target: string;
+  viewport: string | null;
+  status: string;
+  http_status: number | null;
+  duration_ms: number | null;
+  error: string | null;
+  cache_headers: string | null;
+  created_at: string;
 }
 
 interface JobDetailData {
@@ -27,13 +40,72 @@ interface JobDetailProps {
   onBack: () => void;
 }
 
+function CacheHeaderBadge({ cacheHeadersJson }: { cacheHeadersJson: string | null }) {
+  if (!cacheHeadersJson) return <span className="text-gray-600">-</span>;
+  try {
+    const h = JSON.parse(cacheHeadersJson);
+    const cacheStatus = h.cfCacheStatus || h.xCache;
+    if (!cacheStatus) return <span className="text-gray-600">-</span>;
+    const isHit = /HIT/i.test(cacheStatus);
+    return (
+      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+        isHit ? "bg-green-900 text-green-300" : "bg-yellow-900 text-yellow-300"
+      }`}>
+        {cacheStatus}
+        {h.age ? ` (${h.age}s)` : ""}
+      </span>
+    );
+  } catch {
+    return <span className="text-gray-600">-</span>;
+  }
+}
+
 export default function JobDetail({ job, onBack }: JobDetailProps) {
   const [exporting, setExporting] = useState(false);
+  const [results, setResults] = useState<UrlResult[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [filterTarget, setFilterTarget] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
+
   const statsByTarget: Record<string, Record<string, number>> = {};
   for (const stat of job.stats) {
     if (!statsByTarget[stat.target]) statsByTarget[stat.target] = {};
     statsByTarget[stat.target][stat.status] = stat.count;
   }
+
+  const fetchResults = useCallback(async () => {
+    setLoadingResults(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}?results=true`);
+      if (res.ok) {
+        const data = await res.json();
+        setResults(data.results || []);
+      }
+    } finally {
+      setLoadingResults(false);
+    }
+  }, [job.id]);
+
+  useEffect(() => {
+    if (showResults && results.length === 0) {
+      fetchResults();
+    }
+  }, [showResults, results.length, fetchResults]);
+
+  const filteredResults = results.filter((r) => {
+    if (filterTarget !== "all" && r.target !== filterTarget) return false;
+    if (filterStatus !== "all" && r.status !== filterStatus) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredResults.length / PAGE_SIZE);
+  const pagedResults = filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [filterTarget, filterStatus]);
 
   const handleExport = async (format: "csv" | "json") => {
     setExporting(true);
@@ -60,6 +132,8 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
       setExporting(false);
     }
   };
+
+  const uniqueTargets = [...new Set(results.map((r) => r.target))];
 
   return (
     <div className="space-y-6">
@@ -168,6 +242,123 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
           </div>
         </div>
       )}
+
+      {/* Per-URL Results */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-md font-semibold">Einzelergebnisse pro URL</h3>
+          {!showResults ? (
+            <button
+              onClick={() => setShowResults(true)}
+              className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium py-1.5 px-3 rounded-md transition-colors border border-gray-700"
+            >
+              Ergebnisse laden
+            </button>
+          ) : (
+            <span className="text-xs text-gray-500">{filteredResults.length} Ergebnisse</span>
+          )}
+        </div>
+
+        {loadingResults && (
+          <p className="text-sm text-gray-500">Lade Ergebnisse...</p>
+        )}
+
+        {showResults && !loadingResults && results.length > 0 && (
+          <>
+            {/* Filters */}
+            <div className="flex gap-3 mb-4">
+              <select
+                value={filterTarget}
+                onChange={(e) => setFilterTarget(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
+              >
+                <option value="all">Alle Targets</option>
+                {uniqueTargets.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
+              >
+                <option value="all">Alle Status</option>
+                <option value="success">Erfolgreich</option>
+                <option value="failed">Fehlgeschlagen</option>
+              </select>
+            </div>
+
+            {/* Results Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-800 text-left text-gray-400">
+                    <th className="pb-2 pr-3">URL</th>
+                    <th className="pb-2 pr-3">Target</th>
+                    <th className="pb-2 pr-3">Viewport</th>
+                    <th className="pb-2 pr-3">Status</th>
+                    <th className="pb-2 pr-3">HTTP</th>
+                    <th className="pb-2 pr-3">Dauer</th>
+                    <th className="pb-2 pr-3">Cache</th>
+                    <th className="pb-2">Fehler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedResults.map((r) => (
+                    <tr key={r.id} className="border-b border-gray-800/30 hover:bg-gray-800/20">
+                      <td className="py-1.5 pr-3 font-mono text-gray-300 truncate max-w-xs" title={r.url}>
+                        {r.url}
+                      </td>
+                      <td className="py-1.5 pr-3 capitalize">{r.target}</td>
+                      <td className="py-1.5 pr-3 text-gray-400">{r.viewport || "-"}</td>
+                      <td className="py-1.5 pr-3">
+                        <span className={r.status === "success" ? "text-green-400" : "text-red-400"}>
+                          {r.status === "success" ? "OK" : "FAIL"}
+                        </span>
+                      </td>
+                      <td className="py-1.5 pr-3 text-gray-400">{r.http_status || "-"}</td>
+                      <td className="py-1.5 pr-3 text-gray-400">{r.duration_ms ? `${r.duration_ms}ms` : "-"}</td>
+                      <td className="py-1.5 pr-3"><CacheHeaderBadge cacheHeadersJson={r.cache_headers} /></td>
+                      <td className="py-1.5 text-red-400 truncate max-w-xs" title={r.error || ""}>
+                        {r.error || ""}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-gray-500">
+                  Seite {page + 1} von {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPage(Math.max(0, page - 1))}
+                    disabled={page === 0}
+                    className="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-gray-300 text-xs py-1 px-2 rounded border border-gray-700"
+                  >
+                    Zurueck
+                  </button>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 text-gray-300 text-xs py-1 px-2 rounded border border-gray-700"
+                  >
+                    Weiter
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {showResults && !loadingResults && results.length === 0 && (
+          <p className="text-sm text-gray-500">Noch keine Ergebnisse vorhanden.</p>
+        )}
+      </div>
     </div>
   );
 }

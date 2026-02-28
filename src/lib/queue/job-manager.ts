@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "@/lib/db/database";
 import { loadConfig } from "@/lib/config";
 import { parseSitemap } from "@/lib/services/sitemap-parser";
-import { warmUrls, closeBrowser } from "@/lib/services/cdn-warmer";
+import { warmUrls, closeBrowser, type CacheHeaders } from "@/lib/services/cdn-warmer";
 import { warmFacebook } from "@/lib/services/facebook-warmer";
 import { warmLinkedIn } from "@/lib/services/linkedin-warmer";
 import { warmTwitter } from "@/lib/services/twitter-warmer";
@@ -76,13 +76,19 @@ function saveUrlResult(
   status: string,
   httpStatus?: number,
   durationMs?: number,
-  error?: string
+  error?: string,
+  viewport?: string,
+  cacheHeaders?: CacheHeaders
 ) {
   const db = getDb();
   db.prepare(`
-    INSERT INTO url_results (id, job_id, url, target, status, http_status, duration_ms, error)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(uuidv4(), jobId, url, target, status, httpStatus ?? null, durationMs ?? null, error ?? null);
+    INSERT INTO url_results (id, job_id, url, target, viewport, status, http_status, duration_ms, error, cache_headers)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    uuidv4(), jobId, url, target, viewport ?? null, status,
+    httpStatus ?? null, durationMs ?? null, error ?? null,
+    cacheHeaders ? JSON.stringify({ ...cacheHeaders }) : null
+  );
 }
 
 function updateJobProgress(jobId: string, processedUrls: number) {
@@ -145,7 +151,10 @@ export async function processJob(jobId: string): Promise<void> {
     if (targets.includes("cdn")) {
       logger.info({ jobId, urlCount: urls.length }, "Starting CDN warming");
       await warmUrls(urls, (result) => {
-        saveUrlResult(jobId, result.url, "cdn", result.status, result.httpStatus, result.durationMs, result.error);
+        saveUrlResult(
+          jobId, result.url, "cdn", result.status, result.httpStatus,
+          result.durationMs, result.error, result.viewport, result.cacheHeaders
+        );
         processed++;
         updateJobProgress(jobId, processed);
       });

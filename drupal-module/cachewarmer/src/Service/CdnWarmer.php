@@ -29,20 +29,23 @@ class CdnWarmer {
    * @param string $jobId
    *   The job ID.
    * @param callable|null $onResult
-   *   Callback: function(string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error)
+   *   Callback: function(string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error, string $viewport, ?array $cacheHeaders)
    */
   public function warm(array $urls, string $jobId, ?callable $onResult = NULL): void {
     $config = $this->configFactory->get('cachewarmer.settings');
     $timeout = (int) ($config->get('cdn.timeout') ?: 30);
-    $userAgents = [self::DESKTOP_UA, self::MOBILE_UA];
+    $viewports = [
+      ['ua' => self::DESKTOP_UA, 'viewport' => 'desktop'],
+      ['ua' => self::MOBILE_UA, 'viewport' => 'mobile'],
+    ];
 
     foreach ($urls as $url) {
-      foreach ($userAgents as $ua) {
+      foreach ($viewports as $vp) {
         $start = microtime(TRUE);
         try {
           $response = $this->httpClient->request('GET', $url, [
             'timeout' => $timeout,
-            'headers' => ['User-Agent' => $ua],
+            'headers' => ['User-Agent' => $vp['ua']],
             'http_errors' => FALSE,
           ]);
 
@@ -50,14 +53,21 @@ class CdnWarmer {
           $durationMs = (int) ((microtime(TRUE) - $start) * 1000);
           $status = $statusCode < 400 ? 'success' : 'failed';
 
+          $cacheHeaders = array_filter([
+            'xCache' => $response->getHeaderLine('x-cache') ?: NULL,
+            'cfCacheStatus' => $response->getHeaderLine('cf-cache-status') ?: NULL,
+            'age' => $response->getHeaderLine('age') ?: NULL,
+            'cacheControl' => $response->getHeaderLine('cache-control') ?: NULL,
+          ]);
+
           if ($onResult) {
-            $onResult($url, $status, $statusCode, $durationMs, $status === 'failed' ? "HTTP {$statusCode}" : NULL);
+            $onResult($url, $status, $statusCode, $durationMs, $status === 'failed' ? "HTTP {$statusCode}" : NULL, $vp['viewport'], !empty($cacheHeaders) ? $cacheHeaders : NULL);
           }
         }
         catch (\Exception $e) {
           $durationMs = (int) ((microtime(TRUE) - $start) * 1000);
           if ($onResult) {
-            $onResult($url, 'failed', NULL, $durationMs, $e->getMessage());
+            $onResult($url, 'failed', NULL, $durationMs, $e->getMessage(), $vp['viewport'], NULL);
           }
         }
       }

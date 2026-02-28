@@ -52,16 +52,28 @@ function runMigrations(db: Database.Database) {
       job_id TEXT NOT NULL REFERENCES jobs(id),
       url TEXT NOT NULL,
       target TEXT NOT NULL,
+      viewport TEXT,
       status TEXT NOT NULL DEFAULT 'pending',
       http_status INTEGER,
       duration_ms INTEGER,
       error TEXT,
+      cache_headers TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE INDEX IF NOT EXISTS idx_url_results_job_id ON url_results(job_id);
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
   `);
+
+  // Add columns if upgrading from older schema
+  const cols = db.prepare("PRAGMA table_info(url_results)").all() as { name: string }[];
+  const colNames = cols.map((c) => c.name);
+  if (!colNames.includes("viewport")) {
+    db.exec("ALTER TABLE url_results ADD COLUMN viewport TEXT");
+  }
+  if (!colNames.includes("cache_headers")) {
+    db.exec("ALTER TABLE url_results ADD COLUMN cache_headers TEXT");
+  }
 }
 
 export function closeDb() {
