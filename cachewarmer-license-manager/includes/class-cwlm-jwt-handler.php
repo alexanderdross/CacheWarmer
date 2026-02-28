@@ -23,21 +23,31 @@ class CWLM_JWT_Handler {
         $this->secret      = defined( 'CWLM_JWT_SECRET' ) ? CWLM_JWT_SECRET : '';
         $this->expiry_days = defined( 'CWLM_JWT_EXPIRY_DAYS' ) ? (int) CWLM_JWT_EXPIRY_DAYS : 30;
 
-        // Composer-Autoloader laden falls vorhanden
-        $autoload = CWLM_PLUGIN_DIR . 'vendor/autoload.php';
-        if ( file_exists( $autoload ) ) {
-            require_once $autoload;
-        }
-
+        // Autoloader wird zentral in cachewarmer-license-manager.php geladen
         $this->use_firebase = class_exists( '\Firebase\JWT\JWT' ) && class_exists( '\Firebase\JWT\Key' );
+    }
+
+    /**
+     * Prüfe ob ein JWT Secret konfiguriert ist.
+     */
+    public function has_secret(): bool {
+        return strlen( $this->secret ) >= 32;
     }
 
     /**
      * JWT Token generieren.
      *
      * @param array<string, mixed> $payload Payload-Daten.
+     * @throws \RuntimeException Wenn kein JWT Secret konfiguriert ist.
      */
     public function generate( array $payload ): string {
+        if ( ! $this->has_secret() ) {
+            throw new \RuntimeException(
+                'CWLM_JWT_SECRET ist nicht konfiguriert oder zu kurz (mind. 32 Zeichen). '
+                . 'Bitte in wp-config.php definieren.'
+            );
+        }
+
         $payload['iat'] = time();
         $payload['exp'] = time() + ( $this->expiry_days * 86400 );
 
@@ -54,6 +64,10 @@ class CWLM_JWT_Handler {
      * @return array<string, mixed>|false
      */
     public function validate( string $token ): array|false {
+        if ( ! $this->has_secret() ) {
+            return false;
+        }
+
         if ( $this->use_firebase ) {
             try {
                 $decoded = \Firebase\JWT\JWT::decode( $token, new \Firebase\JWT\Key( $this->secret, 'HS256' ) );

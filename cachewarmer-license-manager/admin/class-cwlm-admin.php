@@ -224,17 +224,36 @@ class CWLM_Admin {
      * Dashboard Widget: Quick Links + Mini-KPIs.
      */
     public function render_dashboard_widget(): void {
-        global $wpdb;
-        $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
+        // Transient-Cache: Widget-KPIs nur alle 10 Minuten abfragen
+        $cache_key   = 'cwlm_widget_kpis';
+        $widget_data = get_transient( $cache_key );
 
-        // Mini-KPIs
-        $active   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$prefix}licenses WHERE status = %s", 'active' ) );
-        $installs = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$prefix}installations WHERE is_active = 1" );
-        $expiring = (int) $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$prefix}licenses WHERE status = 'active' AND expires_at BETWEEN %s AND %s",
-            gmdate( 'Y-m-d H:i:s' ),
-            gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) )
-        ) );
+        if ( false === $widget_data ) {
+            global $wpdb;
+            $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
+
+            // Kombinierte Single-Query für alle 3 KPIs
+            $row = $wpdb->get_row( $wpdb->prepare(
+                "SELECT
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_licenses,
+                    SUM(CASE WHEN status = 'active' AND expires_at BETWEEN %s AND %s THEN 1 ELSE 0 END) AS expiring_soon
+                 FROM {$prefix}licenses",
+                gmdate( 'Y-m-d H:i:s' ),
+                gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) )
+            ) );
+            $installs_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$prefix}installations WHERE is_active = 1" );
+
+            $widget_data = [
+                'active'   => (int) ( $row->active_licenses ?? 0 ),
+                'installs' => $installs_count,
+                'expiring' => (int) ( $row->expiring_soon ?? 0 ),
+            ];
+            set_transient( $cache_key, $widget_data, 600 ); // 10 Minuten
+        }
+
+        $active   = $widget_data['active'];
+        $installs = $widget_data['installs'];
+        $expiring = $widget_data['expiring'];
 
         $links = [
             [
@@ -396,21 +415,31 @@ class CWLM_Admin {
         global $wpdb;
         $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
 
-        $licenses = $wpdb->get_results(
-            "SELECT license_key, customer_email, customer_name, tier, plan, status,
-                    max_sites, active_sites, expires_at, created_at
-             FROM {$prefix}licenses ORDER BY created_at DESC"
-        );
-
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename=cwlm-licenses-' . gmdate( 'Y-m-d' ) . '.csv' );
 
         $output = fopen( 'php://output', 'w' );
         fputcsv( $output, [ 'License Key', 'Email', 'Name', 'Tier', 'Plan', 'Status', 'Max Sites', 'Active Sites', 'Expires', 'Created' ] );
 
-        foreach ( $licenses as $license ) {
-            fputcsv( $output, (array) $license );
-        }
+        // Paginierte Abfrage um Speicherverbrauch bei großen Datenmengen zu begrenzen
+        $batch_size = 500;
+        $offset     = 0;
+
+        do {
+            $licenses = $wpdb->get_results( $wpdb->prepare(
+                "SELECT license_key, customer_email, customer_name, tier, plan, status,
+                        max_sites, active_sites, expires_at, created_at
+                 FROM {$prefix}licenses ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                $batch_size,
+                $offset
+            ) );
+
+            foreach ( $licenses as $license ) {
+                fputcsv( $output, (array) $license );
+            }
+
+            $offset += $batch_size;
+        } while ( count( $licenses ) === $batch_size );
 
         fclose( $output );
         wp_die();

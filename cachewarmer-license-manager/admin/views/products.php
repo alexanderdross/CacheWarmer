@@ -13,7 +13,7 @@ global $wpdb;
 $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
 
 // CRUD-Aktionen
-if ( isset( $_POST['cwlm_product_action'] ) && wp_verify_nonce( $_POST['_cwlm_product_nonce'] ?? '', 'cwlm_product_action' ) ) {
+if ( isset( $_POST['cwlm_product_action'] ) && current_user_can( 'manage_options' ) && wp_verify_nonce( $_POST['_cwlm_product_nonce'] ?? '', 'cwlm_product_action' ) ) {
     $action = sanitize_text_field( $_POST['cwlm_product_action'] );
 
     if ( 'create' === $action ) {

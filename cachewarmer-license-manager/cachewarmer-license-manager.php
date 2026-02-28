@@ -71,6 +71,12 @@ function cwlm_init() {
         return;
     }
 
+    // Composer-Autoloader zentral laden (statt in jeder Klasse einzeln)
+    $autoload = CWLM_PLUGIN_DIR . 'vendor/autoload.php';
+    if ( file_exists( $autoload ) ) {
+        require_once $autoload;
+    }
+
     // Autoload-Klassen laden
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-loader.php';
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-database.php';

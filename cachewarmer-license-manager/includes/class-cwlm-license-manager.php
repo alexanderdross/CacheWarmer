@@ -79,6 +79,12 @@ class CWLM_License_Manager {
     public function create_license( array $data ): int|false {
         global $wpdb;
 
+        // Tier validieren
+        $valid_tiers = [ 'free', 'professional', 'enterprise', 'development' ];
+        if ( isset( $data['tier'] ) && ! in_array( $data['tier'], $valid_tiers, true ) ) {
+            return false;
+        }
+
         $defaults = [
             'license_key'    => $this->generate_license_key( $data['tier'] ?? 'free' ),
             'customer_email' => '',
