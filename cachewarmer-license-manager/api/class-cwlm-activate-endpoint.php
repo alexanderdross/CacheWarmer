@@ -118,6 +118,11 @@ class CWLM_Activate_Endpoint extends CWLM_REST_Controller {
             );
         }
 
+        // GeoIP-Daten speichern (asynchron, Fehler werden ignoriert)
+        $geoip    = new CWLM_GeoIP();
+        $real_ip  = CWLM_Audit_Logger::get_client_ip();
+        $geoip->store_for_installation( $result['id'], $real_ip );
+
         // JWT Token generieren
         $jwt      = new CWLM_JWT_Handler();
         $features = ( new CWLM_Feature_Flags() )->get_features( $license );

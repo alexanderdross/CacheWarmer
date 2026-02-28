@@ -17,6 +17,10 @@ class CWLM_Admin {
     public function init(): void {
         add_action( 'admin_menu', [ $this, 'add_menu_pages' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
+
+        // AJAX-Handler registrieren
+        add_action( 'wp_ajax_cwlm_export_licenses', [ $this, 'ajax_export_licenses' ] );
+        add_action( 'wp_ajax_cwlm_dashboard_stats', [ $this, 'ajax_dashboard_stats' ] );
     }
 
     /**
@@ -200,5 +204,64 @@ class CWLM_Admin {
         } else {
             echo '<div class="wrap"><h1>Einstellungen</h1><p>Einstellungen werden geladen...</p></div>';
         }
+    }
+
+    /**
+     * AJAX: Lizenzen als CSV exportieren.
+     */
+    public function ajax_export_licenses(): void {
+        check_ajax_referer( 'cwlm_admin', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( -1 );
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
+
+        $licenses = $wpdb->get_results(
+            "SELECT license_key, customer_email, customer_name, tier, plan, status,
+                    max_sites, active_sites, expires_at, created_at
+             FROM {$prefix}licenses ORDER BY created_at DESC"
+        );
+
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename=cwlm-licenses-' . gmdate( 'Y-m-d' ) . '.csv' );
+
+        $output = fopen( 'php://output', 'w' );
+        fputcsv( $output, [ 'License Key', 'Email', 'Name', 'Tier', 'Plan', 'Status', 'Max Sites', 'Active Sites', 'Expires', 'Created' ] );
+
+        foreach ( $licenses as $license ) {
+            fputcsv( $output, (array) $license );
+        }
+
+        fclose( $output );
+        wp_die();
+    }
+
+    /**
+     * AJAX: Dashboard-Statistiken als JSON.
+     */
+    public function ajax_dashboard_stats(): void {
+        check_ajax_referer( 'cwlm_admin', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+        }
+
+        global $wpdb;
+        $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
+
+        $stats = [
+            'total_licenses'  => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$prefix}licenses" ),
+            'active_licenses' => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$prefix}licenses WHERE status = %s", 'active' ) ),
+            'active_installs' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$prefix}installations WHERE is_active = 1" ),
+            'revenue_tiers'   => $wpdb->get_results(
+                "SELECT tier, COUNT(*) as count FROM {$prefix}licenses WHERE status IN ('active','grace_period') GROUP BY tier",
+                OBJECT_K
+            ),
+        ];
+
+        wp_send_json_success( $stats );
     }
 }

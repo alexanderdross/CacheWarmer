@@ -81,6 +81,7 @@ function cwlm_init() {
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-audit-logger.php';
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-feature-flags.php';
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-email.php';
+    require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-geoip.php';
 
     // REST API laden
     require_once CWLM_PLUGIN_DIR . 'api/class-cwlm-rest-controller.php';

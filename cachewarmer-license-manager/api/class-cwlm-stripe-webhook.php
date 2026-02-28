@@ -315,13 +315,35 @@ class CWLM_Stripe_Webhook extends CWLM_REST_Controller {
     }
 
     /**
-     * Stripe Webhook-Signatur prüfen (HMAC-SHA256).
+     * Stripe Webhook-Signatur prüfen.
+     *
+     * Nutzt das Stripe PHP SDK (Composer-Dependency) wenn verfügbar,
+     * fällt auf manuelle HMAC-SHA256-Prüfung zurück.
      */
     private function verify_signature( string $payload, ?string $sig_header, string $secret ): bool {
         if ( empty( $secret ) || empty( $sig_header ) ) {
             return false;
         }
 
+        // Composer-Autoloader laden
+        $autoload = CWLM_PLUGIN_DIR . 'vendor/autoload.php';
+        if ( file_exists( $autoload ) ) {
+            require_once $autoload;
+        }
+
+        // Stripe SDK verwenden wenn verfügbar
+        if ( class_exists( '\Stripe\Webhook' ) ) {
+            try {
+                \Stripe\Webhook::constructEvent( $payload, $sig_header, $secret );
+                return true;
+            } catch ( \Stripe\Exception\SignatureVerificationException $e ) {
+                return false;
+            } catch ( \Exception $e ) {
+                return false;
+            }
+        }
+
+        // Fallback: Manuelle Signaturprüfung
         $elements = [];
         foreach ( explode( ',', $sig_header ) as $element ) {
             $parts = explode( '=', $element, 2 );
