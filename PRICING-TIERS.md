@@ -267,7 +267,9 @@ Fallback: Wenn der Lizenzserver nicht erreichbar ist, gilt die letzte bekannte L
 |---------|------:|--------|
 | **Free** | 0 € | Unbegrenzt, 1 Site |
 | **Premium** | 79 € / Jahr | 1 Site, 1 Jahr Updates + Support |
-| **Enterprise** | 249 € / Jahr | Unbegrenzte Sites, 1 Jahr Updates + Priority Support |
+| **Enterprise Starter** | 499 € / Jahr | Bis 5 Sites, Priority Support |
+| **Enterprise Professional** | 1.499 € / Jahr | Bis 25 Sites, Webhooks, White-Label, SLA |
+| **Enterprise Corporate** | ab 4.999 € / Jahr | Unbegrenzte Sites, Custom Development, Dedicated Account Manager |
 
 ### Drupal Modul
 
@@ -275,16 +277,19 @@ Fallback: Wenn der Lizenzserver nicht erreichbar ist, gilt die letzte bekannte L
 |---------|------:|--------|
 | **Free** | 0 € | Unbegrenzt, 1 Site |
 | **Premium** | 99 € / Jahr | 1 Site, 1 Jahr Updates + Support |
-| **Enterprise** | 299 € / Jahr | Unbegrenzte Sites, 1 Jahr Updates + Priority Support |
+| **Enterprise Starter** | 699 € / Jahr | Bis 5 Sites, Priority Support |
+| **Enterprise Professional** | 1.999 € / Jahr | Bis 25 Sites, Webhooks, White-Label, SLA |
+| **Enterprise Corporate** | ab 5.999 € / Jahr | Unbegrenzte Sites, Custom Development, Dedicated Account Manager |
 
-> **Hinweis:** Drupal-Preise sind etwas höher, da der Markt kleiner und die Zielgruppe professioneller ist (Agenturen, Unternehmen).
+> **Hinweis:** Drupal-Preise sind höher, da der Markt kleiner und die Zielgruppe professioneller ist (Agenturen, Unternehmen, regulierte Branchen).
 
 ### Lifetime-Option
 
 | Version | Preis |
 |---------|------:|
 | **Premium Lifetime** | 199 € (WP) / 249 € (Drupal) |
-| **Enterprise Lifetime** | 599 € (WP) / 749 € (Drupal) |
+| **Enterprise Starter Lifetime** | 1.299 € (WP) / 1.799 € (Drupal) |
+| **Enterprise Professional Lifetime** | 3.999 € (WP) / 4.999 € (Drupal) |
 
 ---
 
@@ -411,19 +416,26 @@ Empfehlung: **Eigener Lizenzserver** oder Drittanbieter-Lösung:
 ## Zusammenfassung
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     FREE                                     │
-│  CDN Warming + IndexNow | 50 URLs | 2 Sitemaps | Manuell    │
-│  → Sofort nützlich für kleine Websites                       │
-├─────────────────────────────────────────────────────────────┤
-│                    PREMIUM (79€/Jahr)                         │
-│  + Facebook, LinkedIn, Twitter, Google, Bing                 │
-│  + 10.000 URLs | 25 Sitemaps | Scheduler | REST API          │
-│  → Für Content-Marketer und SEO-Profis                       │
-├─────────────────────────────────────────────────────────────┤
-│                  ENTERPRISE (249€/Jahr)                       │
-│  + Unbegrenzt | Multi-Site | Webhooks | White-Label           │
-│  + Custom Cron | Priority Support | CSV Export                │
-│  → Für Agenturen und große Unternehmen                       │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        FREE                                       │
+│  CDN Warming + IndexNow | 50 URLs | 2 Sitemaps | Manuell         │
+│  → Sofort nützlich für kleine Websites                            │
+├──────────────────────────────────────────────────────────────────┤
+│                    PREMIUM (79€/Jahr)                              │
+│  + Facebook, LinkedIn, Twitter, Google, Bing                      │
+│  + 10.000 URLs | 25 Sitemaps | Scheduler | REST API              │
+│  → Für Content-Marketer und SEO-Profis                            │
+├──────────────────────────────────────────────────────────────────┤
+│                ENTERPRISE STARTER (499€/Jahr)                     │
+│  + Bis 5 Sites | Priority Support | Alle Premium-Features        │
+│  → Für kleine Agenturen und wachsende Unternehmen                │
+├──────────────────────────────────────────────────────────────────┤
+│              ENTERPRISE PROFESSIONAL (1.499€/Jahr)                │
+│  + Bis 25 Sites | Webhooks | White-Label | SLA                   │
+│  → Für mittelgroße Agenturen und Unternehmen                     │
+├──────────────────────────────────────────────────────────────────┤
+│              ENTERPRISE CORPORATE (ab 4.999€/Jahr)                │
+│  + Unbegrenzte Sites | Custom Dev | Dedicated Account Manager    │
+│  → Für Großunternehmen, OEM und regulierte Branchen              │
+└──────────────────────────────────────────────────────────────────┘
 ```
