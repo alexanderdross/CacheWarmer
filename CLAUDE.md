@@ -280,6 +280,10 @@ BING_API_KEY=your-bing-api-key
 RATE_LIMIT_CDN_PER_SECOND=2
 RATE_LIMIT_FACEBOOK_PER_HOUR=50
 RATE_LIMIT_INDEXNOW_BATCH_SIZE=100
+
+# Lizenzierung (siehe Abschnitt 15)
+LICENSE_KEY=CW-PRO-A1B2C3D4E5F6G7H8
+LICENSE_DASHBOARD_URL=https://dashboard.cachewarmer.drossmedia.de
 ```
 
 ---
@@ -329,8 +333,17 @@ cachewarmer/
 │   └── style.css
 ├── credentials/                  # Git-ignoriert
 │   └── google-sa.json
-└── data/
-    └── cachewarmer.db           # SQLite-Datenbank
+├── data/
+│   ├── cachewarmer.db           # SQLite-Datenbank
+│   └── .instance-id             # Persistente UUID für Lizenz-Fingerprint
+├── src/
+│   └── license/
+│       ├── client.js            # Lizenz-Aktivierung & Heartbeat
+│       ├── fingerprint.js       # Installations-Fingerprint (SHA-256)
+│       └── feature-gate.js      # Feature-Gating Middleware
+├── LASTENHEFT-LICENSE-DASHBOARD.md  # Lastenheft License Dashboard
+└── license-dashboard/
+    └── README.md                # Technische Doku License Manager Plugin
 ```
 
 ---
@@ -432,3 +445,73 @@ cachewarmer/
 12. ☐ Frontend Dashboard (Progress, Logs, History)
 13. ☐ Scheduling / Cron-Integration
 14. ☐ Testing & Deployment
+
+---
+
+## 15. Lizenzierung & Commercial Distribution
+
+### 15.1 Überblick
+
+CacheWarmer wird kommerziell vertrieben über ein zentrales **License Management Dashboard** basierend auf WordPress.
+
+| Eigenschaft | Wert |
+|------------|------|
+| Dashboard URL | `https://dashboard.cachewarmer.drossmedia.de` |
+| WordPress Plugin | `cachewarmer-license-manager` (CWLM) |
+| API Namespace | `cwlm/v1` |
+| Datenbank | MySQL (7 Tabellen, Prefix `wp_cwlm_`) |
+| Payment | Stripe (native Webhook-Integration) |
+
+### 15.2 Produkt-Tiers
+
+| Feature | Free | Professional | Enterprise |
+|---------|------|-------------|-----------|
+| CDN Warming (HTTP) | ✓ | ✓ | ✓ |
+| CDN Warming (Puppeteer) | – | ✓ | ✓ |
+| Social Media (FB, LI, X) | – | ✓ | ✓ |
+| IndexNow | – | ✓ | ✓ |
+| Google Search Console | – | – | ✓ |
+| Bing Webmaster Tools | – | – | ✓ |
+| Scheduling | – | ✓ | ✓ |
+| Max Sitemaps | 1 | 5 | Unbegrenzt |
+| Max URLs | 50 | 5.000 | Unbegrenzt |
+| Workers | 1 | 5 | 10+ |
+| Multi-Site / Webhooks / Cloudflare | – | – | ✓ |
+| Priority Support | – | – | ✓ |
+
+Zusätzlich: **Development**-Lizenz (Enterprise-Features, nur localhost/\*.local/\*.dev/\*.test).
+
+### 15.3 Plattform-Support
+
+CacheWarmer wird auf 4 Plattformen angeboten:
+
+| Plattform | Paket | Fingerprint |
+|-----------|-------|-------------|
+| Node.js Standalone | `@drossmedia/cachewarmer` (NPM) | Hostname + UUID + OS |
+| Docker | `drossmedia/cachewarmer` (Docker Hub) | Host-UUID (Volume) |
+| WordPress Plugin | `cachewarmer` (wordpress.org / Dashboard) | Domain + WP-Version |
+| Drupal Modul | `cachewarmer` (drupal.org / Dashboard) | Domain + Drupal-Version |
+
+### 15.4 License Key Format
+
+```
+CW-{TIER}-{HEX16}
+Beispiel: CW-PRO-A1B2C3D4E5F6G7H8
+```
+
+### 15.5 Integration in CacheWarmer
+
+Die Lizenzvalidierung wird beim Start durchgeführt und per Heartbeat alle 24h erneuert:
+
+1. `LICENSE_KEY` und `LICENSE_DASHBOARD_URL` in `.env` konfigurieren
+2. Beim Start: `src/license/client.js` ruft `/cwlm/v1/activate` auf
+3. Features werden gecacht und über `src/license/feature-gate.js` geprüft
+4. Alle 24h: Heartbeat an `/cwlm/v1/check`
+5. Bei Feature-Zugriff: Middleware prüft ob Tier berechtigt
+
+### 15.6 Dokumentation
+
+| Dokument | Beschreibung |
+|----------|-------------|
+| `LASTENHEFT-LICENSE-DASHBOARD.md` | Formales Lastenheft mit Anforderungen, Datenmodell, API-Spec, Implementierungsplan |
+| `license-dashboard/README.md` | Technische Doku des WordPress-Plugins (Schema, Endpoints, Stripe, Admin UI) |
