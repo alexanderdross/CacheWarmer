@@ -102,10 +102,32 @@ class CacheWarmer_Job_Manager {
                 return $entry['loc'];
             }, $parsed );
 
+            // Apply URL exclude patterns.
+            $exclude_raw = get_option( 'cachewarmer_exclude_patterns', '' );
+            if ( ! empty( trim( $exclude_raw ) ) ) {
+                $patterns    = array_filter( array_map( 'trim', explode( "\n", $exclude_raw ) ) );
+                $url_strings = array_values( array_filter( $url_strings, function ( $url ) use ( $patterns ) {
+                    foreach ( $patterns as $pattern ) {
+                        if ( false !== strpos( $url, $pattern ) ) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } ) );
+            }
+
             $this->db->update_job( $job_id, array( 'total_urls' => count( $url_strings ) ) );
 
             $targets   = json_decode( $job->targets, true ) ?: array();
             $processed = 0;
+
+            // Notify job started.
+            CacheWarmer_Webhooks::notify( 'job.started', array(
+                'jobId'      => $job_id,
+                'sitemapUrl' => $job->sitemap_url,
+                'urlCount'   => count( $url_strings ),
+                'targets'    => $targets,
+            ) );
 
             $on_result = function ( array $result ) use ( $job_id, &$processed ) {
                 $this->db->insert_url_result( array(
@@ -168,12 +190,37 @@ class CacheWarmer_Job_Manager {
                 'completed_at' => current_time( 'mysql', true ),
             ) );
 
+            // Send completion notifications.
+            $job_data = array(
+                'id'             => $job_id,
+                'status'         => 'completed',
+                'sitemap_url'    => $job->sitemap_url,
+                'total_urls'     => count( $url_strings ),
+                'processed_urls' => $processed,
+                'started_at'     => $job->started_at ?? null,
+                'completed_at'   => current_time( 'mysql', true ),
+            );
+            CacheWarmer_Webhooks::notify( 'job.completed', $job_data );
+            CacheWarmer_Email::send_job_completed( $job_data );
+
         } catch ( \Throwable $e ) {
             $this->db->update_job( $job_id, array(
                 'status'       => 'failed',
                 'completed_at' => current_time( 'mysql', true ),
                 'error'        => $e->getMessage(),
             ) );
+
+            // Send failure notifications.
+            $job_data = array(
+                'id'             => $job_id,
+                'status'         => 'failed',
+                'sitemap_url'    => $job->sitemap_url,
+                'total_urls'     => 0,
+                'processed_urls' => 0,
+                'error'          => $e->getMessage(),
+            );
+            CacheWarmer_Webhooks::notify( 'job.failed', $job_data );
+            CacheWarmer_Email::send_job_completed( $job_data );
         }
     }
 

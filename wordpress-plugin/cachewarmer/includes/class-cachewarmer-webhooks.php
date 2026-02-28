@@ -30,6 +30,13 @@ class CacheWarmer_Webhooks {
             return;
         }
 
+        // SSRF protection: block requests to private/internal hosts.
+        $parsed = wp_parse_url( $webhook_url );
+        $host   = $parsed['host'] ?? '';
+        if ( empty( $host ) || self::is_private_host( $host ) ) {
+            return;
+        }
+
         $payload = wp_json_encode( array(
             'event'     => $event,
             'timestamp' => gmdate( 'c' ),
@@ -42,5 +49,30 @@ class CacheWarmer_Webhooks {
             'timeout'  => 10,
             'blocking' => false,
         ) );
+    }
+
+    /**
+     * Check if a host resolves to a private or reserved IP address.
+     *
+     * @param string $host Hostname to check.
+     * @return bool TRUE if the host is private/internal.
+     */
+    protected static function is_private_host( string $host ): bool {
+        $blocked = array( 'localhost', '127.0.0.1', '::1', '0.0.0.0' );
+        if ( in_array( strtolower( $host ), $blocked, true ) ) {
+            return true;
+        }
+
+        $ip = gethostbyname( $host );
+        if ( $ip === $host ) {
+            // Could not resolve — allow (DNS may be unavailable).
+            return false;
+        }
+
+        return ! filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        );
     }
 }

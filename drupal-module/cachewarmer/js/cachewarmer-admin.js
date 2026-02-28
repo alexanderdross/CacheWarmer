@@ -153,6 +153,12 @@
         html += '</div>';
       }
 
+      // Export buttons
+      html += '<div style="margin-top:16px;display:flex;gap:8px">';
+      html += '<button class="button button--small cachewarmer-btn-export" data-job-id="' + escHtml(job.id) + '" data-format="csv">' + Drupal.t('Export CSV') + '</button>';
+      html += '<button class="button button--small cachewarmer-btn-export" data-job-id="' + escHtml(job.id) + '" data-format="json">' + Drupal.t('Export JSON') + '</button>';
+      html += '</div>';
+
       modalBody.html(html);
     });
   });

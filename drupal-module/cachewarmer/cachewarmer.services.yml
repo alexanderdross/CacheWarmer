@@ -65,3 +65,5 @@ services:
       - '@cachewarmer.indexnow'
       - '@config.factory'
       - '@logger.factory'
+      - '@cachewarmer.webhooks'
+      - '@cachewarmer.email'

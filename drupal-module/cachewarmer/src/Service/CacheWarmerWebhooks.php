@@ -51,6 +51,21 @@ class CacheWarmerWebhooks {
   }
 
   /**
+   * Checks if a hostname resolves to a private/internal IP.
+   */
+  protected function isPrivateHost(string $host): bool {
+    $blocked = ['localhost', '127.0.0.1', '::1', '0.0.0.0'];
+    if (in_array(strtolower($host), $blocked, TRUE)) {
+      return TRUE;
+    }
+    $ip = gethostbyname($host);
+    if ($ip === $host) {
+      return FALSE; // Could not resolve.
+    }
+    return !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+  }
+
+  /**
    * Sends a webhook notification.
    *
    * @param string $event
@@ -68,8 +83,15 @@ class CacheWarmerWebhooks {
       return;
     }
 
+    // SSRF protection: block internal/private IPs.
+    $host = parse_url($webhook_url, PHP_URL_HOST);
+    if ($host && $this->isPrivateHost($host)) {
+      $this->logger->warning('Webhook URL blocked (private/internal): @url', ['@url' => $webhook_url]);
+      return;
+    }
+
     try {
-      $this->httpClient->requestAsync('POST', $webhook_url, [
+      $this->httpClient->request('POST', $webhook_url, [
         'json' => [
           'event' => $event,
           'timestamp' => gmdate('c'),

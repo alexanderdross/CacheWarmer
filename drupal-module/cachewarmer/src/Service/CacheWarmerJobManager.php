@@ -22,6 +22,8 @@ class CacheWarmerJobManager {
   protected IndexNow $indexNow;
   protected ConfigFactoryInterface $configFactory;
   protected LoggerInterface $logger;
+  protected CacheWarmerWebhooks $webhooks;
+  protected CacheWarmerEmail $email;
 
   /**
    * Allowed warming targets.
@@ -42,6 +44,8 @@ class CacheWarmerJobManager {
     IndexNow $indexNow,
     ConfigFactoryInterface $configFactory,
     LoggerChannelFactoryInterface $loggerFactory,
+    CacheWarmerWebhooks $webhooks,
+    CacheWarmerEmail $email,
   ) {
     $this->database = $database;
     $this->sitemapParser = $sitemapParser;
@@ -54,6 +58,8 @@ class CacheWarmerJobManager {
     $this->indexNow = $indexNow;
     $this->configFactory = $configFactory;
     $this->logger = $loggerFactory->get('cachewarmer');
+    $this->webhooks = $webhooks;
+    $this->email = $email;
   }
 
   /**
@@ -118,6 +124,28 @@ class CacheWarmerJobManager {
       $entries = $this->sitemapParser->parse($job->sitemap_url);
       $urls = array_map(fn($e) => $e['loc'], $entries);
 
+      // Apply URL exclude patterns.
+      $config = $this->configFactory->get('cachewarmer.settings');
+      $excludeRaw = $config->get('exclude_patterns') ?? '';
+      if (!empty(trim($excludeRaw))) {
+        $patterns = array_filter(array_map('trim', explode("\n", $excludeRaw)));
+        $beforeCount = count($urls);
+        $urls = array_values(array_filter($urls, function (string $url) use ($patterns) {
+          foreach ($patterns as $pattern) {
+            if (str_contains($url, $pattern)) {
+              return FALSE;
+            }
+          }
+          return TRUE;
+        }));
+        if (count($urls) < $beforeCount) {
+          $this->logger->info('Excluded @count URLs by patterns for job @id', [
+            '@count' => $beforeCount - count($urls),
+            '@id' => $jobId,
+          ]);
+        }
+      }
+
       $this->database->updateJob($jobId, [
         'total_urls' => count($urls),
       ]);
@@ -131,14 +159,14 @@ class CacheWarmerJobManager {
       }
 
       $targets = json_decode($job->targets, TRUE) ?: [];
-      $config = $this->configFactory->get('cachewarmer.settings');
       $processedCount = 0;
 
-      // Build result callback.
-      $onResult = function (string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error) use ($jobId, &$processedCount) {
-        $target = 'cdn'; // Will be overridden per-service below.
-        $this->database->insertUrlResult($jobId, $url, $target, $status, $httpStatus, $durationMs, $error);
-      };
+      $this->webhooks->notify('job.started', [
+        'jobId' => $jobId,
+        'sitemapUrl' => $job->sitemap_url,
+        'urlCount' => count($urls),
+        'targets' => $targets,
+      ]);
 
       // Process each target.
       foreach ($targets as $target) {
@@ -172,6 +200,17 @@ class CacheWarmerJobManager {
         '@id' => $jobId,
         '@count' => $processedCount,
       ]);
+
+      // Send completion notifications.
+      $jobData = [
+        'id' => $jobId,
+        'status' => 'completed',
+        'sitemap_url' => $job->sitemap_url,
+        'total_urls' => count($urls),
+        'processed_urls' => $processedCount,
+      ];
+      $this->webhooks->notify('job.completed', $jobData);
+      $this->email->sendJobCompleted($jobData);
     }
     catch (\Exception $e) {
       $this->database->updateJob($jobId, [
@@ -183,6 +222,18 @@ class CacheWarmerJobManager {
         '@id' => $jobId,
         '@error' => $e->getMessage(),
       ]);
+
+      // Send failure notifications.
+      $jobData = [
+        'id' => $jobId,
+        'status' => 'failed',
+        'sitemap_url' => $job->sitemap_url,
+        'total_urls' => 0,
+        'processed_urls' => 0,
+        'error' => $e->getMessage(),
+      ];
+      $this->webhooks->notify('job.failed', $jobData);
+      $this->email->sendJobCompleted($jobData);
     }
   }
 
