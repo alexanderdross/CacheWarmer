@@ -40,6 +40,18 @@ function cachewarmer_cron() {
 }
 
 /**
+ * Implements hook_mail().
+ */
+function cachewarmer_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'job_notification':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
+
+/**
  * Implements hook_theme().
  */
 function cachewarmer_theme() {

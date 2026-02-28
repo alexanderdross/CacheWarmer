@@ -5,6 +5,7 @@ namespace Drupal\cachewarmer\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\cachewarmer\Service\CacheWarmerDatabase;
 use Drupal\cachewarmer\Service\CacheWarmerJobManager;
+use Drupal\cachewarmer\Service\CacheWarmerLicense;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,6 +17,7 @@ class CacheWarmerAjaxController extends ControllerBase {
 
   protected CacheWarmerDatabase $database;
   protected CacheWarmerJobManager $jobManager;
+  protected CacheWarmerLicense $license;
 
   /**
    * {@inheritdoc}
@@ -24,6 +26,7 @@ class CacheWarmerAjaxController extends ControllerBase {
     $instance = parent::create($container);
     $instance->database = $container->get('cachewarmer.database');
     $instance->jobManager = $container->get('cachewarmer.job_manager');
+    $instance->license = $container->get('cachewarmer.license');
     return $instance;
   }
 
@@ -157,6 +160,94 @@ class CacheWarmerAjaxController extends ControllerBase {
   public function getStatus(): JsonResponse {
     $counts = $this->database->getJobCounts();
     return new JsonResponse(['success' => TRUE, 'data' => $counts]);
+  }
+
+  /**
+   * Bulk adds sitemaps from a list of URLs.
+   */
+  public function bulkAddSitemaps(Request $request): JsonResponse {
+    $content = json_decode($request->getContent(), TRUE);
+    $urlsRaw = $content['urls'] ?? '';
+    $lines = array_filter(array_map('trim', explode("\n", $urlsRaw)));
+    $added = [];
+    $errors = [];
+
+    foreach ($lines as $url) {
+      if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+        $errors[] = $url;
+        continue;
+      }
+      $domain = parse_url($url, PHP_URL_HOST) ?: '';
+      $sitemap = $this->database->insertSitemap($url, $domain);
+      $added[] = [
+        'id' => $sitemap->id,
+        'url' => $sitemap->url,
+        'domain' => $sitemap->domain,
+        'created_at' => $sitemap->created_at,
+      ];
+    }
+
+    return new JsonResponse(['added' => $added, 'errors' => $errors]);
+  }
+
+  /**
+   * Auto-detects sitemaps on the current site.
+   */
+  public function detectSitemaps(): JsonResponse {
+    /** @var \Drupal\cachewarmer\Service\CacheWarmerSitemapDetector $detector */
+    $detector = \Drupal::service('cachewarmer.sitemap_detector');
+    $found = $detector->detect();
+    return new JsonResponse(['sitemaps' => $found]);
+  }
+
+  /**
+   * Exports job results in CSV or JSON format.
+   */
+  public function exportResults(Request $request): JsonResponse {
+    $content = json_decode($request->getContent(), TRUE);
+    $jobId = $content['job_id'] ?? '';
+    $format = $content['format'] ?? 'json';
+    $results = $this->database->getJobResults($jobId);
+
+    if ($format === 'csv') {
+      $csv = "url,target,status,http_status,duration_ms,error,created_at\n";
+      foreach ($results as $r) {
+        $csv .= sprintf(
+          '"%s","%s","%s",%d,%d,"%s","%s"' . "\n",
+          $r->url,
+          $r->target,
+          $r->status,
+          $r->http_status ?? 0,
+          $r->duration_ms ?? 0,
+          str_replace('"', '""', $r->error ?? ''),
+          $r->created_at
+        );
+      }
+      return new JsonResponse([
+        'format' => 'csv',
+        'content' => $csv,
+        'filename' => 'cachewarmer-' . $jobId . '.csv',
+      ]);
+    }
+
+    $jsonResults = [];
+    foreach ($results as $r) {
+      $jsonResults[] = [
+        'url' => $r->url,
+        'target' => $r->target,
+        'status' => $r->status,
+        'http_status' => $r->http_status,
+        'duration_ms' => $r->duration_ms,
+        'error' => $r->error,
+        'created_at' => $r->created_at,
+      ];
+    }
+
+    return new JsonResponse([
+      'format' => 'json',
+      'content' => $jsonResults,
+      'filename' => 'cachewarmer-' . $jobId . '.json',
+    ]);
   }
 
 }

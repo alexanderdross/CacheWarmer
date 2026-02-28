@@ -22,6 +22,41 @@ if ( ! defined( 'ABSPATH' ) ) {
     <form method="post" action="options.php">
         <?php settings_fields( 'cachewarmer_settings' ); ?>
 
+        <!-- License -->
+        <div class="cachewarmer-settings-section">
+            <h2><?php esc_html_e( 'License', 'cachewarmer' ); ?></h2>
+            <?php
+            $current_tier = CacheWarmer_License::get_tier();
+            $tier_labels  = array(
+                'free'       => __( 'Free', 'cachewarmer' ),
+                'premium'    => __( 'Premium', 'cachewarmer' ),
+                'enterprise' => __( 'Enterprise', 'cachewarmer' ),
+            );
+            ?>
+            <p class="description">
+                <?php
+                printf(
+                    /* translators: %s: current tier name */
+                    esc_html__( 'Current tier: %s', 'cachewarmer' ),
+                    '<strong>' . esc_html( $tier_labels[ $current_tier ] ?? $current_tier ) . '</strong>'
+                );
+                ?>
+            </p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">
+                        <label for="cachewarmer_license_key"><?php esc_html_e( 'License Key', 'cachewarmer' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="text" id="cachewarmer_license_key" name="cachewarmer_license_key"
+                               value="<?php echo esc_attr( get_option( 'cachewarmer_license_key', '' ) ); ?>"
+                               class="regular-text">
+                        <p class="description"><?php esc_html_e( 'Enter your license key to unlock Premium or Enterprise features.', 'cachewarmer' ); ?></p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <!-- API Key -->
         <div class="cachewarmer-settings-section">
             <h2><?php esc_html_e( 'General', 'cachewarmer' ); ?></h2>
@@ -331,6 +366,130 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Auto-Warm on Publish -->
+        <div class="cachewarmer-settings-section">
+            <h2>
+                <label>
+                    <input type="hidden" name="cachewarmer_auto_warm_on_publish" value="0">
+                    <input type="checkbox" name="cachewarmer_auto_warm_on_publish" value="1"
+                        <?php checked( get_option( 'cachewarmer_auto_warm_on_publish', '0' ), '1' ); ?>>
+                    <?php esc_html_e( 'Auto-Warm on Publish', 'cachewarmer' ); ?>
+                </label>
+            </h2>
+            <p class="description">
+                <?php esc_html_e( 'Automatically warm cache when a post or page is published. Requires Premium or Enterprise license.', 'cachewarmer' ); ?>
+                <?php if ( ! CacheWarmer_License::is_premium_or_above() ) : ?>
+                    <br><em><?php esc_html_e( 'This feature requires a Premium or Enterprise license.', 'cachewarmer' ); ?></em>
+                <?php endif; ?>
+            </p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Targets', 'cachewarmer' ); ?></th>
+                    <td>
+                        <?php
+                        $auto_warm_targets  = get_option( 'cachewarmer_auto_warm_targets', array( 'cdn', 'facebook', 'linkedin', 'twitter' ) );
+                        if ( is_string( $auto_warm_targets ) ) {
+                            $auto_warm_targets = array_filter( array_map( 'trim', explode( ',', $auto_warm_targets ) ) );
+                        }
+                        $available_targets = array(
+                            'cdn'      => 'CDN',
+                            'facebook' => 'Facebook',
+                            'linkedin' => 'LinkedIn',
+                            'twitter'  => 'Twitter/X',
+                            'google'   => 'Google',
+                            'bing'     => 'Bing',
+                            'indexnow' => 'IndexNow',
+                        );
+                        foreach ( $available_targets as $key => $label ) :
+                        ?>
+                            <label style="margin-right: 12px;">
+                                <input type="checkbox" name="cachewarmer_auto_warm_targets[]" value="<?php echo esc_attr( $key ); ?>"
+                                    <?php checked( in_array( $key, $auto_warm_targets, true ) ); ?>>
+                                <?php echo esc_html( $label ); ?>
+                            </label>
+                        <?php endforeach; ?>
+                        <p class="description"><?php esc_html_e( 'Select which targets to warm when a post is published.', 'cachewarmer' ); ?></p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- URL Exclude Patterns -->
+        <div class="cachewarmer-settings-section">
+            <h2><?php esc_html_e( 'URL Exclude Patterns', 'cachewarmer' ); ?></h2>
+            <p class="description"><?php esc_html_e( 'URLs matching these patterns will be skipped during warming. One pattern per line. Supports wildcard (*) matching.', 'cachewarmer' ); ?></p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">
+                        <label for="cachewarmer_exclude_patterns"><?php esc_html_e( 'Exclude Patterns', 'cachewarmer' ); ?></label>
+                    </th>
+                    <td>
+                        <textarea id="cachewarmer_exclude_patterns" name="cachewarmer_exclude_patterns"
+                                  rows="6" class="large-text code"
+                                  placeholder="/tag/*&#10;/author/*&#10;*.pdf&#10;/wp-admin/*"><?php echo esc_textarea( get_option( 'cachewarmer_exclude_patterns', '' ) ); ?></textarea>
+                        <p class="description"><?php esc_html_e( 'Examples: /tag/*, /author/*, *.pdf, /wp-admin/*', 'cachewarmer' ); ?></p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Email Notifications -->
+        <div class="cachewarmer-settings-section">
+            <h2>
+                <label>
+                    <input type="hidden" name="cachewarmer_email_notifications" value="0">
+                    <input type="checkbox" name="cachewarmer_email_notifications" value="1"
+                        <?php checked( get_option( 'cachewarmer_email_notifications', '0' ), '1' ); ?>>
+                    <?php esc_html_e( 'Email Notifications', 'cachewarmer' ); ?>
+                </label>
+            </h2>
+            <p class="description">
+                <?php esc_html_e( 'Receive email notifications when warming jobs complete or fail.', 'cachewarmer' ); ?>
+                <?php if ( ! CacheWarmer_License::is_premium_or_above() ) : ?>
+                    <br><em><?php esc_html_e( 'This feature requires a Premium or Enterprise license.', 'cachewarmer' ); ?></em>
+                <?php endif; ?>
+            </p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">
+                        <label for="cachewarmer_notification_email"><?php esc_html_e( 'Notification Email', 'cachewarmer' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="email" id="cachewarmer_notification_email" name="cachewarmer_notification_email"
+                               value="<?php echo esc_attr( get_option( 'cachewarmer_notification_email', get_option( 'admin_email' ) ) ); ?>"
+                               class="regular-text">
+                        <p class="description"><?php esc_html_e( 'Email address to receive notifications. Defaults to the admin email.', 'cachewarmer' ); ?></p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Webhook Notifications -->
+        <div class="cachewarmer-settings-section">
+            <h2><?php esc_html_e( 'Webhook Notifications', 'cachewarmer' ); ?></h2>
+            <p class="description">
+                <?php esc_html_e( 'Send event notifications to an external webhook URL.', 'cachewarmer' ); ?>
+                <?php if ( ! CacheWarmer_License::is_enterprise() ) : ?>
+                    <br><em><?php esc_html_e( 'This feature requires an Enterprise license.', 'cachewarmer' ); ?></em>
+                <?php endif; ?>
+            </p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">
+                        <label for="cachewarmer_webhook_url"><?php esc_html_e( 'Webhook URL', 'cachewarmer' ); ?></label>
+                    </th>
+                    <td>
+                        <input type="url" id="cachewarmer_webhook_url" name="cachewarmer_webhook_url"
+                               value="<?php echo esc_attr( get_option( 'cachewarmer_webhook_url', '' ) ); ?>"
+                               class="regular-text"
+                               placeholder="https://example.com/webhook"
+                               <?php echo ! CacheWarmer_License::is_enterprise() ? 'disabled' : ''; ?>>
+                        <p class="description"><?php esc_html_e( 'JSON payloads will be POSTed to this URL for events like job.completed and job.failed.', 'cachewarmer' ); ?></p>
                     </td>
                 </tr>
             </table>

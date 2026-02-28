@@ -42,6 +42,28 @@ $sitemaps = $db->get_all_sitemaps();
         </form>
     </div>
 
+    <!-- Bulk Import -->
+    <div class="cachewarmer-section">
+        <h2><?php esc_html_e( 'Bulk Import Sitemaps', 'cachewarmer' ); ?></h2>
+        <form id="cw-bulk-import-form" class="cachewarmer-form">
+            <div class="cachewarmer-form-row">
+                <label for="cw-bulk-urls"><?php esc_html_e( 'Sitemap URLs (one per line)', 'cachewarmer' ); ?></label>
+                <textarea id="cw-bulk-urls" name="urls" rows="5" class="large-text"
+                          placeholder="https://example.com/sitemap.xml&#10;https://another-site.com/sitemap.xml&#10;https://third-site.com/sitemap_index.xml"></textarea>
+            </div>
+            <div class="cachewarmer-form-row">
+                <button type="submit" class="button button-primary">
+                    <?php esc_html_e( 'Import All', 'cachewarmer' ); ?>
+                </button>
+                <button type="button" id="cw-detect-sitemaps" class="button">
+                    <?php esc_html_e( 'Auto-Detect Local Sitemaps', 'cachewarmer' ); ?>
+                </button>
+                <span id="cw-bulk-spinner" class="spinner" style="float: none;"></span>
+            </div>
+            <div id="cw-bulk-message" class="cachewarmer-message" style="display:none;"></div>
+        </form>
+    </div>
+
     <!-- Sitemaps Table -->
     <div class="cachewarmer-section">
         <h2><?php esc_html_e( 'Registered Sitemaps', 'cachewarmer' ); ?></h2>

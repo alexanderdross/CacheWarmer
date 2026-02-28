@@ -98,3 +98,33 @@ cachewarmer.ajax.status:
     _permission: 'administer cachewarmer'
   options:
     no_cache: TRUE
+
+cachewarmer.ajax.bulk_add_sitemaps:
+  path: '/admin/cachewarmer/ajax/bulk-add-sitemaps'
+  defaults:
+    _controller: '\Drupal\cachewarmer\Controller\CacheWarmerAjaxController::bulkAddSitemaps'
+  requirements:
+    _permission: 'administer cachewarmer'
+  methods: [POST]
+  options:
+    no_cache: TRUE
+
+cachewarmer.ajax.detect_sitemaps:
+  path: '/admin/cachewarmer/ajax/detect-sitemaps'
+  defaults:
+    _controller: '\Drupal\cachewarmer\Controller\CacheWarmerAjaxController::detectSitemaps'
+  requirements:
+    _permission: 'administer cachewarmer'
+  methods: [POST]
+  options:
+    no_cache: TRUE
+
+cachewarmer.ajax.export_results:
+  path: '/admin/cachewarmer/ajax/export-results'
+  defaults:
+    _controller: '\Drupal\cachewarmer\Controller\CacheWarmerAjaxController::exportResults'
+  requirements:
+    _permission: 'administer cachewarmer'
+  methods: [POST]
+  options:
+    no_cache: TRUE

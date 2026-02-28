@@ -115,3 +115,30 @@ cachewarmer.settings:
     log_level:
       type: string
       label: 'Log level'
+    license_key:
+      type: string
+      label: 'License key'
+    license_tier:
+      type: string
+      label: 'License tier'
+    auto_warm_on_publish:
+      type: boolean
+      label: 'Auto-warm on content publish'
+    auto_warm_targets:
+      type: sequence
+      label: 'Auto-warm targets'
+      sequence:
+        type: string
+        label: 'Target'
+    exclude_patterns:
+      type: string
+      label: 'URL exclude patterns'
+    webhook_url:
+      type: string
+      label: 'Webhook URL'
+    email_notifications:
+      type: boolean
+      label: 'Email notifications enabled'
+    notification_email:
+      type: string
+      label: 'Notification email'

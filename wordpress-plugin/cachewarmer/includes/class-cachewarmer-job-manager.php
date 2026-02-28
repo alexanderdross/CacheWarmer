@@ -178,6 +178,46 @@ class CacheWarmer_Job_Manager {
     }
 
     /**
+     * Create a single-URL warming job.
+     *
+     * Used for auto-warm on publish and similar single-URL scenarios.
+     *
+     * @param string $url     The URL to warm.
+     * @param array  $targets Warming targets.
+     * @return array Job data.
+     */
+    public function create_single_url_job( string $url, array $targets ): array {
+        $job_id = wp_generate_uuid4();
+
+        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow' );
+        if ( empty( $targets ) ) {
+            $targets = $all_targets;
+        }
+        $targets = array_intersect( $targets, $all_targets );
+
+        $job_data = array(
+            'id'          => $job_id,
+            'sitemap_id'  => null,
+            'sitemap_url' => $url,
+            'targets'     => array_values( $targets ),
+            'total_urls'  => 1,
+        );
+
+        $this->db->insert_job( $job_data );
+
+        // Schedule background processing.
+        wp_schedule_single_event( time(), 'cachewarmer_process_job', array( $job_id ) );
+        spawn_cron();
+
+        return array(
+            'jobId'     => $job_id,
+            'status'    => 'queued',
+            'targets'   => array_values( $targets ),
+            'createdAt' => current_time( 'mysql', true ),
+        );
+    }
+
+    /**
      * Get job with stats.
      */
     public function get_job_with_stats( string $job_id ): ?array {

@@ -33,3 +33,13 @@ scheduler:
   enabled: false
   frequency: 'daily'
 log_level: 'info'
+license_key: ''
+license_tier: 'free'
+auto_warm_on_publish: false
+auto_warm_targets:
+  - cdn
+  - facebook
+exclude_patterns: ''
+webhook_url: ''
+email_notifications: false
+notification_email: ''

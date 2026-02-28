@@ -263,6 +263,99 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('scheduler.frequency') ?: 'daily',
     ];
 
+    // License.
+    $form['license'] = [
+      '#type' => 'details',
+      '#title' => $this->t('License'),
+      '#open' => FALSE,
+    ];
+    $form['license']['license_key'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('License Key'),
+      '#description' => $this->t('Enter your license key to unlock premium or enterprise features. Keys starting with PRE- activate Premium, ENT- activate Enterprise.'),
+      '#default_value' => $config->get('license_key'),
+      '#maxlength' => 255,
+    ];
+    $currentTier = $config->get('license_tier') ?: 'free';
+    $form['license']['license_tier_display'] = [
+      '#type' => 'item',
+      '#title' => $this->t('Current Tier'),
+      '#markup' => '<strong>' . ucfirst($currentTier) . '</strong>',
+    ];
+
+    // Auto-warm on publish.
+    $form['auto_warm'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Auto-Warm on Publish'),
+      '#open' => FALSE,
+    ];
+    $form['auto_warm']['auto_warm_on_publish'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Automatically warm URLs when content is published'),
+      '#default_value' => $config->get('auto_warm_on_publish'),
+    ];
+    $form['auto_warm']['auto_warm_targets'] = [
+      '#type' => 'checkboxes',
+      '#title' => $this->t('Auto-warm targets'),
+      '#options' => [
+        'cdn' => $this->t('CDN'),
+        'facebook' => $this->t('Facebook'),
+        'linkedin' => $this->t('LinkedIn'),
+        'twitter' => $this->t('Twitter/X'),
+        'google' => $this->t('Google'),
+        'bing' => $this->t('Bing'),
+        'indexnow' => $this->t('IndexNow'),
+      ],
+      '#default_value' => $config->get('auto_warm_targets') ?: ['cdn', 'facebook'],
+    ];
+
+    // URL exclude patterns.
+    $form['filtering'] = [
+      '#type' => 'details',
+      '#title' => $this->t('URL Filtering'),
+      '#open' => FALSE,
+    ];
+    $form['filtering']['exclude_patterns'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('URL Exclude Patterns'),
+      '#description' => $this->t('Enter URL patterns to exclude from warming, one per line. Supports simple wildcard matching with *.'),
+      '#default_value' => $config->get('exclude_patterns'),
+      '#rows' => 4,
+    ];
+
+    // Email notifications.
+    $form['notifications'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Email Notifications'),
+      '#description' => $this->t('Email notifications require a Premium or Enterprise license.'),
+      '#open' => FALSE,
+    ];
+    $form['notifications']['email_notifications'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable email notifications on job completion'),
+      '#default_value' => $config->get('email_notifications'),
+    ];
+    $form['notifications']['notification_email'] = [
+      '#type' => 'email',
+      '#title' => $this->t('Notification Email'),
+      '#description' => $this->t('Email address to send notifications to. Defaults to site email if left empty.'),
+      '#default_value' => $config->get('notification_email'),
+    ];
+
+    // Webhooks.
+    $form['webhooks'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Webhooks'),
+      '#description' => $this->t('Webhook notifications are available with an Enterprise license only.'),
+      '#open' => FALSE,
+    ];
+    $form['webhooks']['webhook_url'] = [
+      '#type' => 'url',
+      '#title' => $this->t('Webhook URL'),
+      '#description' => $this->t('Enterprise only. URL to receive POST notifications on job events.'),
+      '#default_value' => $config->get('webhook_url'),
+    ];
+
     // Logging.
     $form['logging'] = [
       '#type' => 'details',
