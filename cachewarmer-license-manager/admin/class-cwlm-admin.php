@@ -232,21 +232,40 @@ class CWLM_Admin {
             global $wpdb;
             $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
 
-            // Kombinierte Single-Query für alle 3 KPIs
-            $row = $wpdb->get_row( $wpdb->prepare(
-                "SELECT
-                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_licenses,
-                    SUM(CASE WHEN status = 'active' AND expires_at BETWEEN %s AND %s THEN 1 ELSE 0 END) AS expiring_soon
-                 FROM {$prefix}licenses",
-                gmdate( 'Y-m-d H:i:s' ),
-                gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) )
-            ) );
-            $installs_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$prefix}installations WHERE is_active = 1" );
+            // Prüfe ob Tabellen existieren
+            $table_exists = $wpdb->get_var(
+                "SHOW TABLES LIKE '" . esc_sql( $prefix . 'licenses' ) . "'"
+            );
+
+            $active_val   = 0;
+            $installs_val = 0;
+            $expiring_val = 0;
+
+            if ( $table_exists ) {
+                // Kombinierte Single-Query für alle 3 KPIs
+                $row = $wpdb->get_row( $wpdb->prepare(
+                    "SELECT
+                        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_licenses,
+                        SUM(CASE WHEN status = 'active' AND expires_at BETWEEN %s AND %s THEN 1 ELSE 0 END) AS expiring_soon
+                     FROM {$prefix}licenses",
+                    gmdate( 'Y-m-d H:i:s' ),
+                    gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) )
+                ) );
+
+                if ( $row ) {
+                    $active_val   = (int) $row->active_licenses;
+                    $expiring_val = (int) $row->expiring_soon;
+                }
+
+                $installs_val = (int) $wpdb->get_var(
+                    "SELECT COUNT(*) FROM {$prefix}installations WHERE is_active = 1"
+                );
+            }
 
             $widget_data = [
-                'active'   => (int) ( $row->active_licenses ?? 0 ),
-                'installs' => $installs_count,
-                'expiring' => (int) ( $row->expiring_soon ?? 0 ),
+                'active'   => $active_val,
+                'installs' => $installs_val,
+                'expiring' => $expiring_val,
             ];
             set_transient( $cache_key, $widget_data, 600 ); // 10 Minuten
         }
