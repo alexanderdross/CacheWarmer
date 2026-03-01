@@ -393,5 +393,25 @@ if ( ! class_exists( 'WP_REST_Response' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
+    function wp_add_dashboard_widget( string $widget_id, string $widget_name, callable $callback ): void {
+        // Stub for testing.
+    }
+}
+
+if ( ! function_exists( 'human_time_diff' ) ) {
+    function human_time_diff( int $from, int $to = 0 ): string {
+        $diff = abs( $to - $from );
+        if ( $diff < 60 ) {
+            return $diff . ' secs';
+        } elseif ( $diff < 3600 ) {
+            return round( $diff / 60 ) . ' mins';
+        } elseif ( $diff < 86400 ) {
+            return round( $diff / 3600 ) . ' hours';
+        }
+        return round( $diff / 86400 ) . ' days';
+    }
+}
+
 // Global for HTTP mocking.
 $_wp_remote_responses = array();

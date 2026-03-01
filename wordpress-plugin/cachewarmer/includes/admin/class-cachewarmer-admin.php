@@ -21,6 +21,7 @@ class CacheWarmer_Admin {
         add_action( 'admin_menu', array( $this, 'add_menu_pages' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_action( 'wp_dashboard_setup', array( $this, 'register_dashboard_widget' ) );
 
         // AJAX handlers.
         add_action( 'wp_ajax_cachewarmer_start_warm', array( $this, 'ajax_start_warm' ) );
@@ -445,5 +446,159 @@ class CacheWarmer_Admin {
                 'filename' => 'cachewarmer-' . $job_id . '.json',
             ) );
         }
+    }
+
+    /**
+     * Register the WordPress Dashboard widget.
+     */
+    public function register_dashboard_widget(): void {
+        wp_add_dashboard_widget(
+            'cachewarmer_overview',
+            __( 'CacheWarmer', 'cachewarmer' ),
+            array( $this, 'render_dashboard_widget' )
+        );
+    }
+
+    /**
+     * Render the WordPress Dashboard widget with quick stats and links.
+     */
+    public function render_dashboard_widget(): void {
+        $sitemaps      = $this->db->get_all_sitemaps();
+        $sitemap_count = count( $sitemaps );
+        $recent_jobs  = $this->db->get_jobs( 5 );
+        $running      = 0;
+        $completed    = 0;
+        $failed       = 0;
+        $last_run     = null;
+
+        foreach ( $recent_jobs as $job ) {
+            if ( 'running' === $job['status'] || 'queued' === $job['status'] ) {
+                ++$running;
+            } elseif ( 'completed' === $job['status'] ) {
+                ++$completed;
+            } elseif ( 'failed' === $job['status'] ) {
+                ++$failed;
+            }
+            if ( ! empty( $job['completed_at'] ) && null === $last_run ) {
+                $last_run = $job['completed_at'];
+            }
+        }
+
+        $tier = get_option( 'cachewarmer_license_tier', 'free' );
+
+        $services = array();
+        if ( get_option( 'cachewarmer_cdn_enabled' ) ) {
+            $services[] = 'CDN';
+        }
+        if ( get_option( 'cachewarmer_facebook_enabled' ) ) {
+            $services[] = 'Facebook';
+        }
+        if ( get_option( 'cachewarmer_linkedin_enabled' ) ) {
+            $services[] = 'LinkedIn';
+        }
+        if ( get_option( 'cachewarmer_twitter_enabled' ) ) {
+            $services[] = 'Twitter/X';
+        }
+        if ( get_option( 'cachewarmer_indexnow_enabled' ) ) {
+            $services[] = 'IndexNow';
+        }
+        if ( get_option( 'cachewarmer_google_enabled' ) ) {
+            $services[] = 'Google';
+        }
+        if ( get_option( 'cachewarmer_bing_enabled' ) ) {
+            $services[] = 'Bing';
+        }
+        ?>
+        <style>
+            .cw-widget-kpis { display: flex; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #e2e4e7; }
+            .cw-widget-kpi { flex: 1; text-align: center; padding: 8px 4px; background: #f6f7f7; border-radius: 4px; }
+            .cw-widget-kpi .cw-wk-value { font-size: 22px; font-weight: 700; line-height: 1.2; color: #1d2327; }
+            .cw-widget-kpi .cw-wk-label { font-size: 11px; color: #646970; }
+            .cw-widget-kpi.cw-wk-warn .cw-wk-value { color: #dba617; }
+            .cw-widget-kpi.cw-wk-success .cw-wk-value { color: #00a32a; }
+            .cw-widget-kpi.cw-wk-danger .cw-wk-value { color: #d63638; }
+            .cw-widget-services { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+            .cw-widget-services .cw-svc-tag { display: inline-block; padding: 2px 8px; background: #e7f5e7; color: #00450c; border-radius: 3px; font-size: 11px; font-weight: 600; }
+            .cw-widget-services .cw-svc-tag.cw-svc-off { background: #f0f0f1; color: #a7aaad; }
+            .cw-widget-meta { font-size: 12px; color: #646970; margin-bottom: 12px; }
+            .cw-widget-meta strong { color: #1d2327; }
+            .cw-widget-links { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+            .cw-widget-link { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f6f7f7; border-radius: 4px; text-decoration: none; color: #1d2327; transition: background 0.15s; }
+            .cw-widget-link:hover { background: #e2e4e7; color: #0073aa; }
+            .cw-widget-link .dashicons { font-size: 18px; width: 18px; height: 18px; color: #646970; }
+            .cw-widget-link:hover .dashicons { color: #0073aa; }
+            .cw-widget-link-text { line-height: 1.3; }
+            .cw-widget-link-label { font-weight: 600; font-size: 13px; }
+            .cw-widget-link-desc { font-size: 11px; color: #646970; }
+        </style>
+
+        <div class="cw-widget-kpis">
+            <div class="cw-widget-kpi">
+                <div class="cw-wk-value"><?php echo esc_html( $sitemap_count ); ?></div>
+                <div class="cw-wk-label"><?php esc_html_e( 'Sitemaps', 'cachewarmer' ); ?></div>
+            </div>
+            <div class="cw-widget-kpi cw-wk-success">
+                <div class="cw-wk-value"><?php echo esc_html( $completed ); ?></div>
+                <div class="cw-wk-label"><?php esc_html_e( 'Completed', 'cachewarmer' ); ?></div>
+            </div>
+            <div class="cw-widget-kpi <?php echo $running > 0 ? 'cw-wk-warn' : ''; ?>">
+                <div class="cw-wk-value"><?php echo esc_html( $running ); ?></div>
+                <div class="cw-wk-label"><?php esc_html_e( 'Running', 'cachewarmer' ); ?></div>
+            </div>
+            <div class="cw-widget-kpi <?php echo $failed > 0 ? 'cw-wk-danger' : ''; ?>">
+                <div class="cw-wk-value"><?php echo esc_html( $failed ); ?></div>
+                <div class="cw-wk-label"><?php esc_html_e( 'Failed', 'cachewarmer' ); ?></div>
+            </div>
+        </div>
+
+        <div class="cw-widget-meta">
+            <strong><?php esc_html_e( 'Tier:', 'cachewarmer' ); ?></strong> <?php echo esc_html( ucfirst( $tier ) ); ?>
+            <?php if ( $last_run ) : ?>
+                &nbsp;&bull;&nbsp;
+                <strong><?php esc_html_e( 'Last run:', 'cachewarmer' ); ?></strong> <?php echo esc_html( human_time_diff( strtotime( $last_run ), time() ) ); ?> <?php esc_html_e( 'ago', 'cachewarmer' ); ?>
+            <?php endif; ?>
+        </div>
+
+        <div class="cw-widget-services">
+            <?php
+            $all_services = array( 'CDN', 'Facebook', 'LinkedIn', 'Twitter/X', 'IndexNow', 'Google', 'Bing' );
+            foreach ( $all_services as $svc ) :
+                $active = in_array( $svc, $services, true );
+                ?>
+                <span class="cw-svc-tag <?php echo $active ? '' : 'cw-svc-off'; ?>"><?php echo esc_html( $svc ); ?></span>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="cw-widget-links">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=cachewarmer' ) ); ?>" class="cw-widget-link">
+                <span class="dashicons dashicons-chart-area"></span>
+                <span class="cw-widget-link-text">
+                    <span class="cw-widget-link-label"><?php esc_html_e( 'Dashboard', 'cachewarmer' ); ?></span>
+                    <br><span class="cw-widget-link-desc"><?php esc_html_e( 'Jobs & Status', 'cachewarmer' ); ?></span>
+                </span>
+            </a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=cachewarmer-sitemaps' ) ); ?>" class="cw-widget-link">
+                <span class="dashicons dashicons-networking"></span>
+                <span class="cw-widget-link-text">
+                    <span class="cw-widget-link-label"><?php esc_html_e( 'Sitemaps', 'cachewarmer' ); ?></span>
+                    <br><span class="cw-widget-link-desc"><?php echo esc_html( sprintf( __( '%d registered', 'cachewarmer' ), $sitemap_count ) ); ?></span>
+                </span>
+            </a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=cachewarmer-settings' ) ); ?>" class="cw-widget-link">
+                <span class="dashicons dashicons-admin-generic"></span>
+                <span class="cw-widget-link-text">
+                    <span class="cw-widget-link-label"><?php esc_html_e( 'Settings', 'cachewarmer' ); ?></span>
+                    <br><span class="cw-widget-link-desc"><?php esc_html_e( 'Configuration', 'cachewarmer' ); ?></span>
+                </span>
+            </a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=cachewarmer' ) ); ?>" class="cw-widget-link">
+                <span class="dashicons dashicons-performance"></span>
+                <span class="cw-widget-link-text">
+                    <span class="cw-widget-link-label"><?php esc_html_e( 'Warm Now', 'cachewarmer' ); ?></span>
+                    <br><span class="cw-widget-link-desc"><?php esc_html_e( 'Start warming', 'cachewarmer' ); ?></span>
+                </span>
+            </a>
+        </div>
+        <?php
     }
 }
