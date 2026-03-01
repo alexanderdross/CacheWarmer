@@ -308,7 +308,7 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
     $form['license']['license_key'] = [
       '#type' => 'textfield',
       '#title' => $this->t('License Key'),
-      '#description' => $this->t('Enter your license key to unlock premium or enterprise features. Keys starting with PRE- activate Premium, ENT- activate Enterprise.'),
+      '#description' => $this->t('Enter your license key (e.g. CW-PRO-XXXXXXXXXXXXXXXX) to unlock Premium or Enterprise features.'),
       '#default_value' => $config->get('license_key'),
       '#maxlength' => 255,
     ];
@@ -482,12 +482,17 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
     $config->set('scheduler.enabled', (bool) $form_state->getValue('scheduler_enabled'));
     $config->set('scheduler.frequency', $form_state->getValue('scheduler_frequency'));
 
-    // License.
+    // License — validate key and set tier on this config object so that
+    // the single $config->save() below persists everything atomically.
     $licenseKey = $form_state->getValue('license_key');
     if (!empty($licenseKey)) {
       /** @var \Drupal\cachewarmer\Service\CacheWarmerLicense $license */
       $license = \Drupal::service('cachewarmer.license');
-      $license->activate($licenseKey);
+      $result = $license->activate($licenseKey);
+      $config->set('license_key', $licenseKey);
+      $config->set('license_tier', $result['tier']);
+      $config->set('license_activated_at', time());
+      $config->set('license_expires_at', $result['expires_at'] ?? 0);
     }
 
     // Auto-warm.

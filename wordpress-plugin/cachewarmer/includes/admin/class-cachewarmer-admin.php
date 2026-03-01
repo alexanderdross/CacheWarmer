@@ -146,8 +146,6 @@ class CacheWarmer_Admin {
             'cachewarmer_scheduler_enabled',
             'cachewarmer_scheduler_cron',
             'cachewarmer_log_level',
-            'cachewarmer_license_key',
-            'cachewarmer_license_tier',
             'cachewarmer_auto_warm_on_publish',
             'cachewarmer_auto_warm_targets',
             'cachewarmer_exclude_patterns',
@@ -161,6 +159,11 @@ class CacheWarmer_Admin {
                 'sanitize_callback' => array( $this, 'sanitize_setting' ),
             ) );
         }
+
+        // License key needs a dedicated callback that triggers activation.
+        register_setting( 'cachewarmer_settings', 'cachewarmer_license_key', array(
+            'sanitize_callback' => array( $this, 'sanitize_license_key' ),
+        ) );
     }
 
     public function sanitize_setting( $value ) {
@@ -168,6 +171,21 @@ class CacheWarmer_Admin {
             return sanitize_text_field( $value );
         }
         return $value;
+    }
+
+    /**
+     * Sanitize the license key and trigger activation so the tier is updated.
+     *
+     * @param mixed $value The submitted license key.
+     * @return string The sanitized license key.
+     */
+    public function sanitize_license_key( $value ): string {
+        $key = sanitize_text_field( (string) $value );
+
+        // Activate (validates HMAC, sets tier + expiry options).
+        CacheWarmer_License::activate( $key );
+
+        return $key;
     }
 
     // ──────────────────────────────────────────────

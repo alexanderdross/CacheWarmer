@@ -6,12 +6,21 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 
 /**
  * Manages license tiers and feature access for CacheWarmer.
+ *
+ * License key format: CW-{TIER}-{HEX16}
+ *   TIER = PRO | ENT
+ *   HEX16 = 4-char duration (days, hex, 0000 = never) + 12-char HMAC signature.
  */
 class CacheWarmerLicense {
 
   const TIER_FREE = 'free';
   const TIER_PREMIUM = 'premium';
   const TIER_ENTERPRISE = 'enterprise';
+
+  /**
+   * HMAC signing secret for key validation.
+   */
+  const SIGN_SECRET = 'cw-drossmedia-lic-2026-s3cr3t';
 
   const LIMITS = [
     'free' => [
@@ -74,13 +83,25 @@ class CacheWarmerLicense {
   }
 
   /**
-   * Gets the current license tier.
+   * Gets the current license tier, auto-downgrading if expired.
    *
    * @return string
    *   The license tier (free, premium, or enterprise).
    */
   public function getTier(): string {
-    return $this->configFactory->get('cachewarmer.settings')->get('license_tier') ?? self::TIER_FREE;
+    $config = $this->configFactory->get('cachewarmer.settings');
+    $tier = $config->get('license_tier') ?? self::TIER_FREE;
+
+    if ($tier !== self::TIER_FREE) {
+      $expiresAt = (int) ($config->get('license_expires_at') ?? 0);
+      if ($expiresAt > 0 && time() > $expiresAt) {
+        $editable = $this->configFactory->getEditable('cachewarmer.settings');
+        $editable->set('license_tier', self::TIER_FREE)->save();
+        return self::TIER_FREE;
+      }
+    }
+
+    return $tier;
   }
 
   /**
@@ -145,30 +166,71 @@ class CacheWarmerLicense {
   }
 
   /**
+   * Validates a license key via HMAC signature.
+   *
+   * @param string $key
+   *   The license key.
+   *
+   * @return array|false
+   *   Array with 'tier' and 'duration_days', or FALSE if invalid.
+   */
+  public static function validateKey(string $key) {
+    $key = strtoupper(trim($key));
+
+    if (!preg_match('/^CW-(PRO|ENT)-([0-9A-F]{16})$/', $key, $m)) {
+      return FALSE;
+    }
+
+    $tierCode = $m[1];
+    $hex = $m[2];
+    $durationHex = substr($hex, 0, 4);
+    $providedSig = strtolower(substr($hex, 4, 12));
+
+    $payload = $tierCode . $durationHex;
+    $expectedSig = substr(hash_hmac('sha256', $payload, self::SIGN_SECRET), 0, 12);
+
+    if (!hash_equals($expectedSig, $providedSig)) {
+      return FALSE;
+    }
+
+    return [
+      'tier' => $tierCode === 'ENT' ? self::TIER_ENTERPRISE : self::TIER_PREMIUM,
+      'duration_days' => hexdec($durationHex),
+    ];
+  }
+
+  /**
    * Activates a license key and sets the tier accordingly.
    *
    * @param string $licenseKey
    *   The license key to activate.
    *
    * @return array
-   *   Array with 'tier' and 'activated' keys.
+   *   Array with 'tier', 'activated', and optionally 'expires_at' keys.
    */
   public function activate(string $licenseKey): array {
-    $config = $this->configFactory->getEditable('cachewarmer.settings');
-    $config->set('license_key', $licenseKey);
+    $licenseKey = strtoupper(trim($licenseKey));
 
-    $tier = self::TIER_FREE;
-    if (strpos($licenseKey, 'PRE-') === 0) {
-      $tier = self::TIER_PREMIUM;
+    $parsed = self::validateKey($licenseKey);
+
+    if ($parsed === FALSE) {
+      return [
+        'tier' => self::TIER_FREE,
+        'activated' => FALSE,
+        'error' => 'Invalid license key.',
+      ];
     }
-    if (strpos($licenseKey, 'ENT-') === 0) {
-      $tier = self::TIER_ENTERPRISE;
+
+    $expiresAt = 0;
+    if ($parsed['duration_days'] > 0) {
+      $expiresAt = time() + ($parsed['duration_days'] * 86400);
     }
 
-    $config->set('license_tier', $tier);
-    $config->save();
-
-    return ['tier' => $tier, 'activated' => TRUE];
+    return [
+      'tier' => $parsed['tier'],
+      'activated' => TRUE,
+      'expires_at' => $expiresAt,
+    ];
   }
 
 }

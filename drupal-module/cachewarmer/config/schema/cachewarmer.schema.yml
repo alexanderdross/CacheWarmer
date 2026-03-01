@@ -121,6 +121,12 @@ cachewarmer.settings:
     license_tier:
       type: string
       label: 'License tier'
+    license_activated_at:
+      type: integer
+      label: 'License activation timestamp'
+    license_expires_at:
+      type: integer
+      label: 'License expiry timestamp (0 = never)'
     auto_warm_on_publish:
       type: boolean
       label: 'Auto-warm on content publish'
