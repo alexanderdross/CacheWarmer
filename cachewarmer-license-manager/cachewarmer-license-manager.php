@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       CacheWarmer License Manager
- * Plugin URI:        https://dashboard.cachewarmer.drossmedia.de
+ * Plugin URI:        https://cachewarmer.drossmedia.de
  * Description:       Zentrales Lizenzverwaltungssystem für CacheWarmer – verwaltet Lizenzschlüssel, Installationen, Stripe-Zahlungen und Feature-Gating für Node.js, Docker, WordPress und Drupal Plattformen.
  * Version:           1.0.0
  * Requires at least: 6.0

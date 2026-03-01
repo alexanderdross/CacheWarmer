@@ -74,7 +74,9 @@ abstract class CWLM_REST_Controller {
      */
     protected function add_cors_headers( \WP_REST_Response $response ): \WP_REST_Response {
         $allowed = defined( 'CWLM_CORS_ALLOWED_ORIGINS' ) ? CWLM_CORS_ALLOWED_ORIGINS : '';
-        $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $origin  = isset( $_SERVER['HTTP_ORIGIN'] )
+            ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) )
+            : '';
 
         if ( $allowed === '*' ) {
             $response->header( 'Access-Control-Allow-Origin', '*' );

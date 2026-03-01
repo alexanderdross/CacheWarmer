@@ -126,9 +126,14 @@ class CWLM_JWT_Handler {
             return false;
         }
 
-        $payload_data = json_decode( $this->base64url_decode( $payload ), true );
+        $decoded_payload = $this->base64url_decode( $payload );
+        if ( false === $decoded_payload || '' === $decoded_payload ) {
+            return false;
+        }
 
-        if ( ! $payload_data || ! isset( $payload_data['exp'] ) ) {
+        $payload_data = json_decode( $decoded_payload, true );
+
+        if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $payload_data ) || ! isset( $payload_data['exp'] ) ) {
             return false;
         }
 

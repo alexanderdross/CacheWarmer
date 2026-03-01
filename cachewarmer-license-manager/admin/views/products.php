@@ -22,7 +22,7 @@ if ( isset( $_POST['cwlm_product_action'] ) && current_user_can( 'manage_options
             [
                 'stripe_product_id' => sanitize_text_field( $_POST['stripe_product_id'] ?? '' ),
                 'stripe_price_id'   => sanitize_text_field( $_POST['stripe_price_id'] ?? '' ) ?: null,
-                'tier'              => sanitize_text_field( $_POST['tier'] ?? 'professional' ),
+                'tier'              => in_array( $_POST['tier'] ?? '', [ 'free', 'professional', 'enterprise', 'development' ], true ) ? $_POST['tier'] : 'professional',
                 'plan'              => sanitize_text_field( $_POST['plan'] ?? '' ),
                 'max_sites'         => max( 1, (int) ( $_POST['max_sites'] ?? 1 ) ),
                 'duration_days'     => max( 1, (int) ( $_POST['duration_days'] ?? 365 ) ),

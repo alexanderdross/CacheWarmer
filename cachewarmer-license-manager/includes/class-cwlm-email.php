@@ -17,9 +17,13 @@ class CWLM_Email {
     public function send_license_created( string $email, string $license_key, string $tier, string $plan ): bool {
         $subject = 'Ihr CacheWarmer Lizenzschlüssel';
 
+        $template = CWLM_PLUGIN_DIR . 'email-templates/license-created.php';
+        if ( ! file_exists( $template ) ) {
+            return false;
+        }
         ob_start();
         $data = compact( 'license_key', 'tier', 'plan' );
-        include CWLM_PLUGIN_DIR . 'email-templates/license-created.php';
+        include $template;
         $body = ob_get_clean();
 
         return wp_mail( $email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );
@@ -31,9 +35,13 @@ class CWLM_Email {
     public function send_expiry_warning( string $email, string $license_key, string $expires_at ): bool {
         $subject = 'CacheWarmer: Ihre Lizenz läuft bald ab';
 
+        $template = CWLM_PLUGIN_DIR . 'email-templates/license-expiring.php';
+        if ( ! file_exists( $template ) ) {
+            return false;
+        }
         ob_start();
         $data = compact( 'license_key', 'expires_at' );
-        include CWLM_PLUGIN_DIR . 'email-templates/license-expiring.php';
+        include $template;
         $body = ob_get_clean();
 
         return wp_mail( $email, $subject, $body, [ 'Content-Type: text/html; charset=UTF-8' ] );

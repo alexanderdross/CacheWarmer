@@ -52,7 +52,7 @@ Aktuell existiert keine zentrale Lizenzverwaltung. Um den kommerziellen Vertrieb
 ### 1.3 Dashboard-URL
 
 ```
-https://dashboard.cachewarmer.drossmedia.de
+https://cachewarmer.drossmedia.de
 ```
 
 ### 1.4 Technische Basis
@@ -89,7 +89,7 @@ Das System besteht aus vier Hauptkomponenten:
                             ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │           WordPress Dashboard (License Manager Plugin)              │
-│           dashboard.cachewarmer.drossmedia.de                       │
+│           cachewarmer.drossmedia.de                       │
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────────┐  │
 │  │ Admin UI     │  │ REST API     │  │ Stripe Webhook Handler    │  │
@@ -297,8 +297,8 @@ Beispiele:
 |-----------|-----------|---------------------|
 | Node.js | `@drossmedia/cachewarmer` | NPM (private) / GitHub Releases |
 | Docker | `drossmedia/cachewarmer` | Docker Hub / GitHub Container Registry |
-| WordPress | `cachewarmer` | wordpress.org (Free) / dashboard.cachewarmer.drossmedia.de (Pro/Ent) |
-| Drupal | `cachewarmer` | drupal.org (Free) / dashboard.cachewarmer.drossmedia.de (Pro/Ent) |
+| WordPress | `cachewarmer` | wordpress.org (Free) / cachewarmer.drossmedia.de (Pro/Ent) |
+| Drupal | `cachewarmer` | drupal.org (Free) / cachewarmer.drossmedia.de (Pro/Ent) |
 
 ---
 
@@ -485,7 +485,7 @@ CREATE TABLE wp_cwlm_rate_limits (
 ### 7.1 Base URL
 
 ```
-https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/
+https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/
 ```
 
 ### 7.2 Endpunkte
@@ -999,7 +999,7 @@ Header: `Retry-After: 42`
 - [ ] DSGVO-Compliance-Prüfung
 - [ ] Daten-Aufräum-Cronjob (24 Monate)
 - [ ] Performance-Tests (Load Testing)
-- [ ] Deployment auf `dashboard.cachewarmer.drossmedia.de`
+- [ ] Deployment auf `cachewarmer.drossmedia.de`
 - [ ] SSL/TLS-Konfiguration
 - [ ] Monitoring & Alerting Setup
 - [ ] Dokumentation finalisieren
