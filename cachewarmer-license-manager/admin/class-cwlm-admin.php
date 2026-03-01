@@ -127,11 +127,11 @@ class CWLM_Admin {
             true
         );
 
-        // Chart.js für Dashboard
+        // Chart.js für Dashboard (lokal gebundled statt CDN)
         if ( str_contains( $hook, 'cwlm-dashboard' ) || str_starts_with( $hook, 'toplevel_page_cwlm' ) ) {
             wp_enqueue_script(
                 'chartjs',
-                'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js',
+                CWLM_PLUGIN_URL . 'admin/js/chart.min.js',
                 [],
                 '4.4.0',
                 true
@@ -224,6 +224,20 @@ class CWLM_Admin {
      * Dashboard Widget: Quick Links + Mini-KPIs.
      */
     public function render_dashboard_widget(): void {
+        try {
+            $this->render_dashboard_widget_content();
+        } catch ( \Throwable $e ) {
+            echo '<p>' . esc_html__( 'Widget konnte nicht geladen werden.', 'cwlm' ) . '</p>';
+            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+                echo '<p><small>' . esc_html( $e->getMessage() ) . '</small></p>';
+            }
+        }
+    }
+
+    /**
+     * Dashboard Widget Inhalt rendern (intern).
+     */
+    private function render_dashboard_widget_content(): void {
         // Transient-Cache: Widget-KPIs nur alle 10 Minuten abfragen
         $cache_key   = 'cwlm_widget_kpis';
         $widget_data = get_transient( $cache_key );
@@ -233,16 +247,14 @@ class CWLM_Admin {
             $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
 
             // Prüfe ob Tabellen existieren
-            $table_exists = $wpdb->get_var(
-                "SHOW TABLES LIKE '" . esc_sql( $prefix . 'licenses' ) . "'"
-            );
+            $table_licenses      = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $prefix . 'licenses' ) . "'" );
+            $table_installations = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $prefix . 'installations' ) . "'" );
 
             $active_val   = 0;
             $installs_val = 0;
             $expiring_val = 0;
 
-            if ( $table_exists ) {
-                // Kombinierte Single-Query für alle 3 KPIs
+            if ( $table_licenses ) {
                 $row = $wpdb->get_row( $wpdb->prepare(
                     "SELECT
                         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active_licenses,
@@ -256,7 +268,9 @@ class CWLM_Admin {
                     $active_val   = (int) $row->active_licenses;
                     $expiring_val = (int) $row->expiring_soon;
                 }
+            }
 
+            if ( $table_installations ) {
                 $installs_val = (int) $wpdb->get_var(
                     "SELECT COUNT(*) FROM {$prefix}installations WHERE is_active = 1"
                 );

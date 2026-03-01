@@ -66,7 +66,6 @@ $total_pages   = (int) ceil( $total / $per_page );
 
     <form method="get" class="cwlm-filter-bar">
         <input type="hidden" name="page" value="cwlm-installations">
-        <?php wp_nonce_field( 'cwlm_filter_installations', '_cwlm_filter_nonce', true, true ); ?>
         <select name="platform">
             <option value=""><?php esc_html_e( 'Alle Plattformen', 'cwlm' ); ?></option>
             <option value="nodejs" <?php selected( $filter_platform, 'nodejs' ); ?>>Node.js</option>

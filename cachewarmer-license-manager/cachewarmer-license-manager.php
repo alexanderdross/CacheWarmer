@@ -133,23 +133,34 @@ function cwlm_register_rest_routes() {
 }
 
 /**
+ * Eigene Cron-Intervalle registrieren (WordPress kennt kein 'weekly').
+ */
+add_filter( 'cron_schedules', function ( array $schedules ): array {
+    if ( ! isset( $schedules['weekly'] ) ) {
+        $schedules['weekly'] = [
+            'interval' => WEEK_IN_SECONDS,
+            'display'  => __( 'Einmal wöchentlich', 'cwlm' ),
+        ];
+    }
+    return $schedules;
+} );
+
+/**
  * Cronjob-Events registrieren.
  */
 function cwlm_register_cron_events() {
-    if ( ! wp_next_scheduled( 'cwlm_check_expired_licenses' ) ) {
-        wp_schedule_event( time(), 'daily', 'cwlm_check_expired_licenses' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_cleanup_old_data' ) ) {
-        wp_schedule_event( time(), 'weekly', 'cwlm_cleanup_old_data' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_cleanup_rate_limits' ) ) {
-        wp_schedule_event( time(), 'hourly', 'cwlm_cleanup_rate_limits' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_check_stale_installations' ) ) {
-        wp_schedule_event( time(), 'daily', 'cwlm_check_stale_installations' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_send_expiry_warnings' ) ) {
-        wp_schedule_event( time(), 'daily', 'cwlm_send_expiry_warnings' );
+    $events = [
+        'cwlm_check_expired_licenses'    => 'daily',
+        'cwlm_cleanup_old_data'          => 'weekly',
+        'cwlm_cleanup_rate_limits'       => 'hourly',
+        'cwlm_check_stale_installations' => 'daily',
+        'cwlm_send_expiry_warnings'      => 'daily',
+    ];
+
+    foreach ( $events as $hook => $recurrence ) {
+        if ( ! wp_next_scheduled( $hook ) ) {
+            wp_schedule_event( time(), $recurrence, $hook );
+        }
     }
 }
 

@@ -13,9 +13,10 @@ global $wpdb;
 $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
 
 // Prüfe ob Tabellen existieren (Schutz falls Plugin nicht korrekt aktiviert)
-$table_exists = $wpdb->get_var(
-    "SHOW TABLES LIKE '" . esc_sql( $prefix . 'licenses' ) . "'"
-);
+$table_licenses      = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $prefix . 'licenses' ) . "'" );
+$table_installations = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $prefix . 'installations' ) . "'" );
+$table_audit_logs    = $wpdb->get_var( "SHOW TABLES LIKE '" . esc_sql( $prefix . 'audit_logs' ) . "'" );
+$table_exists        = $table_licenses;
 
 $total_licenses    = 0;
 $active_licenses   = 0;
@@ -47,34 +48,40 @@ if ( $table_exists ) {
             gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) )
         ) );
 
-        $install_kpi = $wpdb->get_row( $wpdb->prepare(
-            "SELECT
-                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_installs,
-                SUM(CASE WHEN activated_at >= %s THEN 1 ELSE 0 END) AS today_activations
-             FROM {$prefix}installations",
-            gmdate( 'Y-m-d 00:00:00' )
-        ) );
+        $install_kpi     = null;
+        $platform_counts = [];
+        $timeline_raw    = [];
+
+        if ( $table_installations ) {
+            $install_kpi = $wpdb->get_row( $wpdb->prepare(
+                "SELECT
+                    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_installs,
+                    SUM(CASE WHEN activated_at >= %s THEN 1 ELSE 0 END) AS today_activations
+                 FROM {$prefix}installations",
+                gmdate( 'Y-m-d 00:00:00' )
+            ) );
+
+            // Chart-Daten: Plattform-Verteilung
+            $platform_counts = $wpdb->get_results(
+                "SELECT platform, COUNT(*) as cnt FROM {$prefix}installations WHERE is_active = 1 GROUP BY platform",
+                OBJECT_K
+            );
+
+            // Chart-Daten: Aktivierungen letzte 30 Tage
+            $timeline_raw = $wpdb->get_results( $wpdb->prepare(
+                "SELECT DATE(activated_at) AS act_date, COUNT(*) AS cnt
+                 FROM {$prefix}installations
+                 WHERE activated_at >= %s
+                 GROUP BY DATE(activated_at)",
+                gmdate( 'Y-m-d', strtotime( '-29 days' ) )
+            ), OBJECT_K );
+        }
 
         // Chart-Daten: Tier-Verteilung
         $tier_counts = $wpdb->get_results(
             "SELECT tier, COUNT(*) as cnt FROM {$prefix}licenses WHERE status IN ('active','grace_period') GROUP BY tier",
             OBJECT_K
         );
-
-        // Chart-Daten: Plattform-Verteilung
-        $platform_counts = $wpdb->get_results(
-            "SELECT platform, COUNT(*) as cnt FROM {$prefix}installations WHERE is_active = 1 GROUP BY platform",
-            OBJECT_K
-        );
-
-        // Chart-Daten: Aktivierungen letzte 30 Tage – EINE Batch-Query statt 30 Einzelabfragen
-        $timeline_raw = $wpdb->get_results( $wpdb->prepare(
-            "SELECT DATE(activated_at) AS act_date, COUNT(*) AS cnt
-             FROM {$prefix}installations
-             WHERE activated_at >= %s
-             GROUP BY DATE(activated_at)",
-            gmdate( 'Y-m-d', strtotime( '-29 days' ) )
-        ), OBJECT_K );
 
         // Nur cachen wenn Queries erfolgreich waren
         if ( null !== $kpi_row ) {
@@ -127,11 +134,13 @@ if ( $table_exists ) {
     }
 
     // Letzte Audit-Einträge (nicht gecacht – soll stets aktuell sein)
-    $recent_logs = $wpdb->get_results(
-        "SELECT * FROM {$prefix}audit_logs ORDER BY created_at DESC LIMIT 10"
-    );
-    if ( ! is_array( $recent_logs ) ) {
-        $recent_logs = [];
+    if ( $table_audit_logs ) {
+        $recent_logs = $wpdb->get_results(
+            "SELECT * FROM {$prefix}audit_logs ORDER BY created_at DESC LIMIT 10"
+        );
+        if ( ! is_array( $recent_logs ) ) {
+            $recent_logs = [];
+        }
     }
 } else {
     // Tabellen existieren nicht – leere Timeline füllen

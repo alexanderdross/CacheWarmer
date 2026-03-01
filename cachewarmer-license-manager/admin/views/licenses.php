@@ -139,7 +139,6 @@ $total_pages = (int) ceil( $total / $per_page );
     <!-- Filter -->
     <form method="get" class="cwlm-filter-bar">
         <input type="hidden" name="page" value="cwlm-licenses">
-        <?php wp_nonce_field( 'cwlm_filter_licenses', '_cwlm_filter_nonce', true, true ); ?>
         <select name="tier">
             <option value=""><?php esc_html_e( 'Alle Tiers', 'cwlm' ); ?></option>
             <option value="free" <?php selected( $filter_tier, 'free' ); ?>>Free</option>
