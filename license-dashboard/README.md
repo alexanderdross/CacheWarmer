@@ -5,7 +5,7 @@ WordPress-Plugin zur zentralen Lizenzverwaltung für CacheWarmer-Installationen.
 **Plugin Name:** CacheWarmer License Manager
 **Plugin Slug:** `cachewarmer-license-manager`
 **Kurzform:** CWLM
-**Dashboard URL:** `https://dashboard.cachewarmer.drossmedia.de`
+**Dashboard URL:** `https://cachewarmer.drossmedia.de`
 **Namespace:** `cwlm/v1`
 **PHP:** >= 8.0
 **WordPress:** >= 6.0
@@ -39,7 +39,7 @@ WordPress-Plugin zur zentralen Lizenzverwaltung für CacheWarmer-Installationen.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              WordPress (dashboard.cachewarmer.drossmedia.de) │
+│              WordPress (cachewarmer.drossmedia.de) │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │         CacheWarmer License Manager Plugin             │  │
@@ -164,7 +164,7 @@ Nach Aktivierung des Plugins:
 2. Tabellen werden automatisch erstellt (7 Tabellen mit `wp_cwlm_` Prefix)
 3. Unter **CacheWarmer LM → Einstellungen** die Stripe-Keys verifizieren
 4. MaxMind GeoLite2-Datenbank herunterladen (Button in Einstellungen)
-5. Stripe Webhook-URL konfigurieren: `https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/stripe/webhook`
+5. Stripe Webhook-URL konfigurieren: `https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/stripe/webhook`
 6. Stripe Produkte anlegen und im **Produkte**-Tab mappen
 
 ---
@@ -322,7 +322,7 @@ Das Plugin erstellt 7 Tabellen bei Aktivierung über `dbDelta()`.
 
 ## 4. REST API Referenz
 
-**Base URL:** `https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/`
+**Base URL:** `https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/`
 
 Alle Endpunkte sind öffentlich (keine WordPress-Authentifizierung erforderlich). Rate Limiting wird per IP angewendet.
 
@@ -712,7 +712,7 @@ Die Merge-Logik: Tier-Defaults werden geladen, dann durch `features_json` übers
 **Konfiguration (`.env`):**
 ```env
 LICENSE_KEY=CW-PRO-A1B2C3D4E5F6G7H8
-LICENSE_DASHBOARD_URL=https://dashboard.cachewarmer.drossmedia.de
+LICENSE_DASHBOARD_URL=https://cachewarmer.drossmedia.de
 ```
 
 **Fingerprint-Generierung (`src/license/fingerprint.js`):**
@@ -778,7 +778,7 @@ services:
     image: drossmedia/cachewarmer:latest
     environment:
       - LICENSE_KEY=CW-PRO-A1B2C3D4E5F6G7H8
-      - LICENSE_DASHBOARD_URL=https://dashboard.cachewarmer.drossmedia.de
+      - LICENSE_DASHBOARD_URL=https://cachewarmer.drossmedia.de
     volumes:
       - cachewarmer-data:/app/data  # Persistiert .instance-id
 
@@ -841,7 +841,7 @@ function cachewarmer_generate_drupal_fingerprint() {
 
 | Einstellung | Wert |
 |-------------|------|
-| Endpoint URL | `https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/stripe/webhook` |
+| Endpoint URL | `https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/stripe/webhook` |
 | API Version | `2024-12-18.acacia` (oder aktuellste) |
 | Events | Siehe 7.2 |
 
@@ -1427,15 +1427,15 @@ cd cachewarmer-license-manager
 
 ```bash
 # Health Check
-curl https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/health
+curl https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/health
 
 # Validate
-curl -X POST https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/validate \
+curl -X POST https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/validate \
   -H "Content-Type: application/json" \
   -d '{"license_key":"CW-PRO-A1B2C3D4E5F6G7H8","platform":"nodejs"}'
 
 # Activate
-curl -X POST https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/activate \
+curl -X POST https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/activate \
   -H "Content-Type: application/json" \
   -d '{
     "license_key": "CW-PRO-A1B2C3D4E5F6G7H8",
@@ -1449,7 +1449,7 @@ curl -X POST https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/activat
   }'
 
 # Heartbeat
-curl -X POST https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/check \
+curl -X POST https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/check \
   -H "Content-Type: application/json" \
   -d '{
     "license_key": "CW-PRO-A1B2C3D4E5F6G7H8",
@@ -1459,7 +1459,7 @@ curl -X POST https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/check \
   }'
 
 # Deactivate
-curl -X POST https://dashboard.cachewarmer.drossmedia.de/wp-json/cwlm/v1/deactivate \
+curl -X POST https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/deactivate \
   -H "Content-Type: application/json" \
   -d '{
     "license_key": "CW-PRO-A1B2C3D4E5F6G7H8",

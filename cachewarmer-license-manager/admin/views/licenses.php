@@ -11,19 +11,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $manager = new CWLM_License_Manager();
 
-// Filter-Parameter
-$filter_tier   = sanitize_text_field( $_GET['tier'] ?? '' );
-$filter_status = sanitize_text_field( $_GET['status'] ?? '' );
+// Filter-Parameter (mit Enum-Validierung)
+$valid_tiers    = [ '', 'free', 'professional', 'enterprise', 'development' ];
+$valid_statuses = [ '', 'active', 'inactive', 'grace_period', 'expired', 'revoked' ];
+$filter_tier   = in_array( $_GET['tier'] ?? '', $valid_tiers, true ) ? $_GET['tier'] : '';
+$filter_status = in_array( $_GET['status'] ?? '', $valid_statuses, true ) ? $_GET['status'] : '';
 $search        = sanitize_text_field( $_GET['s'] ?? '' );
 $paged         = max( 1, (int) ( $_GET['paged'] ?? 1 ) );
 $per_page      = 20;
 
 // CRUD-Aktionen verarbeiten
-if ( isset( $_POST['cwlm_action'] ) && wp_verify_nonce( $_POST['_cwlm_nonce'] ?? '', 'cwlm_license_action' ) ) {
+if ( isset( $_POST['cwlm_action'] ) && current_user_can( 'manage_options' ) && wp_verify_nonce( $_POST['_cwlm_nonce'] ?? '', 'cwlm_license_action' ) ) {
     $action = sanitize_text_field( $_POST['cwlm_action'] );
 
     if ( 'create' === $action ) {
-        $tier      = sanitize_text_field( $_POST['tier'] ?? 'free' );
+        $valid_create_tiers = [ 'free', 'professional', 'enterprise', 'development' ];
+        $tier      = in_array( $_POST['tier'] ?? '', $valid_create_tiers, true ) ? $_POST['tier'] : 'free';
         $email     = sanitize_email( $_POST['customer_email'] ?? '' );
         $name      = sanitize_text_field( $_POST['customer_name'] ?? '' );
         $plan      = sanitize_text_field( $_POST['plan'] ?? '' );
@@ -37,7 +40,7 @@ if ( isset( $_POST['cwlm_action'] ) && wp_verify_nonce( $_POST['_cwlm_nonce'] ??
                 'tier'           => $tier,
                 'plan'           => $plan ?: null,
                 'max_sites'      => $max_sites,
-                'expires_at'     => $expires ? gmdate( 'Y-m-d H:i:s', strtotime( $expires ) ) : null,
+                'expires_at'     => ( $expires && false !== strtotime( $expires ) ) ? gmdate( 'Y-m-d H:i:s', strtotime( $expires ) ) : null,
             ] );
 
             if ( $license_id ) {

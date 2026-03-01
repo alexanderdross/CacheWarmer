@@ -78,16 +78,15 @@ class CWLM_Rate_Limiter {
 
     /**
      * Abgelaufene Rate-Limit-Einträge bereinigen.
+     *
+     * Rate limiting uses WordPress transients, so cleanup is handled
+     * automatically by WordPress's transient expiration mechanism.
+     * This method is kept for backwards compatibility and explicitly
+     * triggers transient garbage collection.
      */
     public function cleanup_expired(): void {
-        global $wpdb;
-        $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
-
-        $wpdb->query(
-            $wpdb->prepare(
-                "DELETE FROM {$prefix}rate_limits WHERE window_end < %s",
-                gmdate( 'Y-m-d H:i:s' )
-            )
-        );
+        if ( function_exists( 'delete_expired_transients' ) ) {
+            delete_expired_transients();
+        }
     }
 }

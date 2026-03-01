@@ -32,8 +32,8 @@
             }
         });
 
-        // AJAX Filter
-        $('.cwlm-filter-bar select, .cwlm-filter-bar input').on('change', function () {
+        // Auto-submit Filter (nur sichtbare Selects, keine hidden Inputs)
+        $('.cwlm-filter-bar select').on('change', function () {
             $(this).closest('form').submit();
         });
     });

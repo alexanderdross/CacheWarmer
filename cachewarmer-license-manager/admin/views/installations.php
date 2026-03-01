@@ -12,9 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 global $wpdb;
 $prefix = $wpdb->prefix . CWLM_DB_PREFIX;
 
-// Filter
-$filter_platform = sanitize_text_field( $_GET['platform'] ?? '' );
-$filter_active   = $_GET['active'] ?? '';
+// Filter (mit Enum-Validierung)
+$valid_platforms = [ '', 'nodejs', 'docker', 'wordpress', 'drupal' ];
+$filter_platform = in_array( $_GET['platform'] ?? '', $valid_platforms, true ) ? $_GET['platform'] : '';
+$filter_active   = in_array( $_GET['active'] ?? '', [ '', '0', '1' ], true ) ? $_GET['active'] : '';
 $search          = sanitize_text_field( $_GET['s'] ?? '' );
 $paged           = max( 1, (int) ( $_GET['paged'] ?? 1 ) );
 $per_page        = 25;

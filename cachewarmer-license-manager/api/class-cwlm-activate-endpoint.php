@@ -71,11 +71,15 @@ class CWLM_Activate_Endpoint extends CWLM_REST_Controller {
             );
         }
 
-        // Development-Lizenz: Domain-Check
+        // Development-Lizenz: Domain-Check (Domain/Hostname ist Pflicht)
         if ( $license->tier === 'development' ) {
-            $domain   = $request->get_param( 'domain' ) ?? $request->get_param( 'hostname' ) ?? '';
-            $domain   = sanitize_text_field( $domain );
-            if ( $domain && ! CWLM_Feature_Flags::is_development_domain( $domain ) ) {
+            $domain = sanitize_text_field( $request->get_param( 'domain' ) ?? $request->get_param( 'hostname' ) ?? '' );
+            if ( empty( $domain ) ) {
+                return $this->add_cors_headers(
+                    $this->error( 'DOMAIN_REQUIRED', 'Development-Lizenzen erfordern einen Domain/Hostname-Parameter.', 400 )
+                );
+            }
+            if ( ! CWLM_Feature_Flags::is_development_domain( $domain ) ) {
                 return $this->add_cors_headers(
                     $this->error( 'DEVELOPMENT_ONLY', 'Development-Lizenzen sind nur für lokale Domains gültig.', 403 )
                 );

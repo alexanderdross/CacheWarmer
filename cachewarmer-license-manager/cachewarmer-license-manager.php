@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name:       CacheWarmer License Manager
- * Plugin URI:        https://dashboard.cachewarmer.drossmedia.de
+ * Plugin URI:        https://cachewarmer.drossmedia.de
  * Description:       Zentrales Lizenzverwaltungssystem für CacheWarmer – verwaltet Lizenzschlüssel, Installationen, Stripe-Zahlungen und Feature-Gating für Node.js, Docker, WordPress und Drupal Plattformen.
  * Version:           1.0.0
  * Requires at least: 6.0
- * Requires PHP:      8.0
+ * Requires PHP:      8.2
  * Author:            Alexander Dross / DrossMedia
  * Author URI:        https://drossmedia.de
  * License:           GPL v2 or later
@@ -31,10 +31,10 @@ define( 'CWLM_DB_PREFIX', 'cwlm_' );
  * Überprüfe Mindestanforderungen.
  */
 function cwlm_check_requirements() {
-    if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
+    if ( version_compare( PHP_VERSION, '8.2', '<' ) ) {
         add_action( 'admin_notices', function () {
             echo '<div class="notice notice-error"><p>';
-            echo esc_html__( 'CacheWarmer License Manager benötigt PHP 8.0 oder höher.', 'cwlm' );
+            echo esc_html__( 'CacheWarmer License Manager benötigt PHP 8.2 oder höher.', 'cwlm' );
             echo '</p></div>';
         } );
         return false;
@@ -69,6 +69,12 @@ register_deactivation_hook( __FILE__, 'cwlm_deactivate' );
 function cwlm_init() {
     if ( ! cwlm_check_requirements() ) {
         return;
+    }
+
+    // Composer-Autoloader zentral laden (statt in jeder Klasse einzeln)
+    $autoload = CWLM_PLUGIN_DIR . 'vendor/autoload.php';
+    if ( file_exists( $autoload ) ) {
+        require_once $autoload;
     }
 
     // Autoload-Klassen laden
@@ -127,23 +133,34 @@ function cwlm_register_rest_routes() {
 }
 
 /**
+ * Eigene Cron-Intervalle registrieren (WordPress kennt kein 'weekly').
+ */
+add_filter( 'cron_schedules', function ( array $schedules ): array {
+    if ( ! isset( $schedules['weekly'] ) ) {
+        $schedules['weekly'] = [
+            'interval' => WEEK_IN_SECONDS,
+            'display'  => __( 'Einmal wöchentlich', 'cwlm' ),
+        ];
+    }
+    return $schedules;
+} );
+
+/**
  * Cronjob-Events registrieren.
  */
 function cwlm_register_cron_events() {
-    if ( ! wp_next_scheduled( 'cwlm_check_expired_licenses' ) ) {
-        wp_schedule_event( time(), 'daily', 'cwlm_check_expired_licenses' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_cleanup_old_data' ) ) {
-        wp_schedule_event( time(), 'weekly', 'cwlm_cleanup_old_data' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_cleanup_rate_limits' ) ) {
-        wp_schedule_event( time(), 'hourly', 'cwlm_cleanup_rate_limits' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_check_stale_installations' ) ) {
-        wp_schedule_event( time(), 'daily', 'cwlm_check_stale_installations' );
-    }
-    if ( ! wp_next_scheduled( 'cwlm_send_expiry_warnings' ) ) {
-        wp_schedule_event( time(), 'daily', 'cwlm_send_expiry_warnings' );
+    $events = [
+        'cwlm_check_expired_licenses'    => 'daily',
+        'cwlm_cleanup_old_data'          => 'weekly',
+        'cwlm_cleanup_rate_limits'       => 'hourly',
+        'cwlm_check_stale_installations' => 'daily',
+        'cwlm_send_expiry_warnings'      => 'daily',
+    ];
+
+    foreach ( $events as $hook => $recurrence ) {
+        if ( ! wp_next_scheduled( $hook ) ) {
+            wp_schedule_event( time(), $recurrence, $hook );
+        }
     }
 }
 

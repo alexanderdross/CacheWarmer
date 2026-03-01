@@ -397,7 +397,7 @@ RATE_LIMIT_INDEXNOW_BATCH_SIZE=100
 
 # Lizenzierung (siehe Abschnitt 15)
 LICENSE_KEY=CW-PRO-A1B2C3D4E5F6G7H8
-LICENSE_DASHBOARD_URL=https://dashboard.cachewarmer.drossmedia.de
+LICENSE_DASHBOARD_URL=https://cachewarmer.drossmedia.de
 ```
 
 ---
@@ -615,7 +615,7 @@ CacheWarmer wird kommerziell vertrieben über ein zentrales **License Management
 
 | Eigenschaft | Wert |
 |------------|------|
-| Dashboard URL | `https://dashboard.cachewarmer.drossmedia.de` |
+| Dashboard URL | `https://cachewarmer.drossmedia.de` |
 | WordPress Plugin | `cachewarmer-license-manager` (CWLM) |
 | API Namespace | `cwlm/v1` |
 | Datenbank | MySQL (7 Tabellen, Prefix `wp_cwlm_`) |

@@ -63,6 +63,13 @@ class CWLM_Check_Endpoint extends CWLM_REST_Controller {
             );
         }
 
+        // Cross-Validierung: Token-license_id muss zur Lizenz passen
+        if ( isset( $token_data['license_id'] ) && (int) $token_data['license_id'] !== (int) $license->id ) {
+            return $this->add_cors_headers(
+                $this->error( 'TOKEN_MISMATCH', 'JWT Token gehört nicht zu diesem Lizenzschlüssel.', 403 )
+            );
+        }
+
         // Heartbeat aktualisieren
         $tracker = new CWLM_Installation_Tracker();
         $tracker->update_heartbeat( (int) $license->id, $fingerprint, $cw_version ?: null );

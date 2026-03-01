@@ -325,12 +325,7 @@ class CWLM_Stripe_Webhook extends CWLM_REST_Controller {
             return false;
         }
 
-        // Composer-Autoloader laden
-        $autoload = CWLM_PLUGIN_DIR . 'vendor/autoload.php';
-        if ( file_exists( $autoload ) ) {
-            require_once $autoload;
-        }
-
+        // Autoloader wird zentral in cachewarmer-license-manager.php geladen
         // Stripe SDK verwenden wenn verfügbar
         if ( class_exists( '\Stripe\Webhook' ) ) {
             try {
@@ -353,6 +348,13 @@ class CWLM_Stripe_Webhook extends CWLM_REST_Controller {
         }
 
         if ( empty( $elements['t'] ) || empty( $elements['v1'] ) ) {
+            return false;
+        }
+
+        // Replay-Schutz: Timestamp darf max. 5 Minuten alt sein
+        $tolerance = defined( 'CWLM_STRIPE_WEBHOOK_TOLERANCE' ) ? (int) CWLM_STRIPE_WEBHOOK_TOLERANCE : 300;
+        $timestamp = (int) $elements['t'];
+        if ( abs( time() - $timestamp ) > $tolerance ) {
             return false;
         }
 
