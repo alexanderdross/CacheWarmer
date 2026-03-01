@@ -174,16 +174,32 @@ class CacheWarmer_Admin {
     }
 
     /**
-     * Sanitize the license key and trigger activation so the tier is updated.
+     * Sanitize the license key and set tier/expiry options.
+     *
+     * We call validate_key() directly instead of activate() because
+     * activate() calls update_option('cachewarmer_license_key') which
+     * would re-trigger this sanitize callback, causing infinite recursion.
      *
      * @param mixed $value The submitted license key.
      * @return string The sanitized license key.
      */
-    public function sanitize_license_key( $value ): string {
+    public function sanitize_license_key( $value ) {
         $key = sanitize_text_field( (string) $value );
 
-        // Activate (validates HMAC, sets tier + expiry options).
-        CacheWarmer_License::activate( $key );
+        $parsed = CacheWarmer_License::validate_key( $key );
+
+        if ( false === $parsed ) {
+            update_option( 'cachewarmer_license_tier', 'free' );
+            delete_option( 'cachewarmer_license_activated_at' );
+            delete_option( 'cachewarmer_license_expires_at' );
+        } else {
+            update_option( 'cachewarmer_license_tier', $parsed['tier'] );
+            update_option( 'cachewarmer_license_activated_at', time() );
+            $expires_at = $parsed['duration_days'] > 0
+                ? time() + ( $parsed['duration_days'] * DAY_IN_SECONDS )
+                : 0;
+            update_option( 'cachewarmer_license_expires_at', $expires_at );
+        }
 
         return $key;
     }
