@@ -165,8 +165,9 @@
                     return;
                 }
 
-                var job   = response.data.job;
-                var stats = response.data.stats;
+                var job     = response.data.job;
+                var stats   = response.data.stats;
+                var results = response.data.results || [];
 
                 var html = '<dl class="cachewarmer-job-meta">';
                 html += '<div><dt>Job ID</dt><dd><code>' + escHtml(job.id) + '</code></dd></div>';
@@ -191,9 +192,21 @@
                     $.each(stats, function (target, counts) {
                         html += '<div class="cachewarmer-stat-card">';
                         html += '<h4>' + escHtml(target) + '</h4>';
-                        html += '<div class="stat-row"><span>Success</span><span class="stat-success">' + (counts.success || 0) + '</span></div>';
-                        html += '<div class="stat-row"><span>Failed</span><span class="stat-failed">' + (counts.failed || 0) + '</span></div>';
-                        html += '<div class="stat-row"><span>Skipped</span><span class="stat-skipped">' + (counts.skipped || 0) + '</span></div>';
+
+                        var statuses = ['success', 'failed', 'skipped'];
+                        var statClasses = { success: 'stat-success', failed: 'stat-failed', skipped: 'stat-skipped' };
+
+                        $.each(statuses, function (_, st) {
+                            var count = counts[st] || 0;
+                            html += '<div class="stat-row"><span>' + capitalize(st) + '</span>';
+                            if (count > 0) {
+                                html += '<a href="#" class="cw-stat-toggle ' + statClasses[st] + '" data-target="' + escAttr(target) + '" data-status="' + escAttr(st) + '">' + count + '</a>';
+                            } else {
+                                html += '<span class="' + statClasses[st] + '">0</span>';
+                            }
+                            html += '</div>';
+                        });
+
                         html += '</div>';
                     });
                 } else {
@@ -201,7 +214,17 @@
                 }
 
                 html += '</div>';
+
+                // Hidden URL list panel.
+                html += '<div id="cw-url-list-panel" class="cw-url-list-panel" style="display:none;">';
+                html += '<h3 id="cw-url-list-title"></h3>';
+                html += '<ul id="cw-url-list"></ul>';
+                html += '</div>';
+
                 $body.html(html);
+
+                // Store results for click handlers.
+                $body.data('results', results);
             },
             error: function () {
                 $body.html('<p class="error">Failed to load job details.</p>');
@@ -218,6 +241,56 @@
         if (e.target === this) {
             $(this).hide();
         }
+    });
+
+    // Show URLs when clicking on a stat count.
+    $(document).on('click', '.cw-stat-toggle', function (e) {
+        e.preventDefault();
+
+        var target  = $(this).data('target');
+        var status  = $(this).data('status');
+        var results = $('#cw-job-modal-body').data('results') || [];
+        var $panel  = $('#cw-url-list-panel');
+        var $title  = $('#cw-url-list-title');
+        var $list   = $('#cw-url-list');
+
+        // Toggle off if clicking the same filter.
+        if ($panel.is(':visible') && $panel.data('active-target') === target && $panel.data('active-status') === status) {
+            $panel.slideUp(200);
+            $('.cw-stat-toggle').removeClass('cw-stat-active');
+            return;
+        }
+
+        // Filter results.
+        var filtered = [];
+        $.each(results, function (_, r) {
+            if (r.target === target && r.status === status) {
+                filtered.push(r);
+            }
+        });
+
+        $title.text(capitalize(status) + ' URLs — ' + capitalize(target) + ' (' + filtered.length + ')');
+        $list.empty();
+
+        $.each(filtered, function (_, r) {
+            var li = '<li class="cw-url-item cw-url-' + escAttr(r.status) + '">';
+            li += '<a href="' + escAttr(r.url) + '" target="_blank" rel="noopener">' + escHtml(r.url) + '</a>';
+            if (r.http_status) {
+                li += ' <span class="cw-url-http">' + r.http_status + '</span>';
+            }
+            if (r.duration_ms) {
+                li += ' <span class="cw-url-duration">' + r.duration_ms + 'ms</span>';
+            }
+            if (r.error) {
+                li += '<div class="cw-url-error">' + escHtml(r.error) + '</div>';
+            }
+            li += '</li>';
+            $list.append(li);
+        });
+
+        $('.cw-stat-toggle').removeClass('cw-stat-active');
+        $(this).addClass('cw-stat-active');
+        $panel.data('active-target', target).data('active-status', status).slideDown(200);
     });
 
     // ──────────────────────────────────────────────

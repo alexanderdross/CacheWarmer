@@ -86,6 +86,7 @@ class CacheWarmerAjaxController extends ControllerBase {
     if (!$job) {
       return new JsonResponse(['success' => FALSE, 'error' => 'Job not found.'], 404);
     }
+    $job['results'] = $this->database->getJobResults($job_id);
     return new JsonResponse(['success' => TRUE, 'data' => $job]);
   }
 

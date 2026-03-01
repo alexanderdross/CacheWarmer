@@ -138,6 +138,7 @@
       html += '</dl>';
 
       // Stats by target
+      var results = job.results || [];
       if (job.stats && Object.keys(job.stats).length > 0) {
         html += '<h4>' + Drupal.t('Results by Target') + '</h4>';
         html += '<div class="cachewarmer-stats-grid">';
@@ -145,13 +146,31 @@
           html += '<div class="cachewarmer-stat-card">';
           html += '<div class="cachewarmer-stat-card__title">' + capitalize(escHtml(target)) + '</div>';
           html += '<div class="cachewarmer-stat-card__counts">';
-          html += '<span class="cachewarmer-stat-count--success">' + counts.success + ' ok</span> ';
-          html += '<span class="cachewarmer-stat-count--failed">' + counts.failed + ' fail</span> ';
-          html += '<span class="cachewarmer-stat-count--skipped">' + counts.skipped + ' skip</span>';
+
+          var statuses = [
+            { key: 'success', label: 'ok', cls: 'cachewarmer-stat-count--success' },
+            { key: 'failed', label: 'fail', cls: 'cachewarmer-stat-count--failed' },
+            { key: 'skipped', label: 'skip', cls: 'cachewarmer-stat-count--skipped' }
+          ];
+          $.each(statuses, function (_, st) {
+            var count = counts[st.key] || 0;
+            if (count > 0) {
+              html += '<a href="#" class="cw-stat-toggle ' + st.cls + '" data-target="' + escHtml(target) + '" data-status="' + st.key + '">' + count + ' ' + st.label + '</a> ';
+            } else {
+              html += '<span class="' + st.cls + '">0 ' + st.label + '</span> ';
+            }
+          });
+
           html += '</div></div>';
         });
         html += '</div>';
       }
+
+      // Hidden URL list panel.
+      html += '<div id="cw-url-list-panel" class="cw-url-list-panel" style="display:none;">';
+      html += '<h4 id="cw-url-list-title"></h4>';
+      html += '<ul id="cw-url-list"></ul>';
+      html += '</div>';
 
       // Export buttons
       html += '<div style="margin-top:16px;display:flex;gap:8px">';
@@ -160,12 +179,63 @@
       html += '</div>';
 
       modalBody.html(html);
+      modalBody.data('results', results);
     });
   });
 
   // Close modal
   $(document).on('click', '.cachewarmer-modal__close, .cachewarmer-modal__overlay', function () {
     $('#cachewarmer-modal').hide();
+  });
+
+  // Show URLs when clicking on a stat count.
+  $(document).on('click', '.cw-stat-toggle', function (e) {
+    e.preventDefault();
+
+    var target  = $(this).data('target');
+    var status  = $(this).data('status');
+    var results = $('#cachewarmer-modal-body').data('results') || [];
+    var $panel  = $('#cw-url-list-panel');
+    var $title  = $('#cw-url-list-title');
+    var $list   = $('#cw-url-list');
+
+    // Toggle off if clicking the same filter.
+    if ($panel.is(':visible') && $panel.data('active-target') === target && $panel.data('active-status') === status) {
+      $panel.slideUp(200);
+      $('.cw-stat-toggle').removeClass('cw-stat-active');
+      return;
+    }
+
+    // Filter results.
+    var filtered = [];
+    $.each(results, function (_, r) {
+      if (r.target === target && r.status === status) {
+        filtered.push(r);
+      }
+    });
+
+    $title.text(capitalize(status) + ' URLs \u2014 ' + capitalize(target) + ' (' + filtered.length + ')');
+    $list.empty();
+
+    $.each(filtered, function (_, r) {
+      var li = '<li class="cw-url-item cw-url-' + escHtml(r.status) + '">';
+      li += '<a href="' + escHtml(r.url) + '" target="_blank" rel="noopener">' + escHtml(r.url) + '</a>';
+      if (r.http_status) {
+        li += ' <span class="cw-url-http">' + r.http_status + '</span>';
+      }
+      if (r.duration_ms) {
+        li += ' <span class="cw-url-duration">' + r.duration_ms + 'ms</span>';
+      }
+      if (r.error) {
+        li += '<div class="cw-url-error">' + escHtml(r.error) + '</div>';
+      }
+      li += '</li>';
+      $list.append(li);
+    });
+
+    $('.cw-stat-toggle').removeClass('cw-stat-active');
+    $(this).addClass('cw-stat-active');
+    $panel.data('active-target', target).data('active-status', status).slideDown(200);
   });
 
   // Delete job
