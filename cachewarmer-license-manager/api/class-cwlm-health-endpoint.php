@@ -36,13 +36,11 @@ class CWLM_Health_Endpoint extends CWLM_REST_Controller {
         $geoip_loaded  = file_exists( $geoip_path );
         $geoip_updated = $geoip_loaded ? gmdate( 'Y-m-d', filemtime( $geoip_path ) ) : null;
 
+        // Öffentliche Response ohne sensible Details (Version, GeoIP-Status)
         return $this->add_cors_headers( $this->success( [
-            'status'        => 'ok',
-            'version'       => CWLM_VERSION,
-            'timestamp'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
-            'database'      => $db_ok ? 'connected' : 'error',
-            'geoip_db'      => $geoip_loaded ? 'loaded' : 'missing',
-            'geoip_updated' => $geoip_updated,
+            'status'    => 'ok',
+            'timestamp' => gmdate( 'Y-m-d\TH:i:s\Z' ),
+            'database'  => $db_ok ? 'connected' : 'error',
         ] ) );
     }
 }

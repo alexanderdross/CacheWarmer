@@ -19,7 +19,7 @@ $paged         = max( 1, (int) ( $_GET['paged'] ?? 1 ) );
 $per_page      = 20;
 
 // CRUD-Aktionen verarbeiten
-if ( isset( $_POST['cwlm_action'] ) && wp_verify_nonce( $_POST['_cwlm_nonce'] ?? '', 'cwlm_license_action' ) ) {
+if ( isset( $_POST['cwlm_action'] ) && current_user_can( 'manage_options' ) && wp_verify_nonce( $_POST['_cwlm_nonce'] ?? '', 'cwlm_license_action' ) ) {
     $action = sanitize_text_field( $_POST['cwlm_action'] );
 
     if ( 'create' === $action ) {

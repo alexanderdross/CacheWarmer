@@ -68,11 +68,26 @@ abstract class CWLM_REST_Controller {
 
     /**
      * CORS-Header setzen.
+     *
+     * Verwendet CWLM_CORS_ALLOWED_ORIGINS (kommaseparierte Liste) statt Wildcard.
+     * Setze '*' als Wert um explizit alle Origins zuzulassen.
      */
     protected function add_cors_headers( \WP_REST_Response $response ): \WP_REST_Response {
-        $response->header( 'Access-Control-Allow-Origin', '*' );
+        $allowed = defined( 'CWLM_CORS_ALLOWED_ORIGINS' ) ? CWLM_CORS_ALLOWED_ORIGINS : '';
+        $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+        if ( $allowed === '*' ) {
+            $response->header( 'Access-Control-Allow-Origin', '*' );
+        } elseif ( ! empty( $allowed ) && ! empty( $origin ) ) {
+            $origins = array_map( 'trim', explode( ',', $allowed ) );
+            if ( in_array( $origin, $origins, true ) ) {
+                $response->header( 'Access-Control-Allow-Origin', $origin );
+                $response->header( 'Vary', 'Origin' );
+            }
+        }
+
         $response->header( 'Access-Control-Allow-Methods', 'POST, GET, OPTIONS' );
-        $response->header( 'Access-Control-Allow-Headers', 'Content-Type' );
+        $response->header( 'Access-Control-Allow-Headers', 'Content-Type, Authorization' );
         return $response;
     }
 }

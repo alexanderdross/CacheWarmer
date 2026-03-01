@@ -55,7 +55,9 @@ class CWLM_Activator {
             KEY idx_tier (tier),
             KEY idx_status (status),
             KEY idx_stripe_customer (stripe_customer_id),
-            KEY idx_expires_at (expires_at)
+            KEY idx_stripe_subscription (stripe_subscription_id),
+            KEY idx_expires_at (expires_at),
+            KEY idx_status_expires (status, expires_at)
         ) $charset_collate;";
         dbDelta( $sql );
 
@@ -81,7 +83,9 @@ class CWLM_Activator {
             KEY idx_domain (domain),
             KEY idx_platform (platform),
             KEY idx_last_check (last_check),
-            KEY idx_is_active (is_active)
+            KEY idx_is_active (is_active),
+            KEY idx_activated_at (activated_at),
+            KEY idx_active_lastcheck (is_active, last_check)
         ) $charset_collate;";
         dbDelta( $sql );
 

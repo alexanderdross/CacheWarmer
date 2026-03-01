@@ -188,33 +188,32 @@ class CWLM_Installation_Tracker {
         global $wpdb;
 
         $cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+        $now    = gmdate( 'Y-m-d H:i:s' );
 
-        $stale = $wpdb->get_results(
+        // Batch-Update: Alle stale Installationen in einem Query deaktivieren
+        $affected = (int) $wpdb->query(
             $wpdb->prepare(
-                "SELECT id, license_id FROM {$this->prefix}installations
+                "UPDATE {$this->prefix}installations
+                 SET is_active = 0, deactivated_at = %s
                  WHERE is_active = 1 AND last_check IS NOT NULL AND last_check < %s",
+                $now,
                 $cutoff
             )
         );
 
-        foreach ( $stale as $installation ) {
-            $wpdb->update(
-                $this->prefix . 'installations',
-                [ 'is_active' => 0, 'deactivated_at' => gmdate( 'Y-m-d H:i:s' ) ],
-                [ 'id' => $installation->id ],
-                [ '%d', '%s' ],
-                [ '%d' ]
-            );
-
+        if ( $affected > 0 ) {
+            // Batch-Update: active_sites-Zähler pro Lizenz korrigieren
             $wpdb->query(
-                $wpdb->prepare(
-                    "UPDATE {$this->prefix}licenses SET active_sites = GREATEST(active_sites - 1, 0) WHERE id = %d",
-                    $installation->license_id
-                )
+                "UPDATE {$this->prefix}licenses l
+                 SET l.active_sites = (
+                     SELECT COUNT(*) FROM {$this->prefix}installations i
+                     WHERE i.license_id = l.id AND i.is_active = 1
+                 )
+                 WHERE l.active_sites > 0"
             );
         }
 
-        return count( $stale );
+        return $affected;
     }
 
     /**

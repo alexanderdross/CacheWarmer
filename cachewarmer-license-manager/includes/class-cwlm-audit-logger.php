@@ -77,23 +77,48 @@ class CWLM_Audit_Logger {
 
     /**
      * Client-IP ermitteln.
+     *
+     * Vertraut Proxy-Headern nur wenn CWLM_TRUSTED_PROXIES konfiguriert ist.
+     * Verhindert IP-Spoofing über X-Forwarded-For Header.
      */
     public static function get_client_ip(): string {
-        $headers = [
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_REAL_IP',
-            'HTTP_CF_CONNECTING_IP',
-            'REMOTE_ADDR',
-        ];
+        $remote_addr = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) );
 
-        foreach ( $headers as $header ) {
-            if ( ! empty( $_SERVER[ $header ] ) ) {
-                $ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ) );
-                $ip  = trim( $ips[0] );
-                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+        // Proxy-Header nur auswerten wenn REMOTE_ADDR ein vertrauenswürdiger Proxy ist
+        $trusted_proxies = defined( 'CWLM_TRUSTED_PROXIES' ) ? (array) CWLM_TRUSTED_PROXIES : [];
+
+        if ( ! empty( $trusted_proxies ) && in_array( $remote_addr, $trusted_proxies, true ) ) {
+            // Cloudflare-Header (einzelne IP, nicht fälschbar hinter CF)
+            if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
+                $ip = trim( sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) );
+                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
                     return $ip;
                 }
             }
+
+            // X-Real-IP (Nginx reverse proxy)
+            if ( ! empty( $_SERVER['HTTP_X_REAL_IP'] ) ) {
+                $ip = trim( sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_REAL_IP'] ) ) );
+                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                    return $ip;
+                }
+            }
+
+            // X-Forwarded-For: erstes öffentliche IP
+            if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+                $ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
+                foreach ( $ips as $ip ) {
+                    $ip = trim( $ip );
+                    if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                        return $ip;
+                    }
+                }
+            }
+        }
+
+        // Fallback: REMOTE_ADDR (nicht manipulierbar)
+        if ( filter_var( $remote_addr, FILTER_VALIDATE_IP ) ) {
+            return $remote_addr;
         }
 
         return '0.0.0.0';
