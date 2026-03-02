@@ -48,6 +48,10 @@
 | **Twitter/X Card Validator** | — | ✅ | ✅ |
 | **Google Indexing API** | — | ✅ | ✅ |
 | **Bing Webmaster URL Submission** | — | ✅ | ✅ |
+| **Pinterest Rich Pin Validator** | — | ✅ | ✅ |
+| **Cloudflare Cache Purge + Warm** | — | — | ✅ |
+| **Imperva (Incapsula) Cache Purge + Warm** | — | — | ✅ |
+| **Akamai Fast Purge + Warm** | — | — | ✅ |
 
 ### 2.2 Mengen-Limits
 
@@ -68,6 +72,11 @@
 | **Frequenz-Optionen** | — | Täglich / 12h / 6h | Stündlich + Custom Cron |
 | **Warming bei Beitrags-Veröffentlichung** | — | ✅ | ✅ |
 | **Multi-Sitemap Batch-Warming** | — | — | ✅ |
+| **Smart Warming (Diff-Detection)** | — | ✅ | ✅ |
+| **Prioritätsbasiertes URL-Warming** | — | ✅ | ✅ |
+| **Sitemap-Änderungsüberwachung** | — | — | ✅ |
+| **Bedingtes Warming (Cache-Prüfung)** | — | — | ✅ |
+| **Benutzerdefinierte Warm-Reihenfolge** | — | — | ✅ |
 
 ### 2.4 REST API & Integration
 
@@ -87,26 +96,55 @@
 | **Job-Tabelle mit Fortschritt** | ✅ | ✅ | ✅ |
 | **Job-Detail-Modal** (per-URL Status) | ✅ | ✅ | ✅ |
 | **Per-Target Statistiken** | — | ✅ | ✅ |
-| **Historische Auswertungen** | — | — | ✅ |
 | **CSV/JSON-Export** | — | ✅ | ✅ |
+| **Export fehlgeschlagener/übersprungener URLs (CSV)** | — | ✅ | ✅ |
+| **Cache Hit/Miss Analyse** | — | ✅ | ✅ |
+| **Service-Erfolgsraten-Dashboard** | — | ✅ | ✅ |
+| **Quota-Nutzungs-Tracker** | — | ✅ | ✅ |
+| **Performance-Trending** | — | ✅ | ✅ |
+| **Historische Auswertungen** | — | — | ✅ |
 | **Zeitbasierte Charts** (Warming-Trends) | — | — | ✅ |
+| **Automatische PDF/HTML-Reports** | — | — | ✅ |
+| **Audit-Log** | — | — | ✅ |
+
+### 2.5b Monitoring & Alerting (NEU)
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| **Broken-Link-Erkennung** (404/5xx) | — | ✅ | ✅ |
+| **SSL-Zertifikat-Ablauf-Warnung** | — | ✅ | ✅ |
+| **Performance-Regressions-Alerts** | — | — | ✅ |
+| **Quota-Erschöpfungs-Alerts** | — | — | ✅ |
 
 ### 2.6 Konfiguration & Tuning
 
 | Feature | Free | Premium | Enterprise |
 |---------|:----:|:-------:|:----------:|
 | **CDN Concurrency** (parallel Requests) | Fix: 2 | 1–10 | 1–20 |
-| **Custom User-Agent** | — | ✅ | ✅ |
-| **Erweiterte Timeout-Einstellungen** | — | ✅ | ✅ |
+| **Custom User-Agent** | — | — | ✅ |
+| **Custom HTTP-Headers** | — | — | ✅ |
+| **Custom Viewports** | — | — | ✅ |
+| **Benutzerdefinierter Timeout pro Service** | — | ✅ | ✅ |
 | **Service-spezifisches Rate-Limiting** | — | ✅ | ✅ |
+| **Authentifiziertes Warming (Cookies)** | — | — | ✅ |
 | **Log-Level Konfiguration** | Fix: info | Wählbar | Wählbar |
 
-### 2.7 Multi-Site & Agentur
+### 2.7 API & Integration
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| **REST API Zugang** | — | ✅ | ✅ |
+| **API-Authentifizierung** (Bearer Token) | — | ✅ | ✅ |
+| **Webhook-Benachrichtigungen** | — | — | ✅ |
+| **Zapier/n8n/Make Webhook-Kompatibilität** | — | — | ✅ |
+| **IP-Whitelist für API-Zugriff** | — | — | ✅ |
+
+### 2.8 Multi-Site & Agentur
 
 | Feature | Free | Premium | Enterprise |
 |---------|:----:|:-------:|:----------:|
 | **Single-Site Lizenz** | ✅ | ✅ | — |
-| **Multi-Site / Netzwerk** | — | — | ✅ |
+| **Multi-Site-Verwaltung** (zentrales Dashboard) | — | — | ✅ |
 | **White-Label** (eigenes Branding) | — | — | ✅ |
 | **Zentrale Verwaltung** (alle Sites) | — | — | ✅ |
 | **Prioritäts-Support** | — | E-Mail | E-Mail + Live-Chat |
@@ -221,7 +259,7 @@ class CacheWarmer_License {
             'max_jobs_per_day'     => PHP_INT_MAX,
             'log_retention_days'   => 365,
             'cdn_concurrency'      => 20,
-            'allowed_targets'      => ['cdn', 'indexnow', 'facebook', 'linkedin', 'twitter', 'google', 'bing'],
+            'allowed_targets'      => ['cdn', 'indexnow', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'pinterest', 'cdn-purge'],
             'scheduler_enabled'    => true,
             'api_enabled'          => true,
             'export_enabled'       => true,
@@ -261,35 +299,55 @@ Fallback: Wenn der Lizenzserver nicht erreichbar ist, gilt die letzte bekannte L
 
 ## 5. Preisempfehlung
 
+> **Aktualisiert (v1.1.0):** Preise angepasst an den erweiterten Funktionsumfang (24 neue Features: Pinterest, Cloudflare, Smart Warming, Analytics, Monitoring, Enterprise-Customization, Multi-Site-Management, etc.).
+
 ### WordPress Plugin
 
 | Version | Preis | Lizenz |
 |---------|------:|--------|
 | **Free** | 0 € | Unbegrenzt, 1 Site |
-| **Premium** | 79 € / Jahr | 1 Site, 1 Jahr Updates + Support |
-| **Enterprise Starter** | 499 € / Jahr | Bis 5 Sites, Priority Support |
-| **Enterprise Professional** | 1.499 € / Jahr | Bis 25 Sites, Webhooks, White-Label, SLA |
-| **Enterprise Corporate** | ab 4.999 € / Jahr | Unbegrenzte Sites, Custom Development, Dedicated Account Manager |
+| **Premium** | 99 € / Jahr | 1 Site, 1 Jahr Updates + Support |
+| **Enterprise Starter** | 599 € / Jahr | Bis 5 Sites, Priority Support |
+| **Enterprise Professional** | 1.799 € / Jahr | Bis 25 Sites, Webhooks, White-Label, SLA, Multi-Site, Cloudflare/Imperva/Akamai |
+| **Enterprise Corporate** | ab 5.999 € / Jahr | Unbegrenzte Sites, Custom Development, Dedicated Account Manager |
 
 ### Drupal Modul
 
 | Version | Preis | Lizenz |
 |---------|------:|--------|
 | **Free** | 0 € | Unbegrenzt, 1 Site |
-| **Premium** | 99 € / Jahr | 1 Site, 1 Jahr Updates + Support |
-| **Enterprise Starter** | 699 € / Jahr | Bis 5 Sites, Priority Support |
-| **Enterprise Professional** | 1.999 € / Jahr | Bis 25 Sites, Webhooks, White-Label, SLA |
-| **Enterprise Corporate** | ab 5.999 € / Jahr | Unbegrenzte Sites, Custom Development, Dedicated Account Manager |
+| **Premium** | 129 € / Jahr | 1 Site, 1 Jahr Updates + Support |
+| **Enterprise Starter** | 799 € / Jahr | Bis 5 Sites, Priority Support |
+| **Enterprise Professional** | 2.499 € / Jahr | Bis 25 Sites, Webhooks, White-Label, SLA, Multi-Site, Cloudflare/Imperva/Akamai |
+| **Enterprise Corporate** | ab 6.999 € / Jahr | Unbegrenzte Sites, Custom Development, Dedicated Account Manager |
 
 > **Hinweis:** Drupal-Preise sind höher, da der Markt kleiner und die Zielgruppe professioneller ist (Agenturen, Unternehmen, regulierte Branchen).
+
+### Node.js / Docker (Self-Hosted)
+
+| Version | Preis | Lizenz |
+|---------|------:|--------|
+| **Free** | 0 € | Unbegrenzt, 1 Instance |
+| **Premium** | 149 € / Jahr | 1 Instance, 1 Jahr Updates + Support |
+| **Enterprise Starter** | 999 € / Jahr | Bis 5 Instances, Priority Support |
+| **Enterprise Professional** | 2.999 € / Jahr | Unbegrenzte Instances, SLA, Multi-Site, Cloudflare/Imperva/Akamai |
 
 ### Lifetime-Option
 
 | Version | Preis |
 |---------|------:|
-| **Premium Lifetime** | 199 € (WP) / 249 € (Drupal) |
-| **Enterprise Starter Lifetime** | 1.299 € (WP) / 1.799 € (Drupal) |
-| **Enterprise Professional Lifetime** | 3.999 € (WP) / 4.999 € (Drupal) |
+| **Premium Lifetime** | 249 € (WP) / 329 € (Drupal) / 379 € (Node.js) |
+| **Enterprise Starter Lifetime** | 1.499 € (WP) / 1.999 € (Drupal) / 2.499 € (Node.js) |
+| **Enterprise Professional Lifetime** | 4.499 € (WP) / 5.999 € (Drupal) / 7.499 € (Node.js) |
+
+### Preis-Begründung (v1.1.0 Anpassung)
+
+| Tier | Alter Preis (WP) | Neuer Preis (WP) | Begründung |
+|------|------------------:|------------------:|------------|
+| Premium | 79 € | 99 € | +25% — 24 neue Features inkl. Pinterest, Smart Warming, Cache Analytics, Broken Link Detection, SSL-Check, Performance Trending, Failed URL Export |
+| Enterprise Starter | 499 € | 599 € | +20% — Multi-Site-Management, Cloudflare, Custom UA/Headers/Viewports, Audit Log, Performance Alerts |
+| Enterprise Professional | 1.499 € | 1.799 € | +20% — PDF/HTML Reports, Conditional Warming, Sitemap Polling, Zapier/n8n, IP Whitelist |
+| Enterprise Corporate | 4.999 € | 5.999 € | +20% — Marktwertanpassung für den erweiterten Enterprise-Funktionsumfang |
 
 ---
 
@@ -386,11 +444,13 @@ drush cachewarmer:warm --sitemap=https://example.com/sitemap.xml --targets=cdn,f
 #### n) Slack/Discord/Teams Integration (Enterprise)
 Benachrichtigungen in Chat-Tools, wenn Jobs abgeschlossen oder fehlgeschlagen sind.
 
-#### o) Cloudflare / Fastly / Varnish Integration
+#### o) ~~Cloudflare / Fastly / Varnish Integration~~ ✅ Implementiert (v1.2.0)
 Direkte Integration mit CDN-APIs zum gezielten Cache-Purge _vor_ dem Warming:
-1. Cache purgen (Cloudflare API)
-2. Seite aufrufen (CDN Warming)
+1. Cache purgen (Cloudflare, Imperva, oder Akamai API)
+2. Seite aufrufen (CDN Warming via Puppeteer)
 3. Frischer Cache ist aktiv
+
+> **Status:** Cloudflare, Imperva (Incapsula) und Akamai Fast Purge sind seit v1.2.0 als Enterprise-Feature verfügbar. Fastly und Varnish werden in einer zukünftigen Version ergänzt.
 
 #### p) AMP & hreflang Support
 - AMP-Seiten separat aufwärmen

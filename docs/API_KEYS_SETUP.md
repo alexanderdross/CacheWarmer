@@ -7,6 +7,9 @@
 3. [Google Service Account (Indexing API)](#3-google-service-account-indexing-api)
 4. [Bing Webmaster API Key](#4-bing-webmaster-api-key)
 5. [IndexNow Key](#5-indexnow-key)
+6. [Cloudflare API Token (Enterprise)](#6-cloudflare-api-token-enterprise)
+7. [Imperva API Credentials (Enterprise)](#7-imperva-api-credentials-enterprise)
+8. [Akamai EdgeGrid Credentials (Enterprise)](#8-akamai-edgegrid-credentials-enterprise)
 
 ---
 
@@ -271,6 +274,139 @@ IndexNow ist ein offenes Protokoll, das von Bing, Yandex, Seznam und Naver unter
 
 ---
 
+## 6. Cloudflare API Token (Enterprise)
+
+Die Cloudflare-Integration ermöglicht das gezielte Purgen einzelner URLs aus dem Cloudflare CDN-Cache via API, bevor das Warming durchgeführt wird.
+
+### Voraussetzungen
+- Ein Cloudflare-Konto mit einer aktiven Zone
+- Die Website muss über Cloudflare proxied werden (oranges Cloud-Symbol)
+
+### Schritte
+
+1. **Cloudflare Dashboard öffnen**
+   - Gehe zu https://dash.cloudflare.com
+   - Melde dich an und wähle deine Domain aus
+
+2. **Zone ID kopieren**
+   - Auf der Übersichtsseite deiner Domain (rechte Sidebar unter "API")
+   - Kopiere die **Zone ID** (32-stellige Hex-Zeichenkette)
+
+3. **API Token erstellen**
+   - Gehe zu **Mein Profil** → **API Tokens** (oder direkt: https://dash.cloudflare.com/profile/api-tokens)
+   - Klicke auf **"Token erstellen"**
+   - Wähle die Vorlage: **"Custom Token"**
+   - Berechtigungen: **Zone** → **Cache Purge** → **Purge**
+   - Zone-Ressource: **Include** → **Specific Zone** → Wähle deine Domain
+   - Klicke auf **"Weiter zur Zusammenfassung"** → **"Token erstellen"**
+   - Kopiere den Token (er wird nur einmal angezeigt!)
+
+4. **In config.yaml eintragen**
+   ```yaml
+   cloudflare:
+     enabled: true
+     apiToken: "DEIN_CLOUDFLARE_API_TOKEN"
+     zoneId: "DEINE_ZONE_ID"
+   ```
+
+### Hinweise
+- Der Token benötigt ausschließlich die **Cache Purge**-Berechtigung — keine weiteren Rechte nötig
+- Cloudflare erlaubt bis zu **30 URLs pro Purge-Request**
+- Die Purge-Propagation über das gesamte Cloudflare-Netzwerk dauert typischerweise wenige Sekunden
+
+---
+
+## 7. Imperva API Credentials (Enterprise)
+
+Die Imperva-Integration (ehemals Incapsula) ermöglicht das Purgen des CDN-Caches über die Imperva Cloud WAF API.
+
+### Voraussetzungen
+- Ein Imperva Cloud WAF-Konto
+- Eine aktive Site in Imperva konfiguriert
+
+### Schritte
+
+1. **Imperva Management Console öffnen**
+   - Gehe zu https://my.imperva.com
+   - Melde dich mit deinem Konto an
+
+2. **API ID und API Key abrufen**
+   - Gehe zu **Account Settings** → **API Keys** (oder über das Benutzer-Menü oben rechts)
+   - Falls noch kein Key existiert: Klicke auf **"Add API Key"**
+   - Kopiere die **API ID** (numerisch) und den **API Key** (alphanumerisch)
+
+3. **Site ID ermitteln**
+   - Gehe zu **Websites** → Wähle deine Site
+   - Die **Site ID** findest du in der URL der Site-Seite oder unter **Settings** → **General**
+   - Die Site ID ist eine numerische Kennung (z.B. `12345678`)
+
+4. **In config.yaml eintragen**
+   ```yaml
+   imperva:
+     enabled: true
+     apiId: "DEINE_IMPERVA_API_ID"
+     apiKey: "DEIN_IMPERVA_API_KEY"
+     siteId: "DEINE_SITE_ID"
+   ```
+
+### Hinweise
+- Imperva nutzt `api_id` + `api_key` zur Authentifizierung (im Request-Body, nicht als Header)
+- Purge-Zeiten sind typischerweise **< 500ms** über das gesamte Imperva-Netzwerk
+- Du kannst einzelne URLs per `purge_pattern` oder den gesamten Site-Cache purgen
+- Die API-Dokumentation findest du unter: https://docs.imperva.com/bundle/cloud-application-security/page/v1-api-landing.htm
+
+---
+
+## 8. Akamai EdgeGrid Credentials (Enterprise)
+
+Die Akamai-Integration nutzt die Fast Purge API v3 für URL-basierte Cache-Invalidierung mit EdgeGrid-Authentifizierung.
+
+### Voraussetzungen
+- Ein Akamai-Konto mit Zugang zum Akamai Control Center
+- Eine aktive Property/Konfiguration in Akamai
+
+### Schritte
+
+1. **Akamai Control Center öffnen**
+   - Gehe zu https://control.akamai.com
+   - Melde dich an
+
+2. **API Client erstellen**
+   - Gehe zu **Identity & Access** → **API Clients** (im Menü unter "Account Admin")
+   - Klicke auf **"Create API Client"**
+   - Wähle **"API service name"**: z.B. `CacheWarmer`
+   - Wähle unter **"Select APIs"** die **"CCU APIs"** (Content Control Utility)
+   - Zugriffsebene: **READ-WRITE** auf der **CCU API**
+   - Klicke auf **"Create"**
+
+3. **Credentials kopieren**
+   - Nach der Erstellung werden die Credentials angezeigt:
+     - **Host** (z.B. `akaa-xxxxx.luna.akamaiapis.net`)
+     - **Client Token** (z.B. `akab-xxxxx`)
+     - **Client Secret** (z.B. `xxxxx=`)
+     - **Access Token** (z.B. `akab-xxxxx`)
+   - **Wichtig:** Die Credentials werden nur einmal angezeigt! Kopiere alle 4 Werte sofort.
+
+4. **In config.yaml eintragen**
+   ```yaml
+   akamai:
+     enabled: true
+     host: "akaa-xxxxx.luna.akamaiapis.net"
+     clientToken: "akab-xxxxx"
+     clientSecret: "xxxxx="
+     accessToken: "akab-xxxxx"
+     network: "production"    # production | staging
+   ```
+
+### Hinweise
+- Akamai verwendet **EdgeGrid (EG1-HMAC-SHA256)** für die API-Authentifizierung — CacheWarmer implementiert dies intern
+- Bis zu **50 URLs pro Invalidation-Request**
+- Cache-Invalidierung dauert typischerweise **< 5 Sekunden** über das gesamte Akamai-Netzwerk
+- Wähle `network: "staging"` zum Testen in der Staging-Umgebung, bevor du auf Production umstellst
+- Die API-Dokumentation findest du unter: https://techdocs.akamai.com/purge-cache/reference/api
+
+---
+
 ## Zusammenfassung: Vollständige config.yaml
 
 ```yaml
@@ -300,6 +436,26 @@ indexNow:
   enabled: true
   key: "DEIN_INDEXNOW_KEY"
   keyLocation: "https://www.example.com/DEIN_INDEXNOW_KEY.txt"
+
+# Enterprise: CDN Cache Purge Providers
+cloudflare:
+  enabled: true
+  apiToken: "DEIN_CLOUDFLARE_API_TOKEN"
+  zoneId: "DEINE_ZONE_ID"
+
+imperva:
+  enabled: true
+  apiId: "DEINE_IMPERVA_API_ID"
+  apiKey: "DEIN_IMPERVA_API_KEY"
+  siteId: "DEINE_SITE_ID"
+
+akamai:
+  enabled: true
+  host: "akaa-xxxxx.luna.akamaiapis.net"
+  clientToken: "DEIN_CLIENT_TOKEN"
+  clientSecret: "DEIN_CLIENT_SECRET"
+  accessToken: "DEIN_ACCESS_TOKEN"
+  network: "production"
 ```
 
 > **Tipp:** Erstelle eine `config.local.yaml` mit deinen echten Keys — diese Datei wird automatisch von `.gitignore` ausgeschlossen und hat Vorrang vor `config.yaml`.

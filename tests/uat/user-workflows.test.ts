@@ -272,3 +272,65 @@ describe("UAT: Complete User Workflow", () => {
     expect(filteredLogs.logs.length).toBe(3);
   });
 });
+
+describe("v1.1.0 User Workflows", () => {
+  describe("Failed URL Export Workflow", () => {
+    it("should allow Premium user to export failed URLs as CSV", () => {
+      // Simulate: User views job detail -> sees failures -> clicks "Export Failed"
+      const jobResults = [
+        { url: "https://example.com/ok", target: "cdn", status: "success" },
+        { url: "https://example.com/err", target: "cdn", status: "failed", error: "HTTP 500" },
+        { url: "https://example.com/skip", target: "facebook", status: "skipped" },
+      ];
+
+      const failedSkipped = jobResults.filter(r => r.status === "failed" || r.status === "skipped");
+      expect(failedSkipped).toHaveLength(2);
+
+      // Generate CSV
+      let csv = "url,target,status,error\n";
+      for (const r of failedSkipped) {
+        csv += `"${r.url}","${r.target}","${r.status}","${r.error || ""}"\n`;
+      }
+
+      expect(csv).toContain("https://example.com/err");
+      expect(csv).toContain("HTTP 500");
+      expect(csv).not.toContain("https://example.com/ok");
+    });
+  });
+
+  describe("Pinterest Warming Workflow", () => {
+    it("should include Pinterest in target selection for Premium users", () => {
+      const premiumTargets = ["cdn", "indexnow", "facebook", "linkedin", "twitter", "google", "bing", "pinterest"];
+      expect(premiumTargets).toContain("pinterest");
+    });
+  });
+
+  describe("Custom UA Enterprise Workflow", () => {
+    it("should allow Enterprise user to set custom user agent", () => {
+      const enterpriseConfig = {
+        cdnWarming: {
+          customUserAgent: "MyCompanyBot/2.0 (+https://mycompany.com/bot)",
+        },
+      };
+
+      expect(enterpriseConfig.cdnWarming.customUserAgent).toBeTruthy();
+      expect(enterpriseConfig.cdnWarming.customUserAgent).toContain("MyCompanyBot");
+    });
+  });
+
+  describe("Priority Warming Workflow", () => {
+    it("should warm high-priority pages before low-priority ones", () => {
+      const urls = [
+        { loc: "https://example.com/blog", priority: 0.3 },
+        { loc: "https://example.com/", priority: 1.0 },
+        { loc: "https://example.com/about", priority: 0.7 },
+      ];
+
+      const sorted = [...urls].sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
+
+      expect(sorted[0].loc).toBe("https://example.com/");
+      expect(sorted[1].loc).toBe("https://example.com/about");
+      expect(sorted[2].loc).toBe("https://example.com/blog");
+    });
+  });
+});

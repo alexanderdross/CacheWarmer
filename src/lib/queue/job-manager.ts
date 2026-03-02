@@ -9,11 +9,13 @@ import { warmTwitter, closeBrowser as closeTwitterBrowser } from "@/lib/services
 import { submitIndexNow } from "@/lib/services/indexnow";
 import { submitToGoogle } from "@/lib/services/google-indexer";
 import { submitToBing } from "@/lib/services/bing-indexer";
+import { warmPinterest } from "@/lib/services/pinterest-warmer";
+import { purgeCdnCache } from "@/lib/services/cdn-purge-warm";
 import { sendWebhook } from "@/lib/services/webhooks";
 import { sendJobCompletedEmail } from "@/lib/services/email-notifications";
 import logger from "@/lib/logger";
 
-export type WarmTarget = "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow";
+export type WarmTarget = "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow" | "pinterest" | "cdn-purge";
 
 export interface CreateJobParams {
   sitemapUrl: string;
@@ -141,6 +143,9 @@ export async function processJob(jobId: string): Promise<void> {
       }
     }
 
+    // Priority-based warming: sort by priority descending
+    sitemapUrls.sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
+
     db.prepare("UPDATE jobs SET total_urls = ? WHERE id = ?").run(urls.length, jobId);
 
     sendWebhook("job.started", { jobId, sitemapUrl: job.sitemap_url, urlCount: urls.length, targets }).catch((err) => logger.warn({ err }, "notification failed"));
@@ -225,6 +230,26 @@ export async function processJob(jobId: string): Promise<void> {
       updateJobProgress(jobId, processed);
     }
 
+    // Pinterest
+    if (targets.includes("pinterest")) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting Pinterest warming");
+      await warmPinterest(urls, (result) => {
+        saveUrlResult(jobId, result.url, "pinterest", result.status, result.httpStatus, result.durationMs, result.error);
+        processed++;
+        updateJobProgress(jobId, processed);
+      });
+    }
+
+    // CDN Purge + Warm (Cloudflare, Imperva, Akamai)
+    if (targets.includes("cdn-purge")) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting CDN cache purge (Cloudflare/Imperva/Akamai)");
+      await purgeCdnCache(urls, (result) => {
+        saveUrlResult(jobId, result.url, `cdn-purge:${result.provider}`, result.status, result.httpStatus, result.durationMs, result.error);
+        processed++;
+        updateJobProgress(jobId, processed);
+      });
+    }
+
     updateJobStatus(jobId, "completed");
     logger.info({ jobId, processed }, "Job completed");
 
@@ -257,4 +282,11 @@ export function getJobStats(jobId: string) {
     FROM url_results WHERE job_id = ?
     GROUP BY target, status
   `).all(jobId);
+}
+
+export function getFailedSkippedResults(jobId: string) {
+  const db = getDb();
+  return db.prepare(
+    "SELECT * FROM url_results WHERE job_id = ? AND status IN ('failed', 'skipped') ORDER BY created_at"
+  ).all(jobId);
 }

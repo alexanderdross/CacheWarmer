@@ -2,7 +2,7 @@
 /**
  * Email notifications for CacheWarmer.
  *
- * Sends email notifications when jobs complete (Premium+).
+ * Sends email notifications when jobs complete (Enterprise only).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -14,12 +14,12 @@ class CacheWarmer_Email {
     /**
      * Send a job-completed email notification.
      *
-     * Only fires for Premium+ tiers when email notifications are enabled.
+     * Only fires for Enterprise tier when email notifications are enabled.
      *
      * @param array $job_data Job data array with id, status, sitemap_url, etc.
      */
     public static function send_job_completed( array $job_data ): void {
-        if ( ! CacheWarmer_License::is_premium_or_above() ) {
+        if ( ! CacheWarmer_License::is_enterprise() ) {
             return;
         }
 

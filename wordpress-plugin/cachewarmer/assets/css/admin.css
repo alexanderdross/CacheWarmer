@@ -400,6 +400,103 @@
 .stat-failed { color: #d63638; }
 .stat-skipped { color: #dba617; }
 
+/* Clickable stat counts */
+a.cw-stat-toggle {
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+a.cw-stat-toggle:hover {
+    opacity: 0.7;
+}
+
+a.cw-stat-toggle.cw-stat-active {
+    background: #f0f0f1;
+    border-radius: 3px;
+    padding: 0 4px;
+}
+
+/* URL list panel in modal */
+.cw-url-list-panel {
+    margin-top: 16px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 16px;
+    background: #f9f9f9;
+}
+
+.cw-url-list-panel h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+}
+
+#cw-url-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cw-url-item {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e8e8e8;
+    font-size: 13px;
+    word-break: break-all;
+}
+
+.cw-url-item:last-child {
+    border-bottom: none;
+}
+
+.cw-url-item a {
+    color: #2271b1;
+    text-decoration: none;
+}
+
+.cw-url-item a:hover {
+    text-decoration: underline;
+}
+
+.cw-url-http {
+    display: inline-block;
+    background: #f0f0f1;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    padding: 0 5px;
+    font-size: 11px;
+    color: #646970;
+    margin-left: 6px;
+}
+
+.cw-url-duration {
+    font-size: 11px;
+    color: #a7aaad;
+    margin-left: 4px;
+}
+
+.cw-url-error {
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: #f8d7da;
+    color: #721c24;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.cw-url-failed {
+    border-left: 3px solid #d63638;
+}
+
+.cw-url-skipped {
+    border-left: 3px solid #dba617;
+}
+
+.cw-url-success {
+    border-left: 3px solid #00a32a;
+}
+
 /* Table tweaks */
 #cw-jobs-table .column-status { width: 100px; }
 #cw-jobs-table .column-progress { width: 160px; }
@@ -444,11 +541,11 @@
 .cw-pro-locked,
 .cw-ent-locked {
     position: relative;
-    overflow: hidden;
 }
 
 .cw-pro-locked .cw-locked-content,
 .cw-ent-locked .cw-locked-content {
+    position: relative;
     filter: blur(4px);
     opacity: 0.45;
     pointer-events: none;
@@ -456,19 +553,16 @@
 }
 
 .cw-pro-upgrade-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: relative;
     z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 24px 16px;
-    background: rgba(255, 255, 255, 0.35);
+    padding: 18px 16px;
+    margin-top: -20px;
+    background: rgba(255, 255, 255, 0.6);
 }
 
 .cw-pro-upgrade-overlay .dashicons-lock {
@@ -501,14 +595,42 @@
     line-height: 1.6;
 }
 
-/* Responsive */
+/* ==========================================================================
+   Responsive — Tablet Optimizations
+   ========================================================================== */
+@media screen and (max-width: 1024px) {
+    /* Remove fixed table layout so columns size naturally on tablet */
+    #cw-sitemaps-table.widefat.fixed,
+    #cw-jobs-table.widefat.fixed {
+        table-layout: auto;
+    }
+
+    .cachewarmer-section {
+        padding: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ==========================================================================
+   Responsive — Smartphone Optimizations (782px = WP admin breakpoint)
+   ========================================================================== */
 @media screen and (max-width: 782px) {
+    /* --- Layout --- */
     .cachewarmer-status-cards {
         flex-direction: column;
     }
 
+    .cachewarmer-card {
+        min-width: auto;
+    }
+
     .cachewarmer-form-inline {
         flex-direction: column;
+    }
+
+    .cachewarmer-form-inline > div {
+        min-width: auto;
     }
 
     .cachewarmer-job-meta {
@@ -517,5 +639,241 @@
 
     .cachewarmer-settings-section .form-table th {
         width: auto;
+    }
+
+    .cachewarmer-section {
+        padding: 12px 14px;
+    }
+
+    /* --- Form inputs full width --- */
+    .cachewarmer-wrap input.regular-text,
+    .cachewarmer-wrap select.regular-text,
+    .cachewarmer-wrap textarea.large-text {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* --- Hero button full width on mobile --- */
+    #cw-warm-submit {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* --- Stats grid single column --- */
+    .cachewarmer-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* --- Modal full-screen-ish on mobile --- */
+    .cachewarmer-modal-content {
+        width: 95%;
+        padding: 16px;
+    }
+
+    /* ======================================================================
+       Card-based table layout: Sitemaps
+       ====================================================================== */
+    #cw-sitemaps-table.widefat.fixed {
+        table-layout: auto;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    #cw-sitemaps-table thead {
+        display: none;
+    }
+
+    #cw-sitemaps-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #c3c4c7;
+        border-radius: 6px;
+        padding: 14px 16px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    #cw-sitemaps-table tbody td {
+        display: block;
+        padding: 4px 0;
+        border: none;
+        text-align: left;
+        width: 100% !important;
+    }
+
+    /* Label above each field */
+    #cw-sitemaps-table tbody td::before {
+        display: block;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #646970;
+        margin-bottom: 2px;
+    }
+
+    #cw-sitemaps-table tbody td:nth-child(1)::before { content: "Domain"; }
+    #cw-sitemaps-table tbody td:nth-child(2)::before { content: "URL"; }
+    #cw-sitemaps-table tbody td:nth-child(3)::before { content: "Schedule"; }
+    #cw-sitemaps-table tbody td:nth-child(4)::before { content: "Last Warmed"; }
+    #cw-sitemaps-table tbody td:nth-child(5)::before { content: ""; }
+
+    /* URL should break words instead of overflowing */
+    #cw-sitemaps-table tbody td:nth-child(2) a {
+        word-break: break-all;
+        font-size: 13px;
+    }
+
+    /* Actions row — side-by-side buttons */
+    #cw-sitemaps-table tbody td:nth-child(5) {
+        display: flex;
+        gap: 8px;
+        padding-top: 10px;
+        margin-top: 6px;
+        border-top: 1px solid #f0f0f1;
+    }
+
+    #cw-sitemaps-table tbody td:nth-child(5) .button {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* ======================================================================
+       Card-based table layout: Jobs
+       ====================================================================== */
+    #cw-jobs-table.widefat.fixed {
+        table-layout: auto;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    #cw-jobs-table thead {
+        display: none;
+    }
+
+    #cw-jobs-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #c3c4c7;
+        border-radius: 6px;
+        padding: 14px 16px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    #cw-jobs-table tbody td {
+        display: block;
+        padding: 4px 0;
+        border: none;
+        text-align: left;
+        width: 100% !important;
+    }
+
+    /* Label above each field */
+    #cw-jobs-table tbody td::before {
+        display: block;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #646970;
+        margin-bottom: 2px;
+    }
+
+    #cw-jobs-table tbody td:nth-child(1)::before { content: ""; }
+    #cw-jobs-table tbody td:nth-child(2)::before { content: "Sitemap"; }
+    #cw-jobs-table tbody td:nth-child(3)::before { content: "Progress"; }
+    #cw-jobs-table tbody td:nth-child(4)::before { content: "Targets"; }
+    #cw-jobs-table tbody td:nth-child(5)::before { content: "Created"; }
+    #cw-jobs-table tbody td:nth-child(6)::before { content: ""; }
+
+    /* Remove fixed column widths */
+    #cw-jobs-table .column-status,
+    #cw-jobs-table .column-progress,
+    #cw-jobs-table .column-actions,
+    #cw-jobs-table .column-created {
+        width: auto !important;
+    }
+
+    /* Progress bar: full width on mobile */
+    #cw-jobs-table .cachewarmer-progress {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Targets: flex-wrap tags naturally */
+    #cw-jobs-table tbody td:nth-child(4) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: flex-start;
+    }
+
+    #cw-jobs-table tbody td:nth-child(4)::before {
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    /* Actions row */
+    #cw-jobs-table tbody td:nth-child(6) {
+        display: flex;
+        gap: 8px;
+        padding-top: 10px;
+        margin-top: 6px;
+        border-top: 1px solid #f0f0f1;
+    }
+
+    #cw-jobs-table tbody td:nth-child(6) .button {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Sitemap column text — break long URLs */
+    #cw-jobs-table .column-sitemap {
+        word-break: break-all;
+    }
+
+    /* Targets checkboxes — stack on mobile */
+    .cachewarmer-targets {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .cachewarmer-target-label {
+        justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   Responsive — Small Phone (≤ 480px)
+   ========================================================================== */
+@media screen and (max-width: 480px) {
+    .cachewarmer-card {
+        padding: 12px 14px;
+    }
+
+    .cachewarmer-card-value {
+        font-size: 24px;
+    }
+
+    .cachewarmer-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+    }
+
+    .cachewarmer-tag {
+        font-size: 10px;
+        padding: 1px 6px;
+    }
+
+    .cachewarmer-section h2 {
+        font-size: 15px;
+    }
+
+    .cachewarmer-wrap h1 {
+        font-size: 18px;
     }
 }

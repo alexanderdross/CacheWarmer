@@ -76,7 +76,7 @@ describe("POST /api/warm", () => {
     const response = await POST(request);
     const body = await response.json();
     expect(response.status).toBe(202);
-    expect(body.targets).toEqual(["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow"]);
+    expect(body.targets).toEqual(["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow", "pinterest"]);
   });
 
   it("should filter out invalid targets", async () => {

@@ -33,7 +33,7 @@ export interface CacheHeaders {
 
 export interface WarmResult {
   url: string;
-  viewport: "desktop" | "mobile";
+  viewport: string;
   status: "success" | "failed";
   httpStatus?: number;
   durationMs: number;
@@ -56,7 +56,7 @@ async function warmSingleUrl(
   page: Page,
   url: string,
   userAgent: string,
-  viewport: "desktop" | "mobile",
+  viewport: string,
   timeout: number
 ): Promise<WarmResult> {
   const start = Date.now();
@@ -98,6 +98,19 @@ export async function warmUrls(
   const b = await getBrowser();
   const results: WarmResult[] = [];
 
+  // Enterprise: custom user agent override
+  const desktopUA = config.cdnWarming.customUserAgent || userAgents.desktop;
+  const mobileUA = userAgents.mobile;
+
+  // Enterprise: custom HTTP headers
+  const customHeaders = config.cdnWarming.customHeaders || {};
+
+  // Enterprise: custom viewports
+  const customViewports = config.cdnWarming.customViewports || [];
+
+  // Enterprise: auth cookies
+  const authCookies = config.cdnWarming.authCookies || [];
+
   // Process in batches
   for (let i = 0; i < urls.length; i += concurrency) {
     const batch = urls.slice(i, i + concurrency);
@@ -105,20 +118,49 @@ export async function warmUrls(
       batch.map(async (url) => {
         const page = await b.newPage();
         try {
+          // Set custom headers if any
+          if (Object.keys(customHeaders).length > 0) {
+            await page.setExtraHTTPHeaders(customHeaders);
+          }
+
+          // Set auth cookies if any
+          if (authCookies.length > 0) {
+            const urlObj = new URL(url);
+            const cookies = authCookies.map((c) => ({
+              name: c.name,
+              value: c.value,
+              domain: c.domain || urlObj.hostname,
+            }));
+            await page.setCookie(...cookies);
+          }
+
+          const urlResults: WarmResult[] = [];
+
           // Desktop request
-          const desktopResult = await warmSingleUrl(page, url, userAgents.desktop, "desktop", timeout);
+          const desktopResult = await warmSingleUrl(page, url, desktopUA, "desktop", timeout);
+          urlResults.push(desktopResult);
+
           // Mobile request
           await page.setViewport({ width: 375, height: 812 });
-          const mobileResult = await warmSingleUrl(page, url, userAgents.mobile, "mobile", timeout);
-          return [desktopResult, mobileResult];
+          const mobileResult = await warmSingleUrl(page, url, mobileUA, "mobile", timeout);
+          urlResults.push(mobileResult);
+
+          // Custom viewport requests (Enterprise)
+          for (const vp of customViewports) {
+            await page.setViewport({ width: vp.width, height: vp.height });
+            const vpResult = await warmSingleUrl(page, url, desktopUA, vp.label as "desktop" | "mobile", timeout);
+            urlResults.push(vpResult);
+          }
+
+          return urlResults;
         } finally {
           await page.close();
         }
       })
     );
 
-    for (const pair of batchResults) {
-      for (const r of pair) {
+    for (const urlResults of batchResults) {
+      for (const r of urlResults) {
         results.push(r);
         onProgress?.(r);
       }

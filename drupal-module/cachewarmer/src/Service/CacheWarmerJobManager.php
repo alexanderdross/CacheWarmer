@@ -24,12 +24,13 @@ class CacheWarmerJobManager {
   protected LoggerInterface $logger;
   protected CacheWarmerWebhooks $webhooks;
   protected CacheWarmerEmail $email;
+  protected PinterestWarmer $pinterestWarmer;
 
   /**
    * Allowed warming targets.
    */
   protected const ALLOWED_TARGETS = [
-    'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow',
+    'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest',
   ];
 
   public function __construct(
@@ -46,6 +47,7 @@ class CacheWarmerJobManager {
     LoggerChannelFactoryInterface $loggerFactory,
     CacheWarmerWebhooks $webhooks,
     CacheWarmerEmail $email,
+    PinterestWarmer $pinterestWarmer,
   ) {
     $this->database = $database;
     $this->sitemapParser = $sitemapParser;
@@ -60,6 +62,7 @@ class CacheWarmerJobManager {
     $this->logger = $loggerFactory->get('cachewarmer');
     $this->webhooks = $webhooks;
     $this->email = $email;
+    $this->pinterestWarmer = $pinterestWarmer;
   }
 
   /**
@@ -122,11 +125,24 @@ class CacheWarmerJobManager {
     try {
       // Parse sitemap.
       $entries = $this->sitemapParser->parse($job->sitemap_url);
+
+      // Priority-based warming (Premium+).
+      $licenseService = \Drupal::service('cachewarmer.license');
+      if ($licenseService->can('priority_warming')) {
+        usort($entries, function ($a, $b) {
+          $pa = isset($a['priority']) ? (float) $a['priority'] : 0.5;
+          $pb = isset($b['priority']) ? (float) $b['priority'] : 0.5;
+          return $pb <=> $pa;
+        });
+      }
+
       $urls = array_map(fn($e) => $e['loc'], $entries);
 
-      // Apply URL exclude patterns.
+      // Apply URL exclude patterns (Enterprise only).
       $config = $this->configFactory->get('cachewarmer.settings');
-      $excludeRaw = $config->get('exclude_patterns') ?? '';
+      /** @var \Drupal\cachewarmer\Service\CacheWarmerLicense $licenseService */
+      $licenseService = \Drupal::service('cachewarmer.license');
+      $excludeRaw = $licenseService->isEnterprise() ? ($config->get('exclude_patterns') ?? '') : '';
       if (!empty(trim($excludeRaw))) {
         $patterns = array_filter(array_map('trim', explode("\n", $excludeRaw)));
         $beforeCount = count($urls);
@@ -275,6 +291,10 @@ class CacheWarmerJobManager {
 
       case 'indexnow':
         $this->indexNow->index($urls, $jobId, $onResult);
+        break;
+
+      case 'pinterest':
+        $this->pinterestWarmer->warm($urls, $jobId, $onResult);
         break;
     }
   }

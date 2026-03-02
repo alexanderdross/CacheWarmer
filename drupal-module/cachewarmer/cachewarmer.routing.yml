@@ -119,6 +119,14 @@ cachewarmer.ajax.detect_sitemaps:
   options:
     no_cache: TRUE
 
+cachewarmer.ajax.export_failed:
+  path: '/admin/cachewarmer/ajax/export-failed'
+  defaults:
+    _controller: '\Drupal\cachewarmer\Controller\CacheWarmerAjaxController::exportFailed'
+  requirements:
+    _permission: 'administer cachewarmer'
+  methods: [POST]
+
 cachewarmer.ajax.export_results:
   path: '/admin/cachewarmer/ajax/export-results'
   defaults:

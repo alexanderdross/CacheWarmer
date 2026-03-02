@@ -35,6 +35,7 @@ class CacheWarmer_Admin {
         add_action( 'wp_ajax_cachewarmer_bulk_add_sitemaps', array( $this, 'ajax_bulk_add_sitemaps' ) );
         add_action( 'wp_ajax_cachewarmer_detect_sitemaps', array( $this, 'ajax_detect_sitemaps' ) );
         add_action( 'wp_ajax_cachewarmer_export_results', array( $this, 'ajax_export_results' ) );
+        add_action( 'wp_ajax_cachewarmer_export_failed', array( $this, 'ajax_export_failed' ) );
     }
 
     /**
@@ -174,16 +175,32 @@ class CacheWarmer_Admin {
     }
 
     /**
-     * Sanitize the license key and trigger activation so the tier is updated.
+     * Sanitize the license key and set tier/expiry options.
+     *
+     * We call validate_key() directly instead of activate() because
+     * activate() calls update_option('cachewarmer_license_key') which
+     * would re-trigger this sanitize callback, causing infinite recursion.
      *
      * @param mixed $value The submitted license key.
      * @return string The sanitized license key.
      */
-    public function sanitize_license_key( $value ): string {
+    public function sanitize_license_key( $value ) {
         $key = sanitize_text_field( (string) $value );
 
-        // Activate (validates HMAC, sets tier + expiry options).
-        CacheWarmer_License::activate( $key );
+        $parsed = CacheWarmer_License::validate_key( $key );
+
+        if ( false === $parsed ) {
+            update_option( 'cachewarmer_license_tier', 'free' );
+            delete_option( 'cachewarmer_license_activated_at' );
+            delete_option( 'cachewarmer_license_expires_at' );
+        } else {
+            update_option( 'cachewarmer_license_tier', $parsed['tier'] );
+            update_option( 'cachewarmer_license_activated_at', time() );
+            $expires_at = $parsed['duration_days'] > 0
+                ? time() + ( $parsed['duration_days'] * DAY_IN_SECONDS )
+                : 0;
+            update_option( 'cachewarmer_license_expires_at', $expires_at );
+        }
 
         return $key;
     }
@@ -464,6 +481,47 @@ class CacheWarmer_Admin {
                 'filename' => 'cachewarmer-' . $job_id . '.json',
             ) );
         }
+    }
+
+    /**
+     * AJAX: Export failed/skipped URLs as CSV.
+     */
+    public function ajax_export_failed(): void {
+        check_ajax_referer( 'cachewarmer_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+        }
+
+        if ( ! CacheWarmer_License::can( 'failed_export' ) ) {
+            wp_send_json_error( 'This feature requires a Premium or Enterprise license.', 403 );
+        }
+
+        $job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+        if ( empty( $job_id ) || ! preg_match( '/^[0-9a-f\-]{36}$/i', $job_id ) ) {
+            wp_send_json_error( 'Invalid job ID' );
+        }
+
+        $db = new CacheWarmer_Database();
+        $results = $db->get_failed_skipped_results( $job_id );
+
+        $csv = "url,target,status,http_status,duration_ms,error,created_at\n";
+        foreach ( $results as $r ) {
+            $url    = str_replace( '"', '""', $r['url'] ?? '' );
+            $target = $r['target'] ?? '';
+            $status = $r['status'] ?? '';
+            $http   = $r['http_status'] ?? '';
+            $dur    = $r['duration_ms'] ?? '';
+            $error  = str_replace( '"', '""', $r['error'] ?? '' );
+            $date   = $r['created_at'] ?? '';
+            $csv   .= "\"{$url}\",\"{$target}\",\"{$status}\",{$http},{$dur},\"{$error}\",\"{$date}\"\n";
+        }
+
+        wp_send_json_success( array(
+            'csv'      => $csv,
+            'filename' => "cachewarmer-failed-{$job_id}.csv",
+            'count'    => count( $results ),
+        ) );
     }
 
     /**

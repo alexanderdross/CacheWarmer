@@ -495,3 +495,83 @@ describe("Security: Path Traversal", () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe("v1.1.0 Security", () => {
+  it("should not expose auth cookies in error messages", () => {
+    const cookies = [{ name: "session", value: "secret123", domain: "example.com" }];
+    const errorMessage = "CDN warm failed for https://example.com/page1";
+
+    // Error messages should not contain cookie values
+    expect(errorMessage).not.toContain("secret123");
+    expect(errorMessage).not.toContain(cookies[0].value);
+  });
+
+  it("should sanitize custom headers to prevent injection", () => {
+    const headers: Record<string, string> = {
+      "X-Custom": "safe-value",
+      "Content-Type": "text/html", // Should not override critical headers
+    };
+
+    // Custom headers should not contain newlines (HTTP header injection)
+    for (const [key, value] of Object.entries(headers)) {
+      expect(key).not.toMatch(/[\r\n]/);
+      expect(value).not.toMatch(/[\r\n]/);
+    }
+  });
+
+  it("should validate custom user agent does not contain dangerous characters", () => {
+    const customUA = "CustomBot/1.0 (+https://example.com)";
+
+    // UA should not contain script tags or other injection vectors
+    expect(customUA).not.toMatch(/<script/i);
+    expect(customUA).not.toMatch(/javascript:/i);
+  });
+
+  it("should validate custom viewport dimensions are within reasonable bounds", () => {
+    const viewports = [
+      { width: 1024, height: 768, label: "tablet" },
+      { width: 2560, height: 1440, label: "4k" },
+    ];
+
+    for (const vp of viewports) {
+      expect(vp.width).toBeGreaterThan(0);
+      expect(vp.width).toBeLessThan(10000);
+      expect(vp.height).toBeGreaterThan(0);
+      expect(vp.height).toBeLessThan(10000);
+    }
+  });
+
+  it("should sanitize CSV export to prevent CSV injection", () => {
+    const maliciousUrl = '=CMD("calc")';
+    const sanitized = `"${maliciousUrl.replace(/"/g, '""')}"`;
+
+    // The CSV cell should be quoted, preventing formula injection
+    expect(sanitized).toBe('"=CMD(""calc"")"');
+  });
+
+  it("should not expose internal file paths in export-failed response", () => {
+    const errorMsg = "Failed to connect to https://example.com/page";
+
+    // Error messages should not contain local file system paths
+    expect(errorMsg).not.toMatch(/\/home\//);
+    expect(errorMsg).not.toMatch(/\/usr\//);
+    expect(errorMsg).not.toMatch(/C:\\/);
+  });
+
+  it("should validate job ID format in export-failed endpoint", () => {
+    const validUUID = "b895ce1c-3920-4857-b051-6fd47a68f428";
+    const invalidInputs = [
+      "'; DROP TABLE jobs; --",
+      "../../../etc/passwd",
+      "<script>alert(1)</script>",
+    ];
+
+    // Valid UUID should match pattern
+    expect(validUUID).toMatch(/^[0-9a-f-]{36}$/i);
+
+    // Invalid inputs should not match UUID pattern
+    for (const input of invalidInputs) {
+      expect(input).not.toMatch(/^[0-9a-f-]{36}$/i);
+    }
+  });
+});

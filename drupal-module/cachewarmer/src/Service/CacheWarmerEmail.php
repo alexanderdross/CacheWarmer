@@ -48,7 +48,7 @@ class CacheWarmerEmail {
    *   The job data array.
    */
   public function sendJobCompleted(array $jobData): void {
-    if (!$this->license->isPremiumOrAbove()) {
+    if (!$this->license->isEnterprise()) {
       return;
     }
 

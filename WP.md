@@ -73,7 +73,8 @@ wordpress-plugin/cachewarmer/
 │       ├── class-cachewarmer-twitter-warmer.php    # Twitter/X Card Validator
 │       ├── class-cachewarmer-google-indexer.php    # Google Indexing API
 │       ├── class-cachewarmer-bing-indexer.php      # Bing Webmaster API
-│       └── class-cachewarmer-indexnow.php          # IndexNow protocol
+│       ├── class-cachewarmer-indexnow.php          # IndexNow protocol
+│       └── class-cachewarmer-cdn-purge-warmer.php  # CDN Purge (Cloudflare, Imperva, Akamai)
 ├── templates/
 │   ├── dashboard.php                       # Dashboard page template
 │   ├── sitemaps.php                        # Sitemap management template
@@ -131,7 +132,7 @@ The plugin creates three custom tables using `dbDelta()`:
 | id | VARCHAR(36) PK | UUID |
 | job_id | VARCHAR(36) FK | Parent job |
 | url | TEXT | Warmed URL |
-| target | VARCHAR(20) | cdn/facebook/linkedin/twitter/google/bing/indexnow |
+| target | VARCHAR(50) | cdn/facebook/linkedin/twitter/google/bing/indexnow/cdn-purge:cloudflare/cdn-purge:imperva/cdn-purge:akamai |
 | status | VARCHAR(20) | success/failed/skipped/pending |
 | http_status | INT | HTTP response code |
 | duration_ms | INT | Request duration |
@@ -204,6 +205,14 @@ curl -X POST https://example.com/wp-json/cachewarmer/v1/warm \
 - Batch submission (up to 10,000 URLs per request)
 - Supports Bing, Yandex, Seznam, Naver
 
+### 6.8 CDN Cache Purge (Enterprise)
+- Purges CDN cache via provider APIs before optional re-warming
+- **Cloudflare**: Zone API v4, batch up to 30 URLs, Bearer token auth
+- **Imperva (Incapsula)**: Cloud WAF API v1, URL-pattern purge, api_id + api_key auth
+- **Akamai**: Fast Purge API v3, batch up to 50 URLs, EdgeGrid (EG1-HMAC-SHA256) auth
+- All three providers configurable independently (enable/disable each)
+- Warming target: `cdn-purge` (purges all enabled providers)
+
 ---
 
 ## 7. Configuration (Settings Page)
@@ -228,6 +237,19 @@ All settings are stored in the `wp_options` table with the `cachewarmer_` prefix
 | `cachewarmer_bing_api_key` | (empty) | Bing Webmaster API key |
 | `cachewarmer_indexnow_enabled` | 0 | Enable IndexNow |
 | `cachewarmer_indexnow_key` | (empty) | IndexNow API key |
+| `cachewarmer_cloudflare_enabled` | 0 | Enable Cloudflare cache purge (Enterprise) |
+| `cachewarmer_cloudflare_api_token` | (empty) | Cloudflare API Token (Zone:Cache Purge) |
+| `cachewarmer_cloudflare_zone_id` | (empty) | Cloudflare Zone ID |
+| `cachewarmer_imperva_enabled` | 0 | Enable Imperva cache purge (Enterprise) |
+| `cachewarmer_imperva_api_id` | (empty) | Imperva API ID |
+| `cachewarmer_imperva_api_key` | (empty) | Imperva API Key |
+| `cachewarmer_imperva_site_id` | (empty) | Imperva Site ID |
+| `cachewarmer_akamai_enabled` | 0 | Enable Akamai Fast Purge (Enterprise) |
+| `cachewarmer_akamai_host` | (empty) | Akamai API hostname |
+| `cachewarmer_akamai_client_token` | (empty) | EdgeGrid client_token |
+| `cachewarmer_akamai_client_secret` | (empty) | EdgeGrid client_secret |
+| `cachewarmer_akamai_access_token` | (empty) | EdgeGrid access_token |
+| `cachewarmer_akamai_network` | production | `production` or `staging` |
 | `cachewarmer_scheduler_enabled` | 0 | Enable scheduled warming |
 | `cachewarmer_scheduler_cron` | daily | WP-Cron schedule |
 
@@ -300,3 +322,6 @@ Jobs are processed via **WP-Cron** single events:
 | Google | Service Account JSON | [Google Cloud Console](https://console.cloud.google.com) |
 | Bing | Webmaster API Key | [Bing Webmaster Tools](https://www.bing.com/webmasters) |
 | IndexNow | Self-generated key | Host as .txt on your site |
+| Cloudflare | API Token + Zone ID | [Cloudflare Dashboard](https://dash.cloudflare.com) — API Token with Zone:Cache Purge |
+| Imperva | API ID + API Key + Site ID | [Imperva Console](https://my.imperva.com) — Account Settings → API |
+| Akamai | EdgeGrid Credentials (Host, Client Token, Client Secret, Access Token) | [Akamai Control Center](https://control.akamai.com) — Identity & Access → API Clients |

@@ -270,6 +270,18 @@ class CacheWarmerDatabase {
   }
 
   /**
+   * Gets failed and skipped URL results for a job.
+   */
+  public function getFailedSkippedResults(string $jobId): array {
+    $query = $this->database->select('cachewarmer_url_results', 'r')
+      ->fields('r')
+      ->condition('r.job_id', $jobId)
+      ->condition('r.status', ['failed', 'skipped'], 'IN')
+      ->orderBy('r.created_at', 'DESC');
+    return $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
+  }
+
+  /**
    * Gets recent logs.
    */
   public function getLogs(int $limit = 100, int $offset = 0): array {

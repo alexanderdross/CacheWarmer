@@ -623,6 +623,8 @@ Jeder Tier hat ein vordefiniertes Feature-Set. Einzelne Features können über `
         "lighthouse": false,
         "webhooks": false,
         "cloudflare": false,
+        "imperva": false,
+        "akamai": false,
         "whitelabel": false,
         "priority_support": false
     },
@@ -645,6 +647,8 @@ Jeder Tier hat ein vordefiniertes Feature-Set. Einzelne Features können über `
         "lighthouse": false,
         "webhooks": false,
         "cloudflare": false,
+        "imperva": false,
+        "akamai": false,
         "whitelabel": false,
         "priority_support": false
     },
@@ -667,6 +671,8 @@ Jeder Tier hat ein vordefiniertes Feature-Set. Einzelne Features können über `
         "lighthouse": true,
         "webhooks": true,
         "cloudflare": true,
+        "imperva": true,
+        "akamai": true,
         "whitelabel": true,
         "priority_support": true
     },
