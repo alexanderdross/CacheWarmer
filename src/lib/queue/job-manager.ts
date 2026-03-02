@@ -10,11 +10,12 @@ import { submitIndexNow } from "@/lib/services/indexnow";
 import { submitToGoogle } from "@/lib/services/google-indexer";
 import { submitToBing } from "@/lib/services/bing-indexer";
 import { warmPinterest } from "@/lib/services/pinterest-warmer";
+import { purgeCdnCache } from "@/lib/services/cdn-purge-warm";
 import { sendWebhook } from "@/lib/services/webhooks";
 import { sendJobCompletedEmail } from "@/lib/services/email-notifications";
 import logger from "@/lib/logger";
 
-export type WarmTarget = "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow" | "pinterest";
+export type WarmTarget = "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow" | "pinterest" | "cdn-purge";
 
 export interface CreateJobParams {
   sitemapUrl: string;
@@ -234,6 +235,16 @@ export async function processJob(jobId: string): Promise<void> {
       logger.info({ jobId, urlCount: urls.length }, "Starting Pinterest warming");
       await warmPinterest(urls, (result) => {
         saveUrlResult(jobId, result.url, "pinterest", result.status, result.httpStatus, result.durationMs, result.error);
+        processed++;
+        updateJobProgress(jobId, processed);
+      });
+    }
+
+    // CDN Purge + Warm (Cloudflare, Imperva, Akamai)
+    if (targets.includes("cdn-purge")) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting CDN cache purge (Cloudflare/Imperva/Akamai)");
+      await purgeCdnCache(urls, (result) => {
+        saveUrlResult(jobId, result.url, `cdn-purge:${result.provider}`, result.status, result.httpStatus, result.durationMs, result.error);
         processed++;
         updateJobProgress(jobId, processed);
       });

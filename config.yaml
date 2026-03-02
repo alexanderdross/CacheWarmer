@@ -85,6 +85,20 @@ cloudflare:
   apiToken: ""
   zoneId: ""
 
+imperva:
+  enabled: false
+  apiId: ""
+  apiKey: ""
+  siteId: ""
+
+akamai:
+  enabled: false
+  host: ""              # e.g. akaa-xxxxx.luna.akamaiapis.net
+  clientToken: ""
+  clientSecret: ""
+  accessToken: ""
+  network: "production" # production | staging
+
 logging:
   level: "info"
   file: "./data/cachewarmer.log"

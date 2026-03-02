@@ -174,6 +174,64 @@ bing:
   dailyQuota: 10000
 ```
 
+### 2.7 CDN Cache Purge + Warm (Enterprise)
+
+Direkte Cache-Invalidierung über die APIs der CDN/WAF-Anbieter, ergänzend zum Puppeteer-basierten Edge-Warming. Unterstützt **Cloudflare**, **Imperva (Incapsula)** und **Akamai**.
+
+#### 2.7.1 Cloudflare
+
+- Nutzt die Cloudflare API v4 zum gezielten Purgen einzelner URLs
+- Endpoint: `POST https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache`
+- Batch-Verarbeitung: bis zu 30 URLs pro Request
+- Authentifizierung: Bearer Token (API Token mit `Zone:Cache Purge` Berechtigung)
+
+**Konfiguration:**
+```yaml
+cloudflare:
+  enabled: true
+  apiToken: "YOUR_CLOUDFLARE_API_TOKEN"
+  zoneId: "YOUR_ZONE_ID"
+```
+
+#### 2.7.2 Imperva (Incapsula)
+
+- Nutzt die Imperva Cloud WAF API v1 zum Purgen des Site-Caches
+- Endpoint: `POST https://my.incapsula.com/api/prov/v1/sites/performance/purge`
+- Unterstützt Purge per URL-Pattern (`purge_pattern`) oder vollständigen Site-Purge
+- Authentifizierung: `api_id` + `api_key` im Request-Body
+- Purge-Zeiten typischerweise < 500ms über das gesamte Imperva-Netzwerk
+
+**Konfiguration:**
+```yaml
+imperva:
+  enabled: true
+  apiId: "YOUR_IMPERVA_API_ID"
+  apiKey: "YOUR_IMPERVA_API_KEY"
+  siteId: "YOUR_SITE_ID"
+```
+
+#### 2.7.3 Akamai (Fast Purge API v3)
+
+- Nutzt die Akamai Fast Purge API v3 für URL-basierte Cache-Invalidierung
+- Endpoint: `POST https://{host}/ccu/v3/invalidate/url/{network}`
+- Batch-Verarbeitung: bis zu 50 URLs pro Request
+- Invalidierung in < 5 Sekunden über das gesamte Akamai-Netzwerk
+- Authentifizierung: EdgeGrid (EG1-HMAC-SHA256) mit `client_token`, `client_secret`, `access_token`
+- Unterstützt `production` und `staging` Networks
+
+**Konfiguration:**
+```yaml
+akamai:
+  enabled: true
+  host: "akaa-xxxxx.luna.akamaiapis.net"
+  clientToken: "YOUR_CLIENT_TOKEN"
+  clientSecret: "YOUR_CLIENT_SECRET"
+  accessToken: "YOUR_ACCESS_TOKEN"
+  network: "production"    # production | staging
+```
+
+**Wichtig:** CDN-Purge erhöht kurzfristig die Origin-Last, da ungecachte Requests zum Origin durchschlagen. Bei großen Purge-Batches daher empfohlen, das Puppeteer-Warming direkt im Anschluss auszuführen (`targets: ["cdn-purge", "cdn"]`).
+
 ---
 
 ## 3. REST API Endpunkte
@@ -324,6 +382,25 @@ indexNow:
   key: ""
   keyLocation: ""
 
+cloudflare:
+  enabled: false
+  apiToken: ""                # Cloudflare API Token (Zone:Cache Purge permission)
+  zoneId: ""                  # Cloudflare Zone ID
+
+imperva:
+  enabled: false
+  apiId: ""                   # Imperva API ID
+  apiKey: ""                  # Imperva API Key
+  siteId: ""                  # Imperva Site ID (numeric)
+
+akamai:
+  enabled: false
+  host: ""                    # e.g. akaa-xxxxx.luna.akamaiapis.net
+  clientToken: ""             # EdgeGrid client_token
+  clientSecret: ""            # EdgeGrid client_secret
+  accessToken: ""             # EdgeGrid access_token
+  network: "production"       # production | staging
+
 scheduler:
   enabled: false
   defaultCron: "0 3 * * *"    # Standard: täglich um 03:00 Uhr
@@ -390,6 +467,21 @@ GOOGLE_SITE_URL=https://example.com/
 # Bing Webmaster
 BING_API_KEY=your-bing-api-key
 
+# Cloudflare (Enterprise)
+CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
+CLOUDFLARE_ZONE_ID=your-zone-id
+
+# Imperva / Incapsula (Enterprise)
+IMPERVA_API_ID=your-imperva-api-id
+IMPERVA_API_KEY=your-imperva-api-key
+IMPERVA_SITE_ID=your-imperva-site-id
+
+# Akamai (Enterprise)
+AKAMAI_HOST=akaa-xxxxx.luna.akamaiapis.net
+AKAMAI_CLIENT_TOKEN=your-client-token
+AKAMAI_CLIENT_SECRET=your-client-secret
+AKAMAI_ACCESS_TOKEN=your-access-token
+
 # Rate Limiting
 RATE_LIMIT_CDN_PER_SECOND=2
 RATE_LIMIT_FACEBOOK_PER_HOUR=50
@@ -427,6 +519,7 @@ cachewarmer/
 │   ├── services/
 │   │   ├── sitemap-parser.ts    # XML-Sitemap parsen
 │   │   ├── cdn-warmer.ts        # Puppeteer CDN-Warming
+│   │   ├── cdn-purge-warm.ts   # CDN Cache Purge (Cloudflare, Imperva, Akamai)
 │   │   ├── facebook-warmer.ts   # Facebook Debugger API
 │   │   ├── linkedin-warmer.ts   # LinkedIn Post Inspector
 │   │   ├── twitter-warmer.ts    # Twitter/X Card Validator
@@ -535,6 +628,9 @@ volumes:
 | **Google** | Service Account JSON | [Google Cloud Console](https://console.cloud.google.com) — Indexing API aktivieren |
 | **Bing** | Webmaster API Key | [Bing Webmaster Tools](https://www.bing.com/webmasters) |
 | **IndexNow** | API Key | Selbst generieren + als `.txt` auf der Website hosten |
+| **Cloudflare** | API Token + Zone ID | [Cloudflare Dashboard](https://dash.cloudflare.com) — API Token mit Zone:Cache Purge Berechtigung |
+| **Imperva** | API ID + API Key + Site ID | [Imperva Cloud Security Console](https://my.imperva.com) — Account Settings → API |
+| **Akamai** | EdgeGrid Credentials (Host, Client Token, Client Secret, Access Token) | [Akamai Control Center](https://control.akamai.com) — Identity & Access → API Clients |
 
 ---
 
@@ -584,7 +680,7 @@ volumes:
 - **Lighthouse Audit**: Performance-Score pro URL mitspeichern
 - **Screenshot-Archiv**: Vor/Nach-Vergleich
 - **Pinterest Rich Pin Validator**: Zusätzlicher Social-Cache
-- **Cloudflare API Integration**: Direkte Cache-Purge + Warm Befehle
+- **CDN Cache Purge + Warm**: Direkte Cache-Purge via Cloudflare, Imperva (Incapsula) und Akamai APIs
 
 ---
 
@@ -636,6 +732,8 @@ CacheWarmer wird kommerziell vertrieben über ein zentrales **License Management
 | Bing Webmaster URL Submission | – | ✓ | ✓ |
 | Pinterest Rich Pin Validator | – | ✓ | ✓ |
 | Cloudflare Cache Purge + Warm | – | – | ✓ |
+| Imperva (Incapsula) Cache Purge + Warm | – | – | ✓ |
+| Akamai Fast Purge + Warm | – | – | ✓ |
 
 #### Mengen-Limits
 

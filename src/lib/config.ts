@@ -90,6 +90,20 @@ export interface AppConfig {
     apiToken: string;
     zoneId: string;
   };
+  imperva: {
+    enabled: boolean;
+    apiId: string;
+    apiKey: string;
+    siteId: string;
+  };
+  akamai: {
+    enabled: boolean;
+    host: string;
+    clientToken: string;
+    clientSecret: string;
+    accessToken: string;
+    network: string;
+  };
   excludePatterns: string;
   logging: {
     level: string;
