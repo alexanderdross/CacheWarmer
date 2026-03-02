@@ -118,6 +118,9 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             <p class="description">
                 <?php esc_html_e( 'Visits every page on your site in the background so that your CDN (e.g. Cloudflare, Fastly) stores a cached copy. This means real visitors will load pages much faster because the content is already prepared.', 'cachewarmer' ); ?>
             </p>
+            <p class="description cw-help-note">
+                <?php esc_html_e( 'No additional API keys needed. CacheWarmer simply visits each URL like a regular browser would.', 'cachewarmer' ); ?>
+            </p>
             <table class="form-table">
                 <tr>
                     <th><label for="cachewarmer_cdn_concurrency"><?php esc_html_e( 'Concurrency', 'cachewarmer' ); ?></label></th>
@@ -161,6 +164,16 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             </h2>
             <p class="description">
                 <?php esc_html_e( 'When someone shares your page on Facebook, it shows a preview with a title, description and image. This feature tells Facebook to fetch those details in advance, so the preview is always correct and up-to-date.', 'cachewarmer' ); ?>
+            </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Test manually: %1$sFacebook Sharing Debugger%2$s — paste any URL to check its preview.', 'cachewarmer' ),
+                    '<a href="https://developers.facebook.com/tools/debug/" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
             </p>
             <div class="cw-locked-content">
                 <table class="form-table">
@@ -224,6 +237,16 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             <p class="description">
                 <?php esc_html_e( 'Ensures that the link preview shown when sharing your page on LinkedIn is up-to-date. CacheWarmer tells LinkedIn to re-read your page\'s title, description and image.', 'cachewarmer' ); ?>
             </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Test manually: %1$sLinkedIn Post Inspector%2$s — paste any URL to refresh its LinkedIn preview.', 'cachewarmer' ),
+                    '<a href="https://www.linkedin.com/post-inspector/" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
             <div class="cw-locked-content">
                 <table class="form-table">
                     <tr>
@@ -279,6 +302,16 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             <p class="description">
                 <?php esc_html_e( 'Updates the link preview (Twitter Card) that appears when your page is shared on Twitter/X. No API key is needed — this works automatically through the public Tweet Composer.', 'cachewarmer' ); ?>
             </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Test manually: %1$sX (Twitter) Card Validator%2$s — paste any URL to preview its Twitter Card.', 'cachewarmer' ),
+                    '<a href="https://cards-dev.twitter.com/validator" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
             <div class="cw-locked-content">
                 <table class="form-table">
                     <tr>
@@ -323,6 +356,16 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             </h2>
             <p class="description">
                 <?php esc_html_e( 'Tells Google directly that a page has been updated, so it gets re-crawled and re-indexed faster. This can significantly speed up how quickly your changes appear in Google search results.', 'cachewarmer' ); ?>
+            </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Test manually: %1$sGoogle Search Console%2$s — use "URL Inspection" to check indexing status of any page.', 'cachewarmer' ),
+                    '<a href="https://search.google.com/search-console" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
             </p>
             <div class="cw-locked-content">
                 <table class="form-table">
@@ -384,6 +427,16 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             <p class="description">
                 <?php esc_html_e( 'Submits your updated pages directly to Bing so they appear in Bing search results faster. Also improves discoverability on Yahoo, DuckDuckGo and other Bing-powered search engines.', 'cachewarmer' ); ?>
             </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Test manually: %1$sBing Webmaster Tools%2$s — submit URLs and monitor your site\'s Bing search performance.', 'cachewarmer' ),
+                    '<a href="https://www.bing.com/webmasters" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
             <div class="cw-locked-content">
                 <table class="form-table">
                     <tr>
@@ -437,6 +490,16 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
             <p class="description">
                 <?php esc_html_e( 'IndexNow is a free, open protocol that instantly notifies multiple search engines (Bing, Yandex, Seznam, Naver and others) when your content changes. One submission reaches all participating search engines at once.', 'cachewarmer' ); ?>
             </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Learn more: %1$sIndexNow.org%2$s — documentation and list of supported search engines.', 'cachewarmer' ),
+                    '<a href="https://www.indexnow.org/" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
             <table class="form-table">
                 <tr>
                     <th><label for="cachewarmer_indexnow_key"><?php esc_html_e( 'IndexNow Key', 'cachewarmer' ); ?></label></th>
@@ -464,6 +527,347 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                     </td>
                 </tr>
             </table>
+        </div>
+
+        <!-- Pinterest Rich Pin Validator (Premium) -->
+        <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
+            <h2>
+                <label>
+                    <input type="hidden" name="cachewarmer_pinterest_enabled" value="0">
+                    <input type="checkbox" name="cachewarmer_pinterest_enabled" value="1"
+                        <?php checked( get_option( 'cachewarmer_pinterest_enabled', '0' ), '1' ); ?>>
+                    <?php esc_html_e( 'Pinterest Rich Pin Validator', 'cachewarmer' ); ?>
+                </label>
+            </h2>
+            <p class="description">
+                <?php esc_html_e( 'Refreshes the Rich Pin preview that Pinterest shows when someone pins your page. Ensures your title, description and image are always up-to-date on Pinterest.', 'cachewarmer' ); ?>
+            </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Test manually: %1$sPinterest Rich Pin Validator%2$s — paste any URL to check its Rich Pin preview.', 'cachewarmer' ),
+                    '<a href="https://developers.pinterest.com/tools/url-debugger/" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
+            <div class="cw-locked-content">
+                <p class="description cw-help-note">
+                    <?php esc_html_e( 'No API key required. CacheWarmer uses Pinterest\'s public Rich Pin Validator to refresh previews automatically.', 'cachewarmer' ); ?>
+                </p>
+            </div>
+            <?php if ( $cw_is_free ) : ?>
+                <div class="cw-pro-upgrade-overlay">
+                    <span class="dashicons dashicons-lock"></span>
+                    <strong><?php esc_html_e( 'Premium Feature', 'cachewarmer' ); ?></strong>
+                    <p><?php esc_html_e( 'Keep your Pinterest Rich Pin previews always up-to-date.', 'cachewarmer' ); ?></p>
+                    <a href="<?php echo esc_url( $cw_pricing_url ); ?>" target="_blank" rel="noopener" class="button button-primary"><?php esc_html_e( 'Upgrade to Premium', 'cachewarmer' ); ?></a>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Cloudflare Cache Purge (Enterprise) -->
+        <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
+            <h2>
+                <label>
+                    <input type="hidden" name="cachewarmer_cloudflare_enabled" value="0">
+                    <input type="checkbox" name="cachewarmer_cloudflare_enabled" value="1"
+                        <?php checked( get_option( 'cachewarmer_cloudflare_enabled', '0' ), '1' ); ?>>
+                    <?php esc_html_e( 'Cloudflare Cache Purge', 'cachewarmer' ); ?>
+                </label>
+            </h2>
+            <p class="description">
+                <?php esc_html_e( 'Purges specific URLs from Cloudflare\'s CDN cache via their API before re-warming them. This ensures visitors always get the latest version of your pages instead of a stale cached copy.', 'cachewarmer' ); ?>
+            </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Get credentials: %1$sCloudflare Dashboard%2$s — go to your domain > Overview to find your Zone ID, then create an API Token under My Profile > API Tokens.', 'cachewarmer' ),
+                    '<a href="https://dash.cloudflare.com" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
+            <div class="cw-locked-content">
+                <table class="form-table">
+                    <tr>
+                        <th><label for="cachewarmer_cloudflare_api_token"><?php esc_html_e( 'API Token', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="password" id="cachewarmer_cloudflare_api_token" name="cachewarmer_cloudflare_api_token"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_cloudflare_api_token', '' ) ); ?>"
+                                   class="regular-text"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'A Cloudflare API Token with the "Zone — Cache Purge — Purge" permission. To create one:', 'cachewarmer' ); ?>
+                                <br>
+                                <?php esc_html_e( '1. Log in to Cloudflare and go to My Profile > API Tokens.', 'cachewarmer' ); ?>
+                                <br>
+                                <?php esc_html_e( '2. Click "Create Token" and use the "Custom token" template.', 'cachewarmer' ); ?>
+                                <br>
+                                <?php esc_html_e( '3. Add permission: Zone > Cache Purge > Purge. Restrict to your specific zone.', 'cachewarmer' ); ?>
+                                <br>
+                                <?php esc_html_e( '4. Copy the generated token and paste it here.', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_cloudflare_zone_id"><?php esc_html_e( 'Zone ID', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="text" id="cachewarmer_cloudflare_zone_id" name="cachewarmer_cloudflare_zone_id"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_cloudflare_zone_id', '' ) ); ?>"
+                                   class="regular-text"
+                                   placeholder="e.g. 023e105f4ecef8ad9ca31a8372d0c353"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'Your Cloudflare Zone ID — a 32-character hex string. Find it on your domain\'s Overview page in the Cloudflare Dashboard, in the right sidebar under "API".', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <div class="cw-api-example">
+                    <p class="description"><strong><?php esc_html_e( 'API Reference:', 'cachewarmer' ); ?></strong></p>
+                    <pre class="cw-code-block"><?php echo esc_html( 'POST https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache
+Authorization: Bearer {api_token}
+Content-Type: application/json
+
+{
+  "files": [
+    "https://example.com/page-1",
+    "https://example.com/page-2"
+  ]
+}
+
+// Batch limit: 30 URLs per request
+// CacheWarmer handles batching automatically' ); ?></pre>
+                </div>
+            </div>
+            <?php if ( $cw_is_not_ent ) : ?>
+                <div class="cw-pro-upgrade-overlay">
+                    <span class="dashicons dashicons-lock"></span>
+                    <strong><?php esc_html_e( 'Enterprise Feature', 'cachewarmer' ); ?></strong>
+                    <p><?php esc_html_e( 'Purge and re-warm your Cloudflare CDN cache via API for instant content updates.', 'cachewarmer' ); ?></p>
+                    <a href="<?php echo esc_url( $cw_pricing_url ); ?>" target="_blank" rel="noopener" class="button button-primary"><?php esc_html_e( 'Upgrade to Enterprise', 'cachewarmer' ); ?></a>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Imperva (Incapsula) Cache Purge (Enterprise) -->
+        <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
+            <h2>
+                <label>
+                    <input type="hidden" name="cachewarmer_imperva_enabled" value="0">
+                    <input type="checkbox" name="cachewarmer_imperva_enabled" value="1"
+                        <?php checked( get_option( 'cachewarmer_imperva_enabled', '0' ), '1' ); ?>>
+                    <?php esc_html_e( 'Imperva (Incapsula) Cache Purge', 'cachewarmer' ); ?>
+                </label>
+            </h2>
+            <p class="description">
+                <?php esc_html_e( 'Purges cached pages from Imperva\'s Cloud WAF/CDN network. If your site is behind Imperva (formerly Incapsula), this clears old cached content so visitors see your latest changes immediately.', 'cachewarmer' ); ?>
+            </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Get credentials: %1$sImperva Cloud Security Console%2$s — go to Account Settings > API to find your API ID and API Key, and your Site ID under Sites > your site.', 'cachewarmer' ),
+                    '<a href="https://my.imperva.com" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
+            <div class="cw-locked-content">
+                <table class="form-table">
+                    <tr>
+                        <th><label for="cachewarmer_imperva_api_id"><?php esc_html_e( 'API ID', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="text" id="cachewarmer_imperva_api_id" name="cachewarmer_imperva_api_id"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_imperva_api_id', '' ) ); ?>"
+                                   class="regular-text"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'Your Imperva API ID (numeric). Found under Account Settings > API in the Imperva Console.', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_imperva_api_key"><?php esc_html_e( 'API Key', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="password" id="cachewarmer_imperva_api_key" name="cachewarmer_imperva_api_key"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_imperva_api_key', '' ) ); ?>"
+                                   class="regular-text"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'Your Imperva API Key. Found alongside the API ID in Account Settings > API. Keep this secret.', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_imperva_site_id"><?php esc_html_e( 'Site ID', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="text" id="cachewarmer_imperva_site_id" name="cachewarmer_imperva_site_id"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_imperva_site_id', '' ) ); ?>"
+                                   class="regular-text"
+                                   placeholder="e.g. 12345678"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'The numeric Site ID for your website in Imperva. Find it under Sites > your site > Settings in the Imperva Console.', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <div class="cw-api-example">
+                    <p class="description"><strong><?php esc_html_e( 'API Reference:', 'cachewarmer' ); ?></strong></p>
+                    <pre class="cw-code-block"><?php echo esc_html( 'POST https://my.incapsula.com/api/prov/v1/sites/performance/purge
+Content-Type: application/x-www-form-urlencoded
+
+api_id={api_id}&api_key={api_key}&site_id={site_id}
+&purge_pattern=https://example.com/page-1
+
+// Purges matching URLs from Imperva\'s global CDN
+// Purge propagation: typically < 500ms worldwide' ); ?></pre>
+                </div>
+            </div>
+            <?php if ( $cw_is_not_ent ) : ?>
+                <div class="cw-pro-upgrade-overlay">
+                    <span class="dashicons dashicons-lock"></span>
+                    <strong><?php esc_html_e( 'Enterprise Feature', 'cachewarmer' ); ?></strong>
+                    <p><?php esc_html_e( 'Purge and re-warm your Imperva (Incapsula) CDN cache via API.', 'cachewarmer' ); ?></p>
+                    <a href="<?php echo esc_url( $cw_pricing_url ); ?>" target="_blank" rel="noopener" class="button button-primary"><?php esc_html_e( 'Upgrade to Enterprise', 'cachewarmer' ); ?></a>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Akamai Fast Purge (Enterprise) -->
+        <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
+            <h2>
+                <label>
+                    <input type="hidden" name="cachewarmer_akamai_enabled" value="0">
+                    <input type="checkbox" name="cachewarmer_akamai_enabled" value="1"
+                        <?php checked( get_option( 'cachewarmer_akamai_enabled', '0' ), '1' ); ?>>
+                    <?php esc_html_e( 'Akamai Fast Purge', 'cachewarmer' ); ?>
+                </label>
+            </h2>
+            <p class="description">
+                <?php esc_html_e( 'Invalidates cached content on Akamai\'s global CDN in under 5 seconds. If your site uses Akamai for content delivery, this ensures cache is cleared and re-warmed whenever your content changes.', 'cachewarmer' ); ?>
+            </p>
+            <p class="description cw-tool-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php
+                printf(
+                    esc_html__( 'Get credentials: %1$sAkamai Control Center%2$s — go to Identity & Access Management > API Clients to create EdgeGrid credentials.', 'cachewarmer' ),
+                    '<a href="https://control.akamai.com" target="_blank" rel="noopener">',
+                    '</a>'
+                );
+                ?>
+            </p>
+            <div class="cw-locked-content">
+                <table class="form-table">
+                    <tr>
+                        <th><label for="cachewarmer_akamai_host"><?php esc_html_e( 'API Host', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="text" id="cachewarmer_akamai_host" name="cachewarmer_akamai_host"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_akamai_host', '' ) ); ?>"
+                                   class="regular-text"
+                                   placeholder="e.g. akaa-xxxxx.luna.akamaiapis.net"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'The Akamai API hostname from your EdgeGrid credentials file (.edgerc). Looks like "akaa-xxxxx.luna.akamaiapis.net".', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_akamai_client_token"><?php esc_html_e( 'Client Token', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="password" id="cachewarmer_akamai_client_token" name="cachewarmer_akamai_client_token"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_akamai_client_token', '' ) ); ?>"
+                                   class="regular-text"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'The client_token from your EdgeGrid credentials. Starts with "akab-".', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_akamai_client_secret"><?php esc_html_e( 'Client Secret', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="password" id="cachewarmer_akamai_client_secret" name="cachewarmer_akamai_client_secret"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_akamai_client_secret', '' ) ); ?>"
+                                   class="regular-text"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'The client_secret from your EdgeGrid credentials. This is a Base64-encoded string. Keep it secret.', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_akamai_access_token"><?php esc_html_e( 'Access Token', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <input type="password" id="cachewarmer_akamai_access_token" name="cachewarmer_akamai_access_token"
+                                   value="<?php echo esc_attr( get_option( 'cachewarmer_akamai_access_token', '' ) ); ?>"
+                                   class="regular-text"
+                                   <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                            <p class="description">
+                                <?php esc_html_e( 'The access_token from your EdgeGrid credentials. Starts with "akab-".', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label for="cachewarmer_akamai_network"><?php esc_html_e( 'Network', 'cachewarmer' ); ?></label></th>
+                        <td>
+                            <select id="cachewarmer_akamai_network" name="cachewarmer_akamai_network"
+                                    <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
+                                <?php
+                                $akamai_network = get_option( 'cachewarmer_akamai_network', 'production' );
+                                ?>
+                                <option value="production" <?php selected( $akamai_network, 'production' ); ?>>
+                                    <?php esc_html_e( 'Production', 'cachewarmer' ); ?>
+                                </option>
+                                <option value="staging" <?php selected( $akamai_network, 'staging' ); ?>>
+                                    <?php esc_html_e( 'Staging', 'cachewarmer' ); ?>
+                                </option>
+                            </select>
+                            <p class="description">
+                                <?php esc_html_e( 'Which Akamai network to purge. Use "Production" for your live site. "Staging" is for testing before going live.', 'cachewarmer' ); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <div class="cw-api-example">
+                    <p class="description"><strong><?php esc_html_e( 'API Reference:', 'cachewarmer' ); ?></strong></p>
+                    <pre class="cw-code-block"><?php echo esc_html( 'POST https://{host}/ccu/v3/invalidate/url/{network}
+Authorization: EG1-HMAC-SHA256 client_token=...;access_token=...;...
+Content-Type: application/json
+
+{
+  "objects": [
+    "https://example.com/page-1",
+    "https://example.com/page-2"
+  ]
+}
+
+// Batch limit: 50 URLs per request
+// Invalidation in < 5 seconds globally
+// Auth: EdgeGrid signature (computed automatically by CacheWarmer)' ); ?></pre>
+                </div>
+                <div class="cw-api-example">
+                    <p class="description"><strong><?php esc_html_e( 'EdgeGrid credentials file example (.edgerc):', 'cachewarmer' ); ?></strong></p>
+                    <pre class="cw-code-block"><?php echo esc_html( '[default]
+host = akaa-xxxxx.luna.akamaiapis.net
+client_token = akab-xxxxx
+client_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+access_token = akab-xxxxx
+max-body = 131072' ); ?></pre>
+                </div>
+            </div>
+            <?php if ( $cw_is_not_ent ) : ?>
+                <div class="cw-pro-upgrade-overlay">
+                    <span class="dashicons dashicons-lock"></span>
+                    <strong><?php esc_html_e( 'Enterprise Feature', 'cachewarmer' ); ?></strong>
+                    <p><?php esc_html_e( 'Purge and re-warm your Akamai CDN cache via the Fast Purge API.', 'cachewarmer' ); ?></p>
+                    <a href="<?php echo esc_url( $cw_pricing_url ); ?>" target="_blank" rel="noopener" class="button button-primary"><?php esc_html_e( 'Upgrade to Enterprise', 'cachewarmer' ); ?></a>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Scheduler (Premium) -->
