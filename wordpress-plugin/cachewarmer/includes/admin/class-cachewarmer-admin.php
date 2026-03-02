@@ -169,10 +169,23 @@ class CacheWarmer_Admin {
             'cachewarmer_webhook_url',
         );
 
+        // Multi-line settings need sanitize_textarea_field to preserve newlines.
+        $textarea_settings = array(
+            'cachewarmer_google_service_account',
+            'cachewarmer_exclude_patterns',
+            'cachewarmer_custom_headers',
+        );
+
         foreach ( $settings as $setting ) {
-            register_setting( 'cachewarmer_settings', $setting, array(
-                'sanitize_callback' => array( $this, 'sanitize_setting' ),
-            ) );
+            if ( in_array( $setting, $textarea_settings, true ) ) {
+                register_setting( 'cachewarmer_settings', $setting, array(
+                    'sanitize_callback' => array( $this, 'sanitize_textarea_setting' ),
+                ) );
+            } else {
+                register_setting( 'cachewarmer_settings', $setting, array(
+                    'sanitize_callback' => array( $this, 'sanitize_setting' ),
+                ) );
+            }
         }
 
         // License key needs a dedicated callback that triggers activation.
@@ -182,8 +195,21 @@ class CacheWarmer_Admin {
     }
 
     public function sanitize_setting( $value ) {
+        if ( is_array( $value ) ) {
+            return array_map( 'sanitize_text_field', $value );
+        }
         if ( is_string( $value ) ) {
             return sanitize_text_field( $value );
+        }
+        return $value;
+    }
+
+    /**
+     * Sanitize multi-line textarea fields (preserves newlines).
+     */
+    public function sanitize_textarea_setting( $value ) {
+        if ( is_string( $value ) ) {
+            return sanitize_textarea_field( $value );
         }
         return $value;
     }
@@ -238,6 +264,20 @@ class CacheWarmer_Admin {
     // ──────────────────────────────────────────────
     // AJAX handlers
     // ──────────────────────────────────────────────
+
+    /**
+     * Escape a CSV cell value to prevent formula injection.
+     *
+     * Values starting with =, +, -, @, or tab can be interpreted as
+     * formulas by spreadsheet applications (Excel, Google Sheets).
+     */
+    private function escape_csv_cell( string $value ): string {
+        $value = str_replace( '"', '""', $value );
+        if ( isset( $value[0] ) && in_array( $value[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+            $value = "'" . $value;
+        }
+        return $value;
+    }
 
     private function verify_ajax(): void {
         check_ajax_referer( 'cachewarmer_nonce', 'nonce' );
@@ -386,7 +426,7 @@ class CacheWarmer_Admin {
             wp_send_json_error( array( 'message' => 'Sitemap not found' ) );
         }
 
-        $targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow' );
+        $targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge' );
         $result  = $this->job_manager->create_job( $sitemap->url, $targets, $id );
 
         wp_send_json_success( $result );
@@ -474,13 +514,13 @@ class CacheWarmer_Admin {
             foreach ( $results as $r ) {
                 $csv .= sprintf(
                     '"%s","%s","%s",%d,%d,"%s","%s"' . "\n",
-                    $r->url,
-                    $r->target,
-                    $r->status,
+                    $this->escape_csv_cell( $r->url ?? '' ),
+                    $this->escape_csv_cell( $r->target ?? '' ),
+                    $this->escape_csv_cell( $r->status ?? '' ),
                     $r->http_status ?? 0,
                     $r->duration_ms ?? 0,
-                    str_replace( '"', '""', $r->error ?? '' ),
-                    $r->created_at
+                    $this->escape_csv_cell( $r->error ?? '' ),
+                    $this->escape_csv_cell( $r->created_at ?? '' )
                 );
             }
             wp_send_json_success( array(
@@ -501,33 +541,28 @@ class CacheWarmer_Admin {
      * AJAX: Export failed/skipped URLs as CSV.
      */
     public function ajax_export_failed(): void {
-        check_ajax_referer( 'cachewarmer_nonce', 'nonce' );
-
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorized', 403 );
-        }
+        $this->verify_ajax();
 
         if ( ! CacheWarmer_License::can( 'failed_export' ) ) {
-            wp_send_json_error( 'This feature requires a Premium or Enterprise license.', 403 );
+            wp_send_json_error( array( 'message' => 'This feature requires a Premium or Enterprise license.' ), 403 );
         }
 
         $job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
         if ( empty( $job_id ) || ! preg_match( '/^[0-9a-f\-]{36}$/i', $job_id ) ) {
-            wp_send_json_error( 'Invalid job ID' );
+            wp_send_json_error( array( 'message' => 'Invalid job ID' ) );
         }
 
-        $db = new CacheWarmer_Database();
-        $results = $db->get_failed_skipped_results( $job_id );
+        $results = $this->db->get_failed_skipped_results( $job_id );
 
         $csv = "url,target,status,http_status,duration_ms,error,created_at\n";
         foreach ( $results as $r ) {
-            $url    = str_replace( '"', '""', $r['url'] ?? '' );
-            $target = $r['target'] ?? '';
-            $status = $r['status'] ?? '';
+            $url    = $this->escape_csv_cell( $r['url'] ?? '' );
+            $target = $this->escape_csv_cell( $r['target'] ?? '' );
+            $status = $this->escape_csv_cell( $r['status'] ?? '' );
             $http   = $r['http_status'] ?? '';
             $dur    = $r['duration_ms'] ?? '';
-            $error  = str_replace( '"', '""', $r['error'] ?? '' );
-            $date   = $r['created_at'] ?? '';
+            $error  = $this->escape_csv_cell( $r['error'] ?? '' );
+            $date   = $this->escape_csv_cell( $r['created_at'] ?? '' );
             $csv   .= "\"{$url}\",\"{$target}\",\"{$status}\",{$http},{$dur},\"{$error}\",\"{$date}\"\n";
         }
 
@@ -598,6 +633,18 @@ class CacheWarmer_Admin {
         if ( get_option( 'cachewarmer_bing_enabled' ) ) {
             $services[] = 'Bing';
         }
+        if ( get_option( 'cachewarmer_pinterest_enabled' ) ) {
+            $services[] = 'Pinterest';
+        }
+        if ( get_option( 'cachewarmer_cloudflare_enabled' ) ) {
+            $services[] = 'Cloudflare';
+        }
+        if ( get_option( 'cachewarmer_imperva_enabled' ) ) {
+            $services[] = 'Imperva';
+        }
+        if ( get_option( 'cachewarmer_akamai_enabled' ) ) {
+            $services[] = 'Akamai';
+        }
         ?>
         <style>
             .cw-widget-kpis { display: flex; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #e2e4e7; }
@@ -651,7 +698,7 @@ class CacheWarmer_Admin {
 
         <div class="cw-widget-services">
             <?php
-            $all_services = array( 'CDN', 'Facebook', 'LinkedIn', 'Twitter/X', 'IndexNow', 'Google', 'Bing' );
+            $all_services = array( 'CDN', 'Facebook', 'LinkedIn', 'Twitter/X', 'IndexNow', 'Google', 'Bing', 'Pinterest', 'Cloudflare', 'Imperva', 'Akamai' );
             foreach ( $all_services as $svc ) :
                 $active = in_array( $svc, $services, true );
                 ?>

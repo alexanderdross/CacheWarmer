@@ -29,7 +29,7 @@ class CacheWarmer_Job_Manager {
     public function create_job( string $sitemap_url, array $targets, ?string $sitemap_id = null ): array {
         $job_id = wp_generate_uuid4();
 
-        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest' );
+        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge' );
         if ( empty( $targets ) ) {
             $targets = $all_targets;
         }
@@ -156,7 +156,18 @@ class CacheWarmer_Job_Manager {
                 'bing'      => array( 'cachewarmer_bing_enabled', '0' ),
                 'indexnow'  => array( 'cachewarmer_indexnow_enabled', '0' ),
                 'pinterest' => array( 'cachewarmer_pinterest_enabled', '0' ),
+                'cdn-purge' => array( 'cachewarmer_cloudflare_enabled', '0' ),
             );
+            // cdn-purge is active if ANY of the 3 CDN providers is enabled.
+            if ( in_array( 'cdn-purge', $targets, true ) ) {
+                $cdn_purge_active = get_option( 'cachewarmer_cloudflare_enabled', '0' )
+                    || get_option( 'cachewarmer_imperva_enabled', '0' )
+                    || get_option( 'cachewarmer_akamai_enabled', '0' );
+                if ( $cdn_purge_active ) {
+                    // Override the simple lookup for cdn-purge.
+                    $target_option_map['cdn-purge'] = array( 'cachewarmer_cloudflare_enabled', '1' );
+                }
+            }
             $active_target_count = 0;
             foreach ( $targets as $t ) {
                 if ( isset( $target_option_map[ $t ] ) && get_option( $target_option_map[ $t ][0], $target_option_map[ $t ][1] ) ) {
@@ -233,6 +244,16 @@ class CacheWarmer_Job_Manager {
                 $warmer->warm( $url_strings, $job_id, $on_result );
             }
 
+            if ( in_array( 'cdn-purge', $targets, true ) ) {
+                $cf  = get_option( 'cachewarmer_cloudflare_enabled', '0' );
+                $imp = get_option( 'cachewarmer_imperva_enabled', '0' );
+                $ak  = get_option( 'cachewarmer_akamai_enabled', '0' );
+                if ( $cf || $imp || $ak ) {
+                    $purger = new CacheWarmer_CDN_Purge_Warmer();
+                    $purger->purge( $url_strings, $job_id, $on_result );
+                }
+            }
+
             // Update sitemap last_warmed_at if linked.
             if ( $job->sitemap_id ) {
                 $this->db->update_sitemap_last_warmed( $job->sitemap_id );
@@ -289,7 +310,7 @@ class CacheWarmer_Job_Manager {
     public function create_single_url_job( string $url, array $targets ): array {
         $job_id = wp_generate_uuid4();
 
-        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest' );
+        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge' );
         if ( empty( $targets ) ) {
             $targets = $all_targets;
         }

@@ -24,6 +24,8 @@ require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-twitt
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-google-indexer.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-bing-indexer.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-indexnow.php';
+require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-pinterest-warmer.php';
+require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-purge-warmer.php';
 
 if ( is_admin() ) {
     require_once CACHEWARMER_PLUGIN_DIR . 'includes/admin/class-cachewarmer-admin.php';
@@ -121,6 +123,20 @@ class CacheWarmer {
             'cachewarmer_email_notifications'      => '0',
             'cachewarmer_notification_email'       => '',
             'cachewarmer_webhook_url'              => '',
+            'cachewarmer_pinterest_enabled'        => '0',
+            'cachewarmer_cloudflare_enabled'       => '0',
+            'cachewarmer_cloudflare_api_token'     => '',
+            'cachewarmer_cloudflare_zone_id'       => '',
+            'cachewarmer_imperva_enabled'          => '0',
+            'cachewarmer_imperva_api_id'           => '',
+            'cachewarmer_imperva_api_key'          => '',
+            'cachewarmer_imperva_site_id'          => '',
+            'cachewarmer_akamai_enabled'           => '0',
+            'cachewarmer_akamai_host'              => '',
+            'cachewarmer_akamai_client_token'      => '',
+            'cachewarmer_akamai_client_secret'     => '',
+            'cachewarmer_akamai_access_token'      => '',
+            'cachewarmer_akamai_network'           => 'production',
         );
     }
 

@@ -156,9 +156,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_facebook_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_facebook_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_facebook_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_facebook_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_facebook_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Facebook Sharing Debugger', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -182,7 +183,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="text" id="cachewarmer_facebook_app_id" name="cachewarmer_facebook_app_id"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_facebook_app_id', '' ) ); ?>"
-                                   class="regular-text">
+                                   class="regular-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description">
                                 <?php
                                 printf(
@@ -199,7 +200,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="password" id="cachewarmer_facebook_app_secret" name="cachewarmer_facebook_app_secret"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_facebook_app_secret', '' ) ); ?>"
-                                   class="regular-text">
+                                   class="regular-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'Found in your Facebook App dashboard under Settings > Basic. Keep this secret — do not share it publicly.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -208,7 +209,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="number" id="cachewarmer_facebook_rate_limit" name="cachewarmer_facebook_rate_limit"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_facebook_rate_limit', 10 ) ); ?>"
-                                   min="1" max="50" class="small-text">
+                                   min="1" max="50" class="small-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'Maximum requests per second to the Facebook API. Keep this at 10 or lower to avoid being blocked.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -228,9 +229,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_linkedin_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_linkedin_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_linkedin_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_linkedin_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_linkedin_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'LinkedIn Post Inspector', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -254,7 +256,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="password" id="cachewarmer_linkedin_session_cookie" name="cachewarmer_linkedin_session_cookie"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_linkedin_session_cookie', '' ) ); ?>"
-                                   class="large-text">
+                                   class="large-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description">
                                 <?php esc_html_e( 'This is a login token from your LinkedIn account. To find it:', 'cachewarmer' ); ?>
                                 <br>
@@ -273,7 +275,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="number" id="cachewarmer_linkedin_delay" name="cachewarmer_linkedin_delay"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_linkedin_delay', 5000 ) ); ?>"
-                                   min="1000" max="30000" class="small-text">
+                                   min="1000" max="30000" class="small-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'Waiting time in milliseconds between requests. LinkedIn is strict about rate limits, so keep this at 5000 ms or higher.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -293,9 +295,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_twitter_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_twitter_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_twitter_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_twitter_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_twitter_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Twitter/X Card Validator', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -319,7 +322,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="number" id="cachewarmer_twitter_concurrency" name="cachewarmer_twitter_concurrency"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_twitter_concurrency', 2 ) ); ?>"
-                                   min="1" max="10" class="small-text">
+                                   min="1" max="10" class="small-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'How many pages to process at once. Keep this at 2 or lower to avoid being rate-limited by Twitter.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -328,7 +331,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="number" id="cachewarmer_twitter_delay" name="cachewarmer_twitter_delay"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_twitter_delay', 3000 ) ); ?>"
-                                   min="1000" max="30000" class="small-text">
+                                   min="1000" max="30000" class="small-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'Waiting time in milliseconds between requests. A value of 3000 (3 seconds) works well.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -348,9 +351,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_google_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_google_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_google_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_google_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_google_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Google Indexing API', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -373,7 +377,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <th><label for="cachewarmer_google_service_account"><?php esc_html_e( 'Service Account JSON', 'cachewarmer' ); ?></label></th>
                         <td>
                             <textarea id="cachewarmer_google_service_account" name="cachewarmer_google_service_account"
-                                      rows="6" class="large-text code"><?php echo esc_textarea( get_option( 'cachewarmer_google_service_account', '' ) ); ?></textarea>
+                                      rows="6" class="large-text code" <?php echo $cw_is_free ? 'disabled' : ''; ?>><?php echo esc_textarea( get_option( 'cachewarmer_google_service_account', '' ) ); ?></textarea>
                             <p class="description">
                                 <?php esc_html_e( 'Paste the contents of the JSON key file from your Google Cloud Service Account. To set this up:', 'cachewarmer' ); ?>
                                 <br>
@@ -398,7 +402,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="number" id="cachewarmer_google_daily_quota" name="cachewarmer_google_daily_quota"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_google_daily_quota', 200 ) ); ?>"
-                                   min="1" max="10000" class="small-text">
+                                   min="1" max="10000" class="small-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'Google allows 200 URL submissions per day by default. CacheWarmer stops automatically once this limit is reached.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -418,9 +422,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_bing_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_bing_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_bing_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_bing_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_bing_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Bing Webmaster Tools', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -444,7 +449,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="password" id="cachewarmer_bing_api_key" name="cachewarmer_bing_api_key"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_bing_api_key', '' ) ); ?>"
-                                   class="regular-text">
+                                   class="regular-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description">
                                 <?php
                                 printf(
@@ -461,7 +466,7 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
                         <td>
                             <input type="number" id="cachewarmer_bing_daily_quota" name="cachewarmer_bing_daily_quota"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_bing_daily_quota', 10000 ) ); ?>"
-                                   min="1" max="100000" class="small-text">
+                                   min="1" max="100000" class="small-text" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'Bing allows up to 10,000 URL submissions per day. CacheWarmer stops automatically once this limit is reached.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -533,9 +538,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_pinterest_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_pinterest_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_pinterest_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_pinterest_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_pinterest_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Pinterest Rich Pin Validator', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -571,9 +577,10 @@ $cw_pricing_url   = 'https://cachewarmer.drossmedia.de/pricing/';
         <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_cloudflare_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_cloudflare_enabled" value="0" <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_cloudflare_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_cloudflare_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_cloudflare_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Cloudflare Cache Purge', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -657,9 +664,10 @@ Content-Type: application/json
         <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_imperva_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_imperva_enabled" value="0" <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_imperva_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_imperva_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_imperva_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Imperva (Incapsula) Cache Purge', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -742,9 +750,10 @@ api_id={api_id}&api_key={api_key}&site_id={site_id}
         <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_akamai_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_akamai_enabled" value="0" <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_akamai_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_akamai_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_akamai_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Akamai Fast Purge', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -874,9 +883,10 @@ max-body = 131072' ); ?></pre>
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_scheduler_enabled" value="0">
+                    <input type="hidden" name="cachewarmer_scheduler_enabled" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_scheduler_enabled" value="1"
-                        <?php checked( get_option( 'cachewarmer_scheduler_enabled', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_scheduler_enabled', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Scheduled Warming', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -888,7 +898,7 @@ max-body = 131072' ); ?></pre>
                     <tr>
                         <th><label for="cachewarmer_scheduler_cron"><?php esc_html_e( 'Schedule', 'cachewarmer' ); ?></label></th>
                         <td>
-                            <select id="cachewarmer_scheduler_cron" name="cachewarmer_scheduler_cron">
+                            <select id="cachewarmer_scheduler_cron" name="cachewarmer_scheduler_cron" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                                 <?php
                                 $current = get_option( 'cachewarmer_scheduler_cron', 'daily' );
                                 $options = array(
@@ -951,9 +961,10 @@ max-body = 131072' ); ?></pre>
         <div class="cachewarmer-settings-section<?php echo $cw_is_free ? ' cw-pro-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_auto_warm_on_publish" value="0">
+                    <input type="hidden" name="cachewarmer_auto_warm_on_publish" value="0" <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_auto_warm_on_publish" value="1"
-                        <?php checked( get_option( 'cachewarmer_auto_warm_on_publish', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_auto_warm_on_publish', '0' ), '1' ); ?>
+                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Auto-Warm on Publish', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -981,9 +992,10 @@ max-body = 131072' ); ?></pre>
                             );
                             foreach ( $available_targets as $key => $label ) :
                             ?>
-                                <label style="margin-right: 12px;">
+                                <label class="cw-target-label">
                                     <input type="checkbox" name="cachewarmer_auto_warm_targets[]" value="<?php echo esc_attr( $key ); ?>"
-                                        <?php checked( in_array( $key, $auto_warm_targets, true ) ); ?>>
+                                        <?php checked( in_array( $key, $auto_warm_targets, true ) ); ?>
+                                        <?php echo $cw_is_free ? 'disabled' : ''; ?>>
                                     <?php echo esc_html( $label ); ?>
                                 </label>
                             <?php endforeach; ?>
@@ -1040,9 +1052,10 @@ max-body = 131072' ); ?></pre>
         <div class="cachewarmer-settings-section<?php echo $cw_is_not_ent ? ' cw-ent-locked' : ''; ?>">
             <h2>
                 <label>
-                    <input type="hidden" name="cachewarmer_email_notifications" value="0">
+                    <input type="hidden" name="cachewarmer_email_notifications" value="0" <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <input type="checkbox" name="cachewarmer_email_notifications" value="1"
-                        <?php checked( get_option( 'cachewarmer_email_notifications', '0' ), '1' ); ?>>
+                        <?php checked( get_option( 'cachewarmer_email_notifications', '0' ), '1' ); ?>
+                        <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                     <?php esc_html_e( 'Email Notifications', 'cachewarmer' ); ?>
                 </label>
             </h2>
@@ -1058,7 +1071,7 @@ max-body = 131072' ); ?></pre>
                         <td>
                             <input type="email" id="cachewarmer_notification_email" name="cachewarmer_notification_email"
                                    value="<?php echo esc_attr( get_option( 'cachewarmer_notification_email', get_option( 'admin_email' ) ) ); ?>"
-                                   class="regular-text">
+                                   class="regular-text" <?php echo $cw_is_not_ent ? 'disabled' : ''; ?>>
                             <p class="description"><?php esc_html_e( 'The email address where notifications are sent. Defaults to the WordPress admin email.', 'cachewarmer' ); ?></p>
                         </td>
                     </tr>
@@ -1112,9 +1125,12 @@ max-body = 131072' ); ?></pre>
 
     <div class="cachewarmer-footer">
         <?php
-        printf(
-            'made with %s by <a href="https://dross.net/media/?ref=cachewarmer" target="_blank" rel="noopener">Dross:Media</a>',
-            '<span class="cachewarmer-heart">&hearts;</span>'
+        echo wp_kses_post(
+            sprintf(
+                /* translators: %s: heart symbol */
+                __( 'made with %s by <a href="https://dross.net/media/?ref=cachewarmer" target="_blank" rel="noopener">Dross:Media</a>', 'cachewarmer' ),
+                '<span class="cachewarmer-heart">&hearts;</span>'
+            )
         );
         ?>
     </div>
