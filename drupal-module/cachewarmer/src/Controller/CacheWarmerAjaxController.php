@@ -271,6 +271,45 @@ class CacheWarmerAjaxController extends ControllerBase {
   }
 
   /**
+   * Exports failed and skipped results for a job as CSV.
+   */
+  public function exportFailed(Request $request): JsonResponse {
+    $content = json_decode($request->getContent(), TRUE);
+    $jobId = $content['job_id'] ?? '';
+
+    if (!$this->isValidUuid($jobId)) {
+      return new JsonResponse(['success' => FALSE, 'error' => 'Invalid job ID format.'], 400);
+    }
+
+    if (!$this->license->can('failed_export')) {
+      return new JsonResponse(['success' => FALSE, 'error' => 'This feature requires a Premium or Enterprise license.'], 403);
+    }
+
+    $results = $this->database->getFailedSkippedResults($jobId);
+
+    $csv = "url,target,status,http_status,duration_ms,error,created_at\n";
+    foreach ($results as $r) {
+      $csv .= sprintf(
+        '"%s","%s","%s",%d,%d,"%s","%s"' . "\n",
+        $this->sanitizeCsvValue($r['url'] ?? ''),
+        $this->sanitizeCsvValue($r['target'] ?? ''),
+        $this->sanitizeCsvValue($r['status'] ?? ''),
+        $r['http_status'] ?? 0,
+        $r['duration_ms'] ?? 0,
+        $this->sanitizeCsvValue(str_replace('"', '""', $r['error'] ?? '')),
+        $this->sanitizeCsvValue($r['created_at'] ?? '')
+      );
+    }
+
+    return new JsonResponse([
+      'success' => TRUE,
+      'csv' => $csv,
+      'filename' => 'cachewarmer-failed-' . $jobId . '.csv',
+      'count' => count($results),
+    ]);
+  }
+
+  /**
    * Validates that a string is a valid UUID format.
    *
    * @param string $id

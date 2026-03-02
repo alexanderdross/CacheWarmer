@@ -177,7 +177,7 @@ export default function SitemapManager() {
     <div className="space-y-4">
       {/* Add Form */}
       <form onSubmit={handleAdd} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-        <div className="flex gap-3 items-end">
+        <div className="flex flex-col md:flex-row gap-3 md:items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-300 mb-1">Sitemap URL</label>
             <input
@@ -189,7 +189,7 @@ export default function SitemapManager() {
               className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
-          <div className="w-48">
+          <div className="w-full md:w-48">
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Intervall <span className="text-gray-500">(optional)</span>
             </label>
@@ -206,7 +206,7 @@ export default function SitemapManager() {
             </select>
           </div>
           {cronFrequency !== "none" && cronFrequency !== "hourly" && (
-            <div className="w-32">
+            <div className="w-full md:w-32">
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Startzeit
               </label>
@@ -226,7 +226,7 @@ export default function SitemapManager() {
           <button
             type="submit"
             disabled={adding || !newUrl}
-            className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-md transition-colors whitespace-nowrap"
+            className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-md transition-colors whitespace-nowrap"
           >
             {adding ? "..." : "Hinzufuegen"}
           </button>
@@ -234,20 +234,20 @@ export default function SitemapManager() {
       </form>
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <button
           onClick={() => { setShowBulk(!showBulk); setDetectedSitemaps([]); }}
           className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium py-2 px-4 rounded-md transition-colors border border-gray-700"
         >
           Bulk Import
         </button>
-        <div className="flex gap-2 items-center flex-1">
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center flex-1">
           <input
             type="text"
             value={detectDomain}
             onChange={(e) => setDetectDomain(e.target.value)}
             placeholder="example.com"
-            className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-64"
+            className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-64"
           />
           <button
             onClick={handleDetect}
@@ -321,51 +321,93 @@ export default function SitemapManager() {
           Noch keine Sitemaps registriert.
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-800 text-left text-sm text-gray-400">
-                <th className="px-4 py-3">Domain</th>
-                <th className="px-4 py-3">URL</th>
-                <th className="px-4 py-3">Cron</th>
-                <th className="px-4 py-3">Letztes Warming</th>
-                <th className="px-4 py-3">Aktionen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sitemaps.map((sm) => (
-                <tr key={sm.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                  <td className="px-4 py-3 text-sm font-medium">{sm.domain}</td>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-400 truncate max-w-xs" title={sm.url}>
-                    {sm.url}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">
-                    {formatCronLabel(sm.cron_expression)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-400">
-                    {sm.last_warmed_at ? new Date(sm.last_warmed_at).toLocaleString("de-DE") : "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleWarm(sm.url)}
-                        className="text-orange-500 hover:text-orange-400 text-sm"
-                      >
-                        Jetzt aufwaermen
-                      </button>
-                      <button
-                        onClick={() => handleDelete(sm.id)}
-                        className="text-red-500 hover:text-red-400 text-sm"
-                      >
-                        Loeschen
-                      </button>
-                    </div>
-                  </td>
+        <>
+          {/* Desktop table — hidden on mobile */}
+          <div className="hidden md:block bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-800 text-left text-sm text-gray-400">
+                  <th className="px-4 py-3">Domain</th>
+                  <th className="px-4 py-3">URL</th>
+                  <th className="px-4 py-3">Cron</th>
+                  <th className="px-4 py-3">Letztes Warming</th>
+                  <th className="px-4 py-3">Aktionen</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {sitemaps.map((sm) => (
+                  <tr key={sm.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <td className="px-4 py-3 text-sm font-medium">{sm.domain}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-gray-400 truncate max-w-xs" title={sm.url}>
+                      {sm.url}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-400">
+                      {formatCronLabel(sm.cron_expression)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-400">
+                      {sm.last_warmed_at ? new Date(sm.last_warmed_at).toLocaleString("de-DE") : "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleWarm(sm.url)}
+                          className="text-orange-500 hover:text-orange-400 text-sm"
+                        >
+                          Jetzt aufwaermen
+                        </button>
+                        <button
+                          onClick={() => handleDelete(sm.id)}
+                          className="text-red-500 hover:text-red-400 text-sm"
+                        >
+                          Loeschen
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card layout — visible only on small screens */}
+          <div className="md:hidden space-y-3">
+            {sitemaps.map((sm) => (
+              <div key={sm.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-2">
+                <div className="text-sm font-medium text-white">{sm.domain}</div>
+                <div>
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">URL</span>
+                  <span className="text-sm font-mono text-gray-400 break-all">{sm.url}</span>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">Zeitplan</span>
+                    <span className="text-sm text-gray-400">{formatCronLabel(sm.cron_expression)}</span>
+                  </div>
+                  <div className="flex-1">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">Letztes Warming</span>
+                    <span className="text-sm text-gray-400">
+                      {sm.last_warmed_at ? new Date(sm.last_warmed_at).toLocaleString("de-DE") : "-"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2 border-t border-gray-800">
+                  <button
+                    onClick={() => handleWarm(sm.url)}
+                    className="flex-1 text-center bg-orange-600/10 text-orange-500 hover:bg-orange-600/20 text-sm py-1.5 rounded-md transition-colors"
+                  >
+                    Aufwaermen
+                  </button>
+                  <button
+                    onClick={() => handleDelete(sm.id)}
+                    className="flex-1 text-center bg-red-600/10 text-red-500 hover:bg-red-600/20 text-sm py-1.5 rounded-md transition-colors"
+                  >
+                    Loeschen
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

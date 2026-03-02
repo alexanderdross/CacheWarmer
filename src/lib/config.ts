@@ -29,6 +29,10 @@ export interface AppConfig {
       desktop: string;
       mobile: string;
     };
+    customUserAgent?: string;
+    customHeaders?: Record<string, string>;
+    customViewports?: Array<{ width: number; height: number; label: string }>;
+    authCookies?: Array<{ name: string; value: string; domain?: string }>;
   };
   facebook: {
     enabled: boolean;
@@ -76,6 +80,15 @@ export interface AppConfig {
     smtpPort: number;
     smtpUser: string;
     smtpPass: string;
+  };
+  pinterest: {
+    enabled: boolean;
+    delay: number;
+  };
+  cloudflare: {
+    enabled: boolean;
+    apiToken: string;
+    zoneId: string;
   };
   excludePatterns: string;
   logging: {

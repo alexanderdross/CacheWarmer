@@ -595,14 +595,42 @@ a.cw-stat-toggle.cw-stat-active {
     line-height: 1.6;
 }
 
-/* Responsive */
+/* ==========================================================================
+   Responsive — Tablet Optimizations
+   ========================================================================== */
+@media screen and (max-width: 1024px) {
+    /* Remove fixed table layout so columns size naturally on tablet */
+    #cw-sitemaps-table.widefat.fixed,
+    #cw-jobs-table.widefat.fixed {
+        table-layout: auto;
+    }
+
+    .cachewarmer-section {
+        padding: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ==========================================================================
+   Responsive — Smartphone Optimizations (782px = WP admin breakpoint)
+   ========================================================================== */
 @media screen and (max-width: 782px) {
+    /* --- Layout --- */
     .cachewarmer-status-cards {
         flex-direction: column;
     }
 
+    .cachewarmer-card {
+        min-width: auto;
+    }
+
     .cachewarmer-form-inline {
         flex-direction: column;
+    }
+
+    .cachewarmer-form-inline > div {
+        min-width: auto;
     }
 
     .cachewarmer-job-meta {
@@ -611,5 +639,241 @@ a.cw-stat-toggle.cw-stat-active {
 
     .cachewarmer-settings-section .form-table th {
         width: auto;
+    }
+
+    .cachewarmer-section {
+        padding: 12px 14px;
+    }
+
+    /* --- Form inputs full width --- */
+    .cachewarmer-wrap input.regular-text,
+    .cachewarmer-wrap select.regular-text,
+    .cachewarmer-wrap textarea.large-text {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* --- Hero button full width on mobile --- */
+    #cw-warm-submit {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* --- Stats grid single column --- */
+    .cachewarmer-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* --- Modal full-screen-ish on mobile --- */
+    .cachewarmer-modal-content {
+        width: 95%;
+        padding: 16px;
+    }
+
+    /* ======================================================================
+       Card-based table layout: Sitemaps
+       ====================================================================== */
+    #cw-sitemaps-table.widefat.fixed {
+        table-layout: auto;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    #cw-sitemaps-table thead {
+        display: none;
+    }
+
+    #cw-sitemaps-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #c3c4c7;
+        border-radius: 6px;
+        padding: 14px 16px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    #cw-sitemaps-table tbody td {
+        display: block;
+        padding: 4px 0;
+        border: none;
+        text-align: left;
+        width: 100% !important;
+    }
+
+    /* Label above each field */
+    #cw-sitemaps-table tbody td::before {
+        display: block;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #646970;
+        margin-bottom: 2px;
+    }
+
+    #cw-sitemaps-table tbody td:nth-child(1)::before { content: "Domain"; }
+    #cw-sitemaps-table tbody td:nth-child(2)::before { content: "URL"; }
+    #cw-sitemaps-table tbody td:nth-child(3)::before { content: "Schedule"; }
+    #cw-sitemaps-table tbody td:nth-child(4)::before { content: "Last Warmed"; }
+    #cw-sitemaps-table tbody td:nth-child(5)::before { content: ""; }
+
+    /* URL should break words instead of overflowing */
+    #cw-sitemaps-table tbody td:nth-child(2) a {
+        word-break: break-all;
+        font-size: 13px;
+    }
+
+    /* Actions row — side-by-side buttons */
+    #cw-sitemaps-table tbody td:nth-child(5) {
+        display: flex;
+        gap: 8px;
+        padding-top: 10px;
+        margin-top: 6px;
+        border-top: 1px solid #f0f0f1;
+    }
+
+    #cw-sitemaps-table tbody td:nth-child(5) .button {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* ======================================================================
+       Card-based table layout: Jobs
+       ====================================================================== */
+    #cw-jobs-table.widefat.fixed {
+        table-layout: auto;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    #cw-jobs-table thead {
+        display: none;
+    }
+
+    #cw-jobs-table tbody tr {
+        display: block;
+        margin-bottom: 12px;
+        border: 1px solid #c3c4c7;
+        border-radius: 6px;
+        padding: 14px 16px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    #cw-jobs-table tbody td {
+        display: block;
+        padding: 4px 0;
+        border: none;
+        text-align: left;
+        width: 100% !important;
+    }
+
+    /* Label above each field */
+    #cw-jobs-table tbody td::before {
+        display: block;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: #646970;
+        margin-bottom: 2px;
+    }
+
+    #cw-jobs-table tbody td:nth-child(1)::before { content: ""; }
+    #cw-jobs-table tbody td:nth-child(2)::before { content: "Sitemap"; }
+    #cw-jobs-table tbody td:nth-child(3)::before { content: "Progress"; }
+    #cw-jobs-table tbody td:nth-child(4)::before { content: "Targets"; }
+    #cw-jobs-table tbody td:nth-child(5)::before { content: "Created"; }
+    #cw-jobs-table tbody td:nth-child(6)::before { content: ""; }
+
+    /* Remove fixed column widths */
+    #cw-jobs-table .column-status,
+    #cw-jobs-table .column-progress,
+    #cw-jobs-table .column-actions,
+    #cw-jobs-table .column-created {
+        width: auto !important;
+    }
+
+    /* Progress bar: full width on mobile */
+    #cw-jobs-table .cachewarmer-progress {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Targets: flex-wrap tags naturally */
+    #cw-jobs-table tbody td:nth-child(4) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: flex-start;
+    }
+
+    #cw-jobs-table tbody td:nth-child(4)::before {
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    /* Actions row */
+    #cw-jobs-table tbody td:nth-child(6) {
+        display: flex;
+        gap: 8px;
+        padding-top: 10px;
+        margin-top: 6px;
+        border-top: 1px solid #f0f0f1;
+    }
+
+    #cw-jobs-table tbody td:nth-child(6) .button {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Sitemap column text — break long URLs */
+    #cw-jobs-table .column-sitemap {
+        word-break: break-all;
+    }
+
+    /* Targets checkboxes — stack on mobile */
+    .cachewarmer-targets {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .cachewarmer-target-label {
+        justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   Responsive — Small Phone (≤ 480px)
+   ========================================================================== */
+@media screen and (max-width: 480px) {
+    .cachewarmer-card {
+        padding: 12px 14px;
+    }
+
+    .cachewarmer-card-value {
+        font-size: 24px;
+    }
+
+    .cachewarmer-badge {
+        font-size: 11px;
+        padding: 2px 8px;
+    }
+
+    .cachewarmer-tag {
+        font-size: 10px;
+        padding: 1px 6px;
+    }
+
+    .cachewarmer-section h2 {
+        font-size: 15px;
+    }
+
+    .cachewarmer-wrap h1 {
+        font-size: 18px;
     }
 }

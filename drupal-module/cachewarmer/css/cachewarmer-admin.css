@@ -445,8 +445,27 @@ a.cw-stat-toggle.cw-stat-active {
   color: #fff;
 }
 
-/* Responsive */
+/* ==========================================================================
+   Responsive — Tablet Optimizations
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .cachewarmer-jobs-table,
+  .cachewarmer-sitemaps-table {
+    table-layout: auto;
+  }
+
+  .cachewarmer-warm-form,
+  .cachewarmer-add-sitemap-form {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ==========================================================================
+   Responsive — Smartphone Optimizations
+   ========================================================================== */
 @media (max-width: 782px) {
+  /* --- Layout --- */
   .cachewarmer-status-cards {
     flex-direction: column;
   }
@@ -467,5 +486,180 @@ a.cw-stat-toggle.cw-stat-active {
 
   .cachewarmer-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* --- Form inputs full width --- */
+  .cachewarmer-form-row input[type="url"],
+  .cachewarmer-form-row input[type="text"],
+  .cachewarmer-form-row select {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* --- Stats grid single column --- */
+  .cachewarmer-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ======================================================================
+     Card-based table layout: Sitemaps
+     ====================================================================== */
+  .cachewarmer-sitemaps-table {
+    border: none;
+  }
+
+  .cachewarmer-sitemaps-table thead {
+    display: none;
+  }
+
+  .cachewarmer-sitemaps-table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .cachewarmer-sitemaps-table tbody td {
+    display: block;
+    padding: 4px 0;
+    border: none;
+    text-align: left;
+  }
+
+  .cachewarmer-sitemaps-table tbody td::before {
+    display: block;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #666;
+    margin-bottom: 2px;
+  }
+
+  .cachewarmer-sitemaps-table tbody td:nth-child(1)::before { content: "Domain"; }
+  .cachewarmer-sitemaps-table tbody td:nth-child(2)::before { content: "URL"; }
+  .cachewarmer-sitemaps-table tbody td:nth-child(3)::before { content: "Schedule"; }
+  .cachewarmer-sitemaps-table tbody td:nth-child(4)::before { content: "Last Warmed"; }
+  .cachewarmer-sitemaps-table tbody td:nth-child(5)::before { content: ""; }
+
+  .cachewarmer-sitemaps-table tbody td:nth-child(2) a {
+    word-break: break-all;
+    font-size: 13px;
+  }
+
+  .cachewarmer-sitemaps-table tbody td:nth-child(5) {
+    display: flex;
+    gap: 8px;
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px solid #eee;
+  }
+
+  .cachewarmer-sitemaps-table tbody td:nth-child(5) .button,
+  .cachewarmer-sitemaps-table tbody td:nth-child(5) button {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* ======================================================================
+     Card-based table layout: Jobs
+     ====================================================================== */
+  .cachewarmer-jobs-table {
+    border: none;
+  }
+
+  .cachewarmer-jobs-table thead {
+    display: none;
+  }
+
+  .cachewarmer-jobs-table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .cachewarmer-jobs-table tbody td {
+    display: block;
+    padding: 4px 0;
+    border: none;
+    text-align: left;
+  }
+
+  .cachewarmer-jobs-table tbody td::before {
+    display: block;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #666;
+    margin-bottom: 2px;
+  }
+
+  .cachewarmer-jobs-table tbody td:nth-child(1)::before { content: ""; }
+  .cachewarmer-jobs-table tbody td:nth-child(2)::before { content: "Sitemap"; }
+  .cachewarmer-jobs-table tbody td:nth-child(3)::before { content: "Progress"; }
+  .cachewarmer-jobs-table tbody td:nth-child(4)::before { content: "Targets"; }
+  .cachewarmer-jobs-table tbody td:nth-child(5)::before { content: "Created"; }
+  .cachewarmer-jobs-table tbody td:nth-child(6)::before { content: ""; }
+
+  .cachewarmer-jobs-table .cachewarmer-progress {
+    width: 100%;
+  }
+
+  .cachewarmer-jobs-table tbody td:nth-child(4) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: flex-start;
+  }
+
+  .cachewarmer-jobs-table tbody td:nth-child(4)::before {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .cachewarmer-jobs-table tbody td:nth-child(6) {
+    display: flex;
+    gap: 8px;
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px solid #eee;
+  }
+
+  .cachewarmer-jobs-table tbody td:nth-child(6) .button,
+  .cachewarmer-jobs-table tbody td:nth-child(6) button {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* ==========================================================================
+   Responsive — Small Phone (≤ 480px)
+   ========================================================================== */
+@media (max-width: 480px) {
+  .cachewarmer-card {
+    padding: 12px 14px;
+  }
+
+  .cachewarmer-card__value {
+    font-size: 22px;
+  }
+
+  .cachewarmer-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .cachewarmer-tag {
+    font-size: 10px;
+    padding: 1px 6px;
   }
 }

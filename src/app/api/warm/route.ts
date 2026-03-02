@@ -3,7 +3,7 @@ import { authenticateRequest } from "@/lib/auth";
 import { createJob, processJob, type WarmTarget } from "@/lib/queue/job-manager";
 import logger from "@/lib/logger";
 
-const VALID_TARGETS: WarmTarget[] = ["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow"];
+const VALID_TARGETS: WarmTarget[] = ["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow", "pinterest"];
 
 export async function POST(request: NextRequest) {
   const authError = authenticateRequest(request);

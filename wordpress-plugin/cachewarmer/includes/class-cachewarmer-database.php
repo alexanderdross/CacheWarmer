@@ -221,6 +221,23 @@ class CacheWarmer_Database {
         );
     }
 
+    /**
+     * Get failed and skipped URL results for a job.
+     *
+     * @param string $job_id Job ID.
+     * @return array
+     */
+    public function get_failed_skipped_results( string $job_id ): array {
+        global $wpdb;
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}cachewarmer_url_results WHERE job_id = %s AND status IN ('failed', 'skipped') ORDER BY created_at DESC",
+                $job_id
+            ),
+            ARRAY_A
+        );
+    }
+
     public function get_job_results( string $job_id, int $limit = 500, int $offset = 0 ): array {
         global $wpdb;
         return $wpdb->get_results(

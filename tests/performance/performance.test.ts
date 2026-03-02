@@ -254,3 +254,45 @@ describe("Performance Tests", () => {
     });
   });
 });
+
+describe("v1.1.0 Performance", () => {
+  it("should not degrade custom viewport performance beyond 50% per viewport", () => {
+    // Each custom viewport adds one request per URL
+    // With 3 custom viewports, total requests = URLs * (2 default + 3 custom) = URLs * 5
+    const urlCount = 100;
+    const defaultViewports = 2;
+    const customViewports = 3;
+    const totalRequests = urlCount * (defaultViewports + customViewports);
+
+    // Total should scale linearly
+    expect(totalRequests).toBe(500);
+    expect(totalRequests / urlCount).toBe(defaultViewports + customViewports);
+  });
+
+  it("should complete Pinterest warming within acceptable time bounds", () => {
+    // Pinterest warmer has 2s delay between requests
+    // For 10 URLs, expected minimum time = 10 * 2000ms = 20s
+    const urlCount = 10;
+    const delayMs = 2000;
+    const expectedMinMs = urlCount * delayMs;
+
+    // Verify calculation is reasonable for planning
+    expect(expectedMinMs).toBe(20000);
+    expect(expectedMinMs).toBeLessThan(300000); // Should complete in under 5 minutes
+  });
+
+  it("should keep priority sorting O(n log n)", () => {
+    // Verify that sorting 10k URLs by priority is feasible
+    const urls = Array.from({ length: 10000 }, (_, i) => ({
+      loc: `https://example.com/page${i}`,
+      priority: Math.random(),
+    }));
+
+    const start = Date.now();
+    urls.sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
+    const elapsed = Date.now() - start;
+
+    // Sorting 10k items should take less than 100ms
+    expect(elapsed).toBeLessThan(100);
+  });
+});

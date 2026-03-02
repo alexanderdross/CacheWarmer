@@ -29,7 +29,7 @@ class CacheWarmer_Job_Manager {
     public function create_job( string $sitemap_url, array $targets, ?string $sitemap_id = null ): array {
         $job_id = wp_generate_uuid4();
 
-        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow' );
+        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest' );
         if ( empty( $targets ) ) {
             $targets = $all_targets;
         }
@@ -107,6 +107,15 @@ class CacheWarmer_Job_Manager {
                 return;
             }
 
+            // Priority-based warming (Premium+).
+            if ( CacheWarmer_License::can( 'priority_warming' ) ) {
+                usort( $parsed, function ( $a, $b ) {
+                    $pa = isset( $a['priority'] ) ? (float) $a['priority'] : 0.5;
+                    $pb = isset( $b['priority'] ) ? (float) $b['priority'] : 0.5;
+                    return $pb <=> $pa;
+                } );
+            }
+
             $url_strings = array_map( function ( $entry ) {
                 return $entry['loc'];
             }, $parsed );
@@ -139,13 +148,14 @@ class CacheWarmer_Job_Manager {
             // Count how many targets are both requested and enabled so
             // total_urls reflects the actual work items (urls × active targets).
             $target_option_map = array(
-                'cdn'      => array( 'cachewarmer_cdn_enabled', '1' ),
-                'facebook' => array( 'cachewarmer_facebook_enabled', '0' ),
-                'linkedin' => array( 'cachewarmer_linkedin_enabled', '0' ),
-                'twitter'  => array( 'cachewarmer_twitter_enabled', '0' ),
-                'google'   => array( 'cachewarmer_google_enabled', '0' ),
-                'bing'     => array( 'cachewarmer_bing_enabled', '0' ),
-                'indexnow' => array( 'cachewarmer_indexnow_enabled', '0' ),
+                'cdn'       => array( 'cachewarmer_cdn_enabled', '1' ),
+                'facebook'  => array( 'cachewarmer_facebook_enabled', '0' ),
+                'linkedin'  => array( 'cachewarmer_linkedin_enabled', '0' ),
+                'twitter'   => array( 'cachewarmer_twitter_enabled', '0' ),
+                'google'    => array( 'cachewarmer_google_enabled', '0' ),
+                'bing'      => array( 'cachewarmer_bing_enabled', '0' ),
+                'indexnow'  => array( 'cachewarmer_indexnow_enabled', '0' ),
+                'pinterest' => array( 'cachewarmer_pinterest_enabled', '0' ),
             );
             $active_target_count = 0;
             foreach ( $targets as $t ) {
@@ -218,6 +228,11 @@ class CacheWarmer_Job_Manager {
                 $indexnow->submit( $url_strings, $job_id, $on_result );
             }
 
+            if ( in_array( 'pinterest', $targets, true ) && get_option( 'cachewarmer_pinterest_enabled', '0' ) ) {
+                $warmer = new CacheWarmer_Pinterest_Warmer();
+                $warmer->warm( $url_strings, $job_id, $on_result );
+            }
+
             // Update sitemap last_warmed_at if linked.
             if ( $job->sitemap_id ) {
                 $this->db->update_sitemap_last_warmed( $job->sitemap_id );
@@ -274,7 +289,7 @@ class CacheWarmer_Job_Manager {
     public function create_single_url_job( string $url, array $targets ): array {
         $job_id = wp_generate_uuid4();
 
-        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow' );
+        $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest' );
         if ( empty( $targets ) ) {
             $targets = $all_targets;
         }

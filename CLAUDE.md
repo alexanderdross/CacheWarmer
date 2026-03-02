@@ -623,19 +623,93 @@ CacheWarmer wird kommerziell vertrieben über ein zentrales **License Management
 
 ### 15.2 Produkt-Tiers
 
-| Feature | Free | Professional | Enterprise |
-|---------|------|-------------|-----------|
-| CDN Warming (HTTP) | ✓ | ✓ | ✓ |
-| CDN Warming (Puppeteer) | – | ✓ | ✓ |
-| Social Media (FB, LI, X) | – | ✓ | ✓ |
-| IndexNow | – | ✓ | ✓ |
-| Google Search Console | – | – | ✓ |
-| Bing Webmaster Tools | – | – | ✓ |
-| Scheduling | – | ✓ | ✓ |
-| Max Sitemaps | 1 | 5 | Unbegrenzt |
-| Max URLs | 50 | 5.000 | Unbegrenzt |
-| Workers | 1 | 5 | 10+ |
-| Multi-Site / Webhooks / Cloudflare | – | – | ✓ |
+#### Warming-Targets
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| CDN Edge Cache (Desktop + Mobile) | ✓ | ✓ | ✓ |
+| IndexNow (Bing, Yandex, Seznam, Naver) | ✓ | ✓ | ✓ |
+| Facebook Sharing Debugger | – | ✓ | ✓ |
+| LinkedIn Post Inspector | – | ✓ | ✓ |
+| Twitter/X Card Validator | – | ✓ | ✓ |
+| Google Indexing API | – | ✓ | ✓ |
+| Bing Webmaster URL Submission | – | ✓ | ✓ |
+| Pinterest Rich Pin Validator | – | ✓ | ✓ |
+| Cloudflare Cache Purge + Warm | – | – | ✓ |
+
+#### Mengen-Limits
+
+| Limit | Free | Premium | Enterprise |
+|-------|:----:|:-------:|:----------:|
+| URLs pro Warming-Job | 50 | 10.000 | Unbegrenzt |
+| Registrierte Sitemaps | 2 | 25 | Unbegrenzt |
+| Externe Sitemaps | 1 | 10 | Unbegrenzt |
+| Jobs pro Tag | 3 | 50 | Unbegrenzt |
+| CDN Concurrency | 2 | 10 | 20 |
+| Log-Aufbewahrung | 7 Tage | 90 Tage | 365 Tage |
+| Verwaltete Sites | 1 | 1 | Unbegrenzt |
+
+#### Scheduling & Automatisierung
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| Manuelles Warming | ✓ | ✓ | ✓ |
+| Geplantes Warming (Scheduler) | – | ✓ | ✓ |
+| Auto-Warm bei Veröffentlichung | – | ✓ | ✓ |
+| Smart Warming (Diff-Detection) | – | ✓ | ✓ |
+| Prioritätsbasiertes URL-Warming | – | ✓ | ✓ |
+| Sitemap-Änderungsüberwachung | – | – | ✓ |
+| Bedingtes Warming | – | – | ✓ |
+| Benutzerdefinierte Warm-Reihenfolge | – | – | ✓ |
+
+#### Dashboard & Reporting
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| Status-Dashboard | ✓ | ✓ | ✓ |
+| CSV/JSON-Export | – | ✓ | ✓ |
+| Export fehlgeschlagener URLs (CSV) | – | ✓ | ✓ |
+| Cache Hit/Miss Analyse | – | ✓ | ✓ |
+| Performance-Trending | – | ✓ | ✓ |
+| Quota-Nutzungs-Tracker | – | ✓ | ✓ |
+| Automatische PDF/HTML-Reports | – | – | ✓ |
+| Audit-Log | – | – | ✓ |
+
+#### Monitoring & Alerting
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| Broken-Link-Erkennung | – | ✓ | ✓ |
+| SSL-Zertifikat-Ablauf-Warnung | – | ✓ | ✓ |
+| Performance-Regressions-Alerts | – | – | ✓ |
+| Quota-Erschöpfungs-Alerts | – | – | ✓ |
+
+#### Konfiguration & Customization
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| Custom Timeout pro Service | – | ✓ | ✓ |
+| Custom User-Agent | – | – | ✓ |
+| Custom HTTP-Headers | – | – | ✓ |
+| Custom Viewports | – | – | ✓ |
+| Authentifiziertes Warming | – | – | ✓ |
+
+#### API & Integration
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| REST API Zugang | – | ✓ | ✓ |
+| Webhook-Benachrichtigungen | – | – | ✓ |
+| Zapier/n8n/Make Kompatibilität | – | – | ✓ |
+| IP-Whitelist für API | – | – | ✓ |
+
+#### Multi-Site & Agentur
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| Single-Site | ✓ | ✓ | – |
+| Multi-Site-Verwaltung | – | – | ✓ |
+| White-Label | – | – | ✓ |
 | Priority Support | – | – | ✓ |
 
 Zusätzlich: **Development**-Lizenz (Enterprise-Features, nur localhost/\*.local/\*.dev/\*.test).

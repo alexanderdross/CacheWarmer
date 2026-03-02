@@ -722,46 +722,55 @@ Deploy your own CacheWarmer instance.
 ### Sektion 2: Pricing Cards
 
 ```
-┌──────────────────┐  ┌───────────────────────┐  ┌──────────────────┐
-│                    │  │  ★ MOST POPULAR        │  │                    │
-│  FREE              │  │                        │  │  ENTERPRISE        │
-│                    │  │  PREMIUM               │  │                    │
-│  €0                │  │                        │  │  from €499/yr      │
-│  forever           │  │  €79/yr (WordPress)    │  │                    │
-│                    │  │  €99/yr (Drupal)       │  │  Unlimited sites   │
-│                    │  │                        │  │                    │
-│  2 warming targets │  │  All 7 targets         │  │  All 7 targets     │
-│  · CDN Edge Cache  │  │  · CDN Edge Cache      │  │  · Everything in   │
-│  · IndexNow        │  │  · IndexNow            │  │    Premium, plus:  │
-│                    │  │  · Facebook Debugger   │  │                    │
-│  50 URLs per job   │  │  · LinkedIn Inspector  │  │  Unlimited URLs    │
-│  2 sitemaps        │  │  · Twitter/X Cards     │  │  Unlimited sitemaps│
-│  3 jobs per day    │  │  · Google Indexing API  │  │  Unlimited jobs    │
-│  Manual warming    │  │  · Bing Webmaster API  │  │                    │
-│  7-day log history │  │                        │  │  Multi-Site support│
-│                    │  │  10,000 URLs per job   │  │  Webhook notifs    │
-│  Basic dashboard   │  │  25 sitemaps           │  │  White-Label       │
-│                    │  │  50 jobs per day       │  │  Custom Cron       │
-│                    │  │  Scheduled warming     │  │  365-day logs      │
-│                    │  │  REST API access       │  │  Priority support  │
-│                    │  │  CSV/JSON export       │  │  SLA available     │
-│                    │  │  90-day log history    │  │                    │
-│                    │  │  Email support         │  │  Email + Live Chat │
-│                    │  │                        │  │                    │
-│  [Get Started]     │  │  [Get Premium →]       │  │  [Contact Sales →] │
-│                    │  │                        │  │                    │
-│                    │  │  30-day money-back     │  │                    │
-│                    │  │  guarantee             │  │                    │
-└──────────────────┘  └───────────────────────┘  └──────────────────┘
+┌──────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐
+│                    │  │  ★ MOST POPULAR        │  │                        │
+│  FREE              │  │                        │  │  ENTERPRISE            │
+│                    │  │  PREMIUM               │  │                        │
+│  €0                │  │                        │  │  from €599/yr          │
+│  forever           │  │  €99/yr (WordPress)    │  │                        │
+│                    │  │  €129/yr (Drupal)      │  │  Unlimited sites       │
+│                    │  │                        │  │                        │
+│  2 warming targets │  │  All 9 targets         │  │  All 9 targets         │
+│  · CDN Edge Cache  │  │  · CDN Edge Cache      │  │  · Everything in       │
+│  · IndexNow        │  │  · IndexNow            │  │    Premium, plus:      │
+│                    │  │  · Facebook Debugger   │  │                        │
+│  50 URLs per job   │  │  · LinkedIn Inspector  │  │  Unlimited URLs        │
+│  2 sitemaps        │  │  · Twitter/X Cards     │  │  Unlimited sitemaps    │
+│  3 jobs per day    │  │  · Google Indexing API  │  │  Unlimited jobs        │
+│  Manual warming    │  │  · Bing Webmaster API  │  │                        │
+│  7-day log history │  │  · Pinterest Rich Pins │  │  Multi-Site management │
+│                    │  │                        │  │  Cloudflare integration│
+│  Basic dashboard   │  │  10,000 URLs per job   │  │  Custom UA & Headers   │
+│                    │  │  25 sitemaps           │  │  Custom viewports      │
+│                    │  │  50 jobs per day       │  │  Authenticated warming │
+│                    │  │  Scheduled warming     │  │  Conditional warming   │
+│                    │  │  REST API access       │  │  Audit log             │
+│                    │  │  CSV/JSON export       │  │  PDF/HTML reports      │
+│                    │  │  Smart warming (diff)  │  │  Performance alerts    │
+│                    │  │  Priority URL warming  │  │  Quota alerts          │
+│                    │  │  Cache analytics       │  │  IP whitelist          │
+│                    │  │  Broken link detection │  │  Zapier/n8n/Make       │
+│                    │  │  SSL expiry warnings   │  │  365-day logs          │
+│                    │  │  Performance trending  │  │  Priority support      │
+│                    │  │  Quota usage tracker   │  │  SLA available         │
+│                    │  │  Failed URL CSV export │  │                        │
+│                    │  │  90-day log history    │  │  Email + Live Chat     │
+│                    │  │  Email support         │  │                        │
+│                    │  │                        │  │                        │
+│  [Get Started]     │  │  [Get Premium →]       │  │  [Contact Sales →]     │
+│                    │  │                        │  │                        │
+│                    │  │  30-day money-back     │  │                        │
+│                    │  │  guarantee             │  │                        │
+└──────────────────┘  └───────────────────────┘  └───────────────────────┘
 ```
 
 **Unterhalb der Cards:**
 
 ```
 Also available:
-· Lifetime Premium: €199 (WordPress) / €249 (Drupal) — pay once, own forever
-· Lifetime Enterprise Starter: €1,299 (WordPress) / €1,799 (Drupal)
-· Lifetime Enterprise Professional: €3,999 (WordPress) / €4,999 (Drupal)
+· Lifetime Premium: €249 (WordPress) / €329 (Drupal) / €379 (Node.js) — pay once, own forever
+· Lifetime Enterprise Starter: €1,499 (WordPress) / €1,999 (Drupal) / €2,499 (Node.js)
+· Lifetime Enterprise Professional: €4,499 (WordPress) / €5,999 (Drupal) / €7,499 (Node.js)
 ```
 
 ---
@@ -781,6 +790,8 @@ Also available:
 | Twitter/X Card Validator | — | ✓ | ✓ |
 | Google Indexing API | — | ✓ | ✓ |
 | Bing Webmaster URL Submission | — | ✓ | ✓ |
+| **Pinterest Rich Pin Validator** | — | ✓ | ✓ |
+| **Cloudflare Cache Purge + Warm** | — | — | ✓ |
 
 #### Limits
 
@@ -791,6 +802,7 @@ Also available:
 | External sitemaps (other domains) | 1 | 10 | Unlimited |
 | Jobs per day | 3 | 50 | Unlimited |
 | Log retention | 7 days | 90 days | 365 days |
+| **Managed sites** | 1 | 1 | Unlimited |
 
 #### Scheduling & Automation
 
@@ -801,6 +813,11 @@ Also available:
 | Frequency options | — | Daily / 12h / 6h | Hourly + Custom Cron |
 | Auto-warm on publish | — | ✓ | ✓ |
 | Multi-sitemap batch warming | — | — | ✓ |
+| **Smart Warming (diff-detection)** | — | ✓ | ✓ |
+| **Priority-based URL warming** | — | ✓ | ✓ |
+| **Sitemap change polling** | — | — | ✓ |
+| **Conditional warming (skip fresh cache)** | — | — | ✓ |
+| **Custom warm sequence** | — | — | ✓ |
 
 #### Dashboard & Reporting
 
@@ -811,8 +828,24 @@ Also available:
 | Job detail modal | ✓ | ✓ | ✓ |
 | Per-target statistics | — | ✓ | ✓ |
 | CSV/JSON export | — | ✓ | ✓ |
+| **Export failed/skipped URLs as CSV** | — | ✓ | ✓ |
+| **Cache hit/miss analysis** | — | ✓ | ✓ |
+| **Service success rate dashboard** | — | ✓ | ✓ |
+| **Quota usage tracker** | — | ✓ | ✓ |
+| **Performance trending** | — | ✓ | ✓ |
 | Historical analytics | — | — | ✓ |
 | Trend charts | — | — | ✓ |
+| **Automated PDF/HTML reports** | — | — | ✓ |
+| **Audit log** | — | — | ✓ |
+
+#### Monitoring & Alerting
+
+| Feature | Free | Premium | Enterprise |
+|---------|:----:|:-------:|:----------:|
+| **Broken link detection** | — | ✓ | ✓ |
+| **SSL certificate expiry warnings** | — | ✓ | ✓ |
+| **Performance regression alerts** | — | — | ✓ |
+| **Quota exhaustion alerts** | — | — | ✓ |
 
 #### API & Integration
 
@@ -823,23 +856,28 @@ Also available:
 | API rate limit | — | 60 req/min | Unlimited |
 | Webhook notifications | — | — | ✓ |
 | CI/CD integration | — | — | ✓ |
+| **Zapier/n8n/Make webhook compatibility** | — | — | ✓ |
+| **IP whitelist for API access** | — | — | ✓ |
 
-#### Configuration
+#### Configuration & Customization
 
 | Feature | Free | Premium | Enterprise |
 |---------|:----:|:-------:|:----------:|
 | CDN concurrency | Fixed: 2 | 1–10 | 1–20 |
-| Custom user-agent | — | ✓ | ✓ |
-| Timeout settings | — | ✓ | ✓ |
+| Custom user-agent | — | — | ✓ |
+| Custom timeout per service | — | ✓ | ✓ |
 | Per-service rate limits | — | ✓ | ✓ |
 | Log level | Fixed: info | Selectable | Selectable |
+| **Custom HTTP headers** | — | — | ✓ |
+| **Custom viewports** | — | — | ✓ |
+| **Authenticated page warming (cookies)** | — | — | ✓ |
 
 #### Multi-Site & Agency
 
 | Feature | Free | Premium | Enterprise |
 |---------|:----:|:-------:|:----------:|
 | Single-site license | ✓ | ✓ | — |
-| Multi-site / network | — | — | ✓ |
+| **Multi-site management (single dashboard)** | — | — | ✓ |
 | White-label branding | — | — | ✓ |
 | Central management | — | — | ✓ |
 
@@ -917,11 +955,21 @@ Start free. Upgrade when you're ready.
 | Feature | Detail |
 |---------|--------|
 | **Unlimited Everything** | No limits on URLs, sitemaps, jobs, or sites. Scale without worrying about quotas. |
-| **Multi-Site Support** | One license covers your entire WordPress Multisite network or Drupal multi-site setup. |
-| **Webhook Notifications** | Get notified via webhook when jobs complete, fail, or encounter errors. Integrate with Slack, Teams, or your monitoring stack. |
+| **Multi-Site Management** | Manage warming for multiple domains from a single dashboard. Per-domain sitemap groups, per-domain stats, cross-site overview. |
+| **Webhook Notifications** | Get notified via webhook when jobs complete, fail, or encounter errors. Zapier/n8n/Make compatible payloads for no-code automation. |
 | **White-Label Branding** | Remove "CacheWarmer" branding and replace with your agency's name and logo. |
 | **Custom Cron Schedules** | Define warming schedules down to the minute with custom cron expressions. |
-| **REST API (Unlimited)** | No rate limits on API access. Integrate into CI/CD pipelines, custom dashboards, or automation workflows. |
+| **REST API (Unlimited)** | No rate limits on API access. IP whitelist for security. Integrate into CI/CD pipelines, custom dashboards, or automation workflows. |
+| **Custom User Agent & Headers** | Define custom UA strings and HTTP headers for CDN warming. Useful for CDN rules, bot detection bypass, and internal caching layers. |
+| **Custom Viewports** | Test beyond desktop and mobile — add tablet, 4K, or any custom viewport size to your warming runs. |
+| **Authenticated Warming** | Warm pages behind login walls by injecting cookies or session tokens. Essential for intranets, paywalls, and staging environments. |
+| **Cloudflare Integration** | Purge and re-warm via Cloudflare Zone API. Auto-detect CF-proxied domains. |
+| **Conditional Warming** | Skip URLs where cache is still fresh (checks CDN headers before warming). Saves time and bandwidth. |
+| **Sitemap Change Polling** | Automatically detect sitemap changes and trigger warming without manual intervention. |
+| **Performance Regression Alerts** | Get alerted when response times spike >50% compared to previous runs. |
+| **Quota Exhaustion Alerts** | Receive warnings when Google/Bing daily quotas reach 80% and 100%. |
+| **Audit Log** | Full trail of all API calls, job triggers, and config changes. Who did what, when. |
+| **Automated PDF/HTML Reports** | Generate and download professional warming reports per job. |
 | **Priority Support** | Email and live chat support with guaranteed response times. |
 | **SLA Agreement** | Service Level Agreement available for teams that need uptime and response guarantees. |
 
@@ -947,11 +995,11 @@ Start free. Upgrade when you're ready.
 
 | Plan | Price | Sites | Support |
 |------|------:|------:|---------|
-| **Enterprise Starter** | €499/year (WP) / €699/year (Drupal) | Up to 5 sites | Email + Live Chat |
-| **Enterprise Professional** | €1,499/year (WP) / €1,999/year (Drupal) | Up to 25 sites | Priority + SLA, Webhooks, White-Label |
-| **Enterprise Corporate** | from €4,999/year (WP) / €5,999/year (Drupal) | Unlimited | Dedicated Account Manager, Custom Dev |
-| **Enterprise Starter Lifetime** | €1,299 (WP) / €1,799 (Drupal) | Up to 5 sites | Lifetime updates + support |
-| **Enterprise Professional Lifetime** | €3,999 (WP) / €4,999 (Drupal) | Up to 25 sites | Lifetime updates + support |
+| **Enterprise Starter** | €599/year (WP) / €799/year (Drupal) / €999/year (Node.js) | Up to 5 sites | Email + Live Chat |
+| **Enterprise Professional** | €1,799/year (WP) / €2,499/year (Drupal) / €2,999/year (Node.js) | Up to 25 sites | Priority + SLA, Webhooks, White-Label, Multi-Site, Cloudflare |
+| **Enterprise Corporate** | from €5,999/year (WP) / €6,999/year (Drupal) | Unlimited | Dedicated Account Manager, Custom Dev |
+| **Enterprise Starter Lifetime** | €1,499 (WP) / €1,999 (Drupal) / €2,499 (Node.js) | Up to 5 sites | Lifetime updates + support |
+| **Enterprise Professional Lifetime** | €4,499 (WP) / €5,999 (Drupal) / €7,499 (Node.js) | Up to 25 sites | Lifetime updates + support |
 
 ---
 
@@ -1030,9 +1078,72 @@ Let's find the right plan for your team.
 - Requires hosted key file on your domain
 - **Available in:** Free, Premium, Enterprise
 
+#### Pinterest Rich Pin Validator (NEW)
+- Triggers Pinterest's rich pin scraper for OG meta refresh
+- Automatically refreshes preview images and metadata
+- Configurable delay between requests
+- **Available in:** Premium, Enterprise
+
+#### Cloudflare Cache Purge + Warm (NEW)
+- Purge Cloudflare cache via Zone API before warming
+- Auto-detect Cloudflare-proxied domains
+- Requires Cloudflare API token with cache purge permissions
+- **Available in:** Enterprise
+
 ---
 
-### Sektion 3: Dashboard & Management Features
+### Sektion 3: Smart Warming Features (NEW)
+
+| Feature | Description | Tier |
+|---------|-------------|------|
+| **Smart Warming (Diff-Detection)** | Only warm URLs where `lastmod` in sitemap changed since the last run. Saves time and API quota. | Premium+ |
+| **Priority-Based Warming** | Process high-priority URLs first based on sitemap `<priority>` field. Critical pages get warmed before low-priority ones. | Premium+ |
+| **Conditional Warming** | Send HEAD request before warming — skip URLs where CDN cache is still fresh (Age < max-age). | Enterprise |
+| **Sitemap Change Polling** | Background polling: fetch sitemap every N hours, compare with previous state, auto-trigger warming on changes. | Enterprise |
+| **Custom Warm Sequence** | Define the order in which warming services execute (e.g., CDN first, then social, then search engines). | Enterprise |
+
+---
+
+### Sektion 4: Analytics & Reporting Features (NEW)
+
+| Feature | Description | Tier |
+|---------|-------------|------|
+| **Cache Hit/Miss Analysis** | Parse CDN cache headers (X-Cache, CF-Cache-Status, Age) and display hit/miss/expired ratios per job. | Premium+ |
+| **Performance Trending** | Track average response time per URL over multiple warming runs. Visualize performance improvements. | Premium+ |
+| **Service Success Rate Dashboard** | Per-target success/failure/skipped rates with historical comparison charts. | Premium+ |
+| **Quota Usage Tracker** | Visual progress bar for Google and Bing daily API quota consumption. Alerts at 80% and 100%. | Premium+ |
+| **Export Failed/Skipped URLs** | Download a CSV of all URLs that failed or were skipped during a warming job. Filter by target service. | Premium+ |
+| **Automated PDF/HTML Reports** | Generate downloadable warming reports per job with summary stats, per-target results, and cache analysis. | Enterprise |
+| **Audit Log** | Log all API calls, job triggers, and config changes with timestamps, actor, and details. | Enterprise |
+
+---
+
+### Sektion 5: Monitoring & Alerting Features (NEW)
+
+| Feature | Description | Tier |
+|---------|-------------|------|
+| **Broken Link Detection** | Flag HTTP 404/5xx responses during warming. Exportable broken link report per job. | Premium+ |
+| **SSL Certificate Expiry Warnings** | Check SSL certificate validity during CDN warming. Warn if certificate expires within 30 days. | Premium+ |
+| **Performance Regression Alerts** | Alert (via webhook/email) when average response time increases >50% compared to the previous run. | Enterprise |
+| **Quota Exhaustion Alerts** | Notify when Google/Bing daily API quota reaches 80% or 100%. | Enterprise |
+
+---
+
+### Sektion 6: Enterprise Configuration Features (NEW)
+
+| Feature | Description |
+|---------|-------------|
+| **Custom User Agent** | Define a custom UA string for CDN warming requests. Useful for CDN rules that treat bots differently. |
+| **Custom HTTP Headers** | Inject custom headers (e.g., `X-Warm: true`, auth tokens) into CDN warming requests. |
+| **Custom Viewports** | Define additional viewport sizes beyond default desktop (1920x1080) and mobile (375x812). |
+| **Authenticated Page Warming** | Inject cookies or session tokens to warm pages behind login walls or paywalls. |
+| **Multi-Site Management** | Manage warming for multiple domains from a single dashboard. Per-domain sitemap groups and statistics. |
+| **IP Whitelist** | Restrict REST API access to configured IP ranges for additional security. |
+| **Zapier/n8n/Make Compatibility** | Structured webhook payloads with documented JSON event schema for no-code automation platforms. |
+
+---
+
+### Sektion 7: Dashboard & Management Features
 
 | Feature | Description |
 |---------|-------------|
@@ -1133,6 +1244,71 @@ Documentation
 ### Format
 
 ```
+## v1.1.0 — 2026-03-02
+
+### New Warming Target
+- Pinterest Rich Pin Validator — triggers Pinterest's rich pin scraper
+  to refresh OG meta cache (Premium+)
+- Cloudflare API Integration — purge + warm via Cloudflare Zone API;
+  auto-detect CF domains (Enterprise)
+
+### New Features (Premium)
+- Smart Warming (diff-detection) — only warm URLs where `lastmod`
+  changed since last run
+- Priority-based URL warming — process high-priority URLs first
+  based on sitemap `<priority>` field
+- Cache hit/miss analysis — parse CDN cache headers and display
+  hit/miss ratios per job
+- Performance trending — track average response times per URL across
+  multiple runs
+- Service success rate dashboard — per-target success/failure rates
+  with historical comparison
+- Quota usage tracker — visual progress bar for Google/Bing daily
+  API quota consumption
+- Broken link detection — flag HTTP 404/5xx responses during warming
+  with exportable report
+- SSL certificate expiry warnings — detect certificates expiring
+  within 30 days during CDN warming
+- Export failed/skipped URLs as CSV — download a CSV of all URLs
+  that failed or were skipped during a warming job
+- Custom timeout per service — override timeout individually per
+  warming target
+
+### New Features (Enterprise)
+- Custom User Agent strings — define a custom UA for CDN warming
+- Custom HTTP headers — inject custom headers (e.g., `X-Warm: true`,
+  auth headers) into CDN requests
+- Custom viewports — define additional viewport sizes beyond default
+  desktop/mobile
+- Authenticated page warming — inject cookies/session tokens to warm
+  pages behind login
+- Sitemap change polling — periodically poll sitemaps for changes
+  and auto-trigger warming
+- Conditional warming — skip URLs if CDN cache headers indicate
+  cache is still fresh
+- Custom warm sequence — user-defined order of warming services
+- Multi-site management — single dashboard managing warming for
+  multiple domains with per-domain stats
+- Audit log — log all API calls, job triggers, config changes with
+  timestamps and actor
+- IP whitelist for API access — restrict REST API to configured
+  IP ranges
+- Performance regression alerts — alert when average response time
+  increases >50% vs previous run
+- Quota exhaustion alerts — notify when Google/Bing daily quota
+  reaches 80% or 100%
+- Automated PDF/HTML reports — generate downloadable warming reports
+  per job
+- Zapier/n8n/Make webhook compatibility — structured webhook payloads
+  with documented event schema
+
+### Platforms
+- WordPress 5.8+ / PHP 7.4+
+- Drupal 10+ / PHP 8.1+
+- Node.js 20+ / TypeScript
+
+---
+
 ## v1.0.0 — 2026-03-15
 
 ### Added

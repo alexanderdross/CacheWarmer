@@ -76,6 +76,15 @@ notifications:
 
 excludePatterns: ""
 
+pinterest:
+  enabled: false
+  delay: 2000
+
+cloudflare:
+  enabled: false
+  apiToken: ""
+  zoneId: ""
+
 logging:
   level: "info"
   file: "./data/cachewarmer.log"

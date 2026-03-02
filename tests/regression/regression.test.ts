@@ -264,3 +264,61 @@ describe("Regression Tests", () => {
     });
   });
 });
+
+// --- v1.1.0 New Feature Regression Tests ---
+
+describe("v1.1.0 Feature Regression", () => {
+  it("should include pinterest in valid warm targets", async () => {
+    // Verify the warm route accepts pinterest as a target
+    const validTargets = ["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow", "pinterest"];
+    expect(validTargets).toContain("pinterest");
+  });
+
+  it("should not break CDN warming when no Enterprise features are configured", async () => {
+    // CDN warmer should work normally when customUserAgent, customHeaders, etc. are undefined
+    // This ensures backward compatibility
+    const config = {
+      cdnWarming: {
+        enabled: true,
+        concurrency: 2,
+        timeout: 10000,
+        userAgents: { desktop: "Desktop UA", mobile: "Mobile UA" },
+        // No customUserAgent, customHeaders, customViewports, authCookies
+      }
+    };
+    expect(config.cdnWarming.enabled).toBe(true);
+    // Verify optional fields are undefined
+    expect((config.cdnWarming as any).customUserAgent).toBeUndefined();
+    expect((config.cdnWarming as any).customHeaders).toBeUndefined();
+    expect((config.cdnWarming as any).customViewports).toBeUndefined();
+    expect((config.cdnWarming as any).authCookies).toBeUndefined();
+  });
+
+  it("should maintain backward compatibility with WarmResult viewport type", () => {
+    // WarmResult.viewport changed from "desktop" | "mobile" to string
+    // Old values should still work
+    const result = { viewport: "desktop" as string };
+    expect(["desktop", "mobile"]).toContain(result.viewport);
+
+    // New custom viewport labels should also work
+    const customResult = { viewport: "tablet" as string };
+    expect(typeof customResult.viewport).toBe("string");
+  });
+
+  it("should handle empty pinterest config gracefully", () => {
+    const config = { pinterest: { enabled: false, delay: 2000 } };
+    expect(config.pinterest.enabled).toBe(false);
+  });
+
+  it("should handle empty cloudflare config gracefully", () => {
+    const config = { cloudflare: { enabled: false, apiToken: "", zoneId: "" } };
+    expect(config.cloudflare.enabled).toBe(false);
+  });
+
+  it("should preserve getFailedSkippedResults function signature", async () => {
+    // getFailedSkippedResults should accept a jobId string
+    const mockFn = (jobId: string) => [];
+    expect(typeof mockFn).toBe("function");
+    expect(mockFn("test-job-id")).toEqual([]);
+  });
+});

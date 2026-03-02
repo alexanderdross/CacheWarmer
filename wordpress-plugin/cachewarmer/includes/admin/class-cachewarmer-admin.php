@@ -35,6 +35,7 @@ class CacheWarmer_Admin {
         add_action( 'wp_ajax_cachewarmer_bulk_add_sitemaps', array( $this, 'ajax_bulk_add_sitemaps' ) );
         add_action( 'wp_ajax_cachewarmer_detect_sitemaps', array( $this, 'ajax_detect_sitemaps' ) );
         add_action( 'wp_ajax_cachewarmer_export_results', array( $this, 'ajax_export_results' ) );
+        add_action( 'wp_ajax_cachewarmer_export_failed', array( $this, 'ajax_export_failed' ) );
     }
 
     /**
@@ -480,6 +481,47 @@ class CacheWarmer_Admin {
                 'filename' => 'cachewarmer-' . $job_id . '.json',
             ) );
         }
+    }
+
+    /**
+     * AJAX: Export failed/skipped URLs as CSV.
+     */
+    public function ajax_export_failed(): void {
+        check_ajax_referer( 'cachewarmer_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+        }
+
+        if ( ! CacheWarmer_License::can( 'failed_export' ) ) {
+            wp_send_json_error( 'This feature requires a Premium or Enterprise license.', 403 );
+        }
+
+        $job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+        if ( empty( $job_id ) || ! preg_match( '/^[0-9a-f\-]{36}$/i', $job_id ) ) {
+            wp_send_json_error( 'Invalid job ID' );
+        }
+
+        $db = new CacheWarmer_Database();
+        $results = $db->get_failed_skipped_results( $job_id );
+
+        $csv = "url,target,status,http_status,duration_ms,error,created_at\n";
+        foreach ( $results as $r ) {
+            $url    = str_replace( '"', '""', $r['url'] ?? '' );
+            $target = $r['target'] ?? '';
+            $status = $r['status'] ?? '';
+            $http   = $r['http_status'] ?? '';
+            $dur    = $r['duration_ms'] ?? '';
+            $error  = str_replace( '"', '""', $r['error'] ?? '' );
+            $date   = $r['created_at'] ?? '';
+            $csv   .= "\"{$url}\",\"{$target}\",\"{$status}\",{$http},{$dur},\"{$error}\",\"{$date}\"\n";
+        }
+
+        wp_send_json_success( array(
+            'csv'      => $csv,
+            'filename' => "cachewarmer-failed-{$job_id}.csv",
+            'count'    => count( $results ),
+        ) );
     }
 
     /**

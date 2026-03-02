@@ -9,7 +9,7 @@ services:
 
   cachewarmer.cdn_warmer:
     class: Drupal\cachewarmer\Service\CdnWarmer
-    arguments: ['@http_client', '@config.factory']
+    arguments: ['@http_client', '@config.factory', '@cachewarmer.license']
 
   cachewarmer.facebook_warmer:
     class: Drupal\cachewarmer\Service\FacebookWarmer
@@ -34,6 +34,10 @@ services:
   cachewarmer.indexnow:
     class: Drupal\cachewarmer\Service\IndexNow
     arguments: ['@http_client', '@config.factory']
+
+  cachewarmer.pinterest_warmer:
+    class: Drupal\cachewarmer\Service\PinterestWarmer
+    arguments: ['@config.factory', '@http_client']
 
   cachewarmer.license:
     class: Drupal\cachewarmer\Service\CacheWarmerLicense
@@ -67,3 +71,4 @@ services:
       - '@logger.factory'
       - '@cachewarmer.webhooks'
       - '@cachewarmer.email'
+      - '@cachewarmer.pinterest_warmer'
