@@ -30,6 +30,7 @@ WordPress-Plugin zur zentralen Lizenzverwaltung für CacheWarmer-Installationen.
 13. [Sicherheit](#13-sicherheit)
 14. [Cronjobs & Wartung](#14-cronjobs--wartung)
 15. [Development & Testing](#15-development--testing)
+16. [Changelog](#16-changelog)
 
 ---
 
@@ -1041,13 +1042,54 @@ Stripe Produkt-Mapping Verwaltung (CRUD):
 
 **Route:** `admin.php?page=cwlm-settings`
 
-**Tabs:**
-1. **Allgemein** – Grace Period, Heartbeat-Intervall, Dev-Domains
-2. **Stripe** – Keys (verschleiert angezeigt), Webhook-URL (Copy-Button), Verbindungstest
-3. **MaxMind** – License Key, DB-Pfad, Letztes Update, "Jetzt aktualisieren" Button
-4. **Rate Limiting** – Limits pro Endpoint konfigurierbar
-5. **E-Mail** – Templates für Lizenz-Zustellung, Ablauf-Warnung
-6. **DSGVO** – Aufbewahrungsfristen, "Kundendaten löschen" Funktion
+Die Einstellungsseite wird durch die zentrale Klasse `CWLM_Settings` (`includes/class-cwlm-settings.php`) gesteuert, die 11 konfigurierbare Felder in 6 Sektionen organisiert.
+
+**Sektionen (aufklappbar, mit Icons):**
+
+| Sektion | Icon | Felder |
+|---------|------|--------|
+| Security & Authentification | 🛡️ | JWT Secret, JWT Expiry Days, CORS Allowed Origins |
+| Stripe Integration | 💰 | Stripe Webhook Secret |
+| License Behavior | 🌐 | Grace Period Days, Heartbeat Interval Hours, Development Domains |
+| Rate Limiting | 📊 | Rate Limit Per Minute, Activation Rate Limit |
+| Geolocation | 📍 | MaxMind GeoIP Database Path |
+| System Information | ℹ️ | Plugin-Version, PHP, WordPress, MySQL, OpenSSL (nur Anzeige) |
+
+**Feld-Typen:**
+- `text` – Klartext-Eingabe (z.B. CORS Origins, Dev-Domains)
+- `number` – Numerische Eingabe (z.B. JWT Expiry Days, Rate Limits)
+- `password` – Verschlüsselte Eingabe mit Sichtbarkeits-Toggle (z.B. JWT Secret, Stripe Webhook Secret)
+
+**Features:**
+- **AES-256-CBC Verschlüsselung:** Sensitive Felder (Typ `password`) werden vor dem Speichern mit AES-256-CBC verschlüsselt, unter Verwendung von WordPress `AUTH_KEY` + `SECURE_AUTH_KEY` als Salt
+- **wp-config.php Overrides:** Alle Felder können als PHP-Konstante in `wp-config.php` definiert werden (z.B. `define('CWLM_JWT_SECRET', '...')`). Definierte Konstanten haben Vorrang und die UI-Felder werden als deaktiviert angezeigt
+- **Auto-Generierung:** JWT Secret wird automatisch generiert, wenn leer gespeichert
+- **Passwort-Schutz:** Leere Passwort-Felder überschreiben keine bestehenden Werte
+- **Transient-Cache-Invalidierung:** Dashboard-Caches werden bei Änderungen automatisch geleert
+- **System-Info-Anzeige:** Plugin-Version, PHP-Version, WordPress-Version, MySQL-Version, OpenSSL-Status, Cronjob-Status mit nächster Ausführung, REST API Endpoint-URLs, GeoIP-Datei-Status
+- **wp-config.php Referenz:** Aufklappbarer Bereich mit Syntax-highlightetem Code-Beispiel aller verfügbaren Konstanten
+
+**Verfügbare wp-config.php Konstanten:**
+```php
+define('CWLM_JWT_SECRET', 'your-secret-key');
+define('CWLM_JWT_EXPIRY_DAYS', 30);
+define('CWLM_CORS_ORIGINS', '*');
+define('CWLM_STRIPE_WEBHOOK_SECRET', 'whsec_...');
+define('CWLM_GRACE_PERIOD_DAYS', 14);
+define('CWLM_HEARTBEAT_INTERVAL_HOURS', 24);
+define('CWLM_DEV_DOMAINS', 'localhost,*.local,*.dev,*.test');
+define('CWLM_RATE_LIMIT_PER_MINUTE', 60);
+define('CWLM_ACTIVATION_RATE_LIMIT', 10);
+define('CWLM_MAXMIND_DB_PATH', '/path/to/GeoLite2-City.mmdb');
+```
+
+### 8.8 Dashboard Widget
+
+**Standort:** WordPress Admin Dashboard (Hauptseite)
+
+Ein kompaktes Widget zeigt KPI-Übersichten direkt auf dem WordPress-Dashboard:
+- Aktive Lizenzen, Grace Period, Installationen
+- Nutzt lokal gebündeltes Chart.js (kein externes CDN, vermeidet Ladeprobleme)
 
 ---
 
@@ -1186,10 +1228,11 @@ cachewarmer-license-manager/
 │   ├── class-cwlm-geoip.php            # MaxMind Integration
 │   ├── class-cwlm-audit-logger.php     # Audit-Trail
 │   ├── class-cwlm-rate-limiter.php     # Rate Limiting (Transients)
-│   ├── class-cwlm-jwt-handler.php      # JWT Token Management
+│   ├── class-cwlm-jwt-handler.php      # JWT Token Management (mit exp-Enforcement)
 │   ├── class-cwlm-stripe-handler.php   # Stripe Webhook Verarbeitung
 │   ├── class-cwlm-email.php            # E-Mail-Versand (Templates)
-│   └── class-cwlm-feature-flags.php    # Tier → Feature Mapping
+│   ├── class-cwlm-feature-flags.php    # Tier → Feature Mapping
+│   └── class-cwlm-settings.php         # Zentrale Settings-Verwaltung (AES-256-CBC)
 │
 ├── admin/
 │   ├── class-cwlm-admin.php            # Admin-Menü & Page Registration
@@ -1219,7 +1262,8 @@ cachewarmer-license-manager/
 │   └── js/
 │       ├── cwlm-dashboard.js           # Chart.js Diagramme
 │       ├── cwlm-licenses.js            # Lizenz-Tabelle (DataTables)
-│       └── cwlm-admin.js               # Allgemeine Admin-Funktionen
+│       ├── cwlm-admin.js               # Allgemeine Admin-Funktionen
+│       └── chart.min.js                # Chart.js (lokal gebündelt, kein CDN)
 │
 ├── api/
 │   ├── class-cwlm-rest-controller.php  # REST API Base Controller
@@ -1243,16 +1287,43 @@ cachewarmer-license-manager/
 │   ├── cwlm-de_DE.po                   # Deutsche Übersetzung
 │   └── cwlm-de_DE.mo
 │
-└── tests/
-    ├── test-license-manager.php
-    ├── test-api-endpoints.php
-    ├── test-stripe-webhook.php
-    └── test-feature-flags.php
+├── tests/
+│   ├── bootstrap.php                   # Test-Bootstrap (WordPress-Stubs, Autoloading)
+│   ├── test-license-manager.php
+│   ├── test-api-endpoints.php
+│   ├── test-stripe-webhook.php
+│   ├── test-feature-flags.php
+│   ├── unit/
+│   │   └── SettingsTest.php            # 14 Unit-Tests für CWLM_Settings
+│   ├── regression/
+│   │   └── DashboardRegressionTest.php # Regressionstests (Chart.js, Widget, Cron)
+│   └── security/
+│       └── SecurityTest.php            # 58 Sicherheitstests (SQL Injection, CORS, JWT, Enum)
+│
+└── phpunit.xml                         # PHPUnit-Konfiguration
 ```
 
 ---
 
 ## 13. Sicherheit
+
+### 13.0 AES-256-CBC Verschlüsselung (Settings)
+
+Sensitive Einstellungen (JWT Secret, Stripe Webhook Secret) werden mit AES-256-CBC verschlüsselt in der `wp_options`-Tabelle gespeichert:
+
+```php
+// Verschlüsselung
+$key = hash('sha256', AUTH_KEY . SECURE_AUTH_KEY, true);
+$iv = openssl_random_pseudo_bytes(16);
+$encrypted = openssl_encrypt($value, 'aes-256-cbc', $key, 0, $iv);
+$stored = base64_encode($iv . '::' . $encrypted);
+
+// Entschlüsselung
+list($iv, $encrypted) = explode('::', base64_decode($stored), 2);
+$decrypted = openssl_decrypt($encrypted, 'aes-256-cbc', $key, 0, $iv);
+```
+
+**Voraussetzung:** OpenSSL PHP-Extension (wird auf der Einstellungsseite geprüft und angezeigt).
 
 ### 13.1 SQL Injection Prevention
 
@@ -1311,13 +1382,37 @@ try {
 
 ### 13.4 CORS
 
-API-Endpunkte erlauben Cross-Origin Requests (notwendig für Node.js/Docker-Installationen):
+API-Endpunkte erlauben Cross-Origin Requests (notwendig für Node.js/Docker-Installationen).
+CORS Origins werden über die Einstellung `CWLM_CORS_ORIGINS` konfiguriert und sanitisiert:
 
 ```php
-header('Access-Control-Allow-Origin: *');
+// Konfigurierbar via Settings UI oder wp-config.php:
+// define('CWLM_CORS_ORIGINS', 'https://example.com,https://app.example.com');
+// Wildcard '*' erlaubt alle Origins (Standard)
+header('Access-Control-Allow-Origin: ' . $allowed_origin);
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 ```
+
+### 13.4a JWT Expiry Enforcement
+
+JWT-Tokens werden mit strikter `exp`-Claim-Validierung behandelt:
+
+```php
+// Bei Token-Erstellung: exp-Claim wird immer gesetzt
+$payload = [
+    'lic' => $license_key,
+    'fp'  => $fingerprint,
+    'iat' => time(),
+    'exp' => time() + ($expiry_days * 86400),
+];
+
+// Bei Token-Validierung: exp wird in beiden Pfaden erzwungen
+// 1. Firebase/php-jwt: wirft ExpiredException bei abgelaufenem Token
+// 2. Fallback (manuell): explizite Prüfung von $payload->exp < time()
+```
+
+Tokens ohne `exp`-Claim werden als ungültig abgelehnt.
 
 ### 13.5 HTTPS Enforcement
 
@@ -1421,13 +1516,31 @@ CW-ENT-0000000000000004  → Enterprise Tier
 ### 15.3 PHPUnit Tests
 
 ```bash
-# Tests ausführen
+# Alle Tests ausführen (Unit + Regression + Security)
 cd cachewarmer-license-manager
 ./vendor/bin/phpunit
 
-# Einzelnen Test ausführen
+# Einzelne Test-Suite ausführen
+./vendor/bin/phpunit tests/unit/SettingsTest.php
+./vendor/bin/phpunit tests/security/SecurityTest.php
+./vendor/bin/phpunit tests/regression/DashboardRegressionTest.php
+
+# Einzelnen Legacy-Test ausführen
 ./vendor/bin/phpunit tests/test-api-endpoints.php
 ```
+
+**Test-Bootstrap:** `tests/bootstrap.php` stellt minimale WordPress-Stubs bereit (~15 Funktionen: `get_option`, `update_option`, `wp_generate_password`, `sanitize_text_field` u.a.), sodass Unit-Tests ohne vollständige WordPress-Installation laufen.
+
+**Test-Suiten:**
+
+| Suite | Datei | Tests | Assertions | Beschreibung |
+|-------|-------|:-----:|:----------:|-------------|
+| Unit: Settings | `tests/unit/SettingsTest.php` | 14 | ~50 | CWLM_Settings Klasse, Felder, Defaults, Encryption, Constants |
+| Unit: Legacy | `tests/test-*.php` | 47 | ~330 | License Manager, API Endpoints, Stripe Webhooks, Feature Flags |
+| Regression | `tests/regression/DashboardRegressionTest.php` | ~5 | ~15 | Chart.js lokal gebündelt, Dashboard Widget, Cron-Registration |
+| Security | `tests/security/SecurityTest.php` | 58 | 67 | SQL Injection, CORS, JWT exp, Enum Validation, Rate Limiting |
+
+**Gesamt:** 119 Tests, 448+ Assertions
 
 ### 15.4 API-Testing mit cURL
 
@@ -1472,3 +1585,52 @@ curl -X POST https://cachewarmer.drossmedia.de/wp-json/cwlm/v1/deactivate \
     "fingerprint": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
   }'
 ```
+
+---
+
+## 16. Changelog
+
+### v1.2.0 (2026-03-04)
+
+**Settings UI & Encryption**
+- Neue zentrale `CWLM_Settings`-Klasse mit 11 konfigurierbaren Feldern in 6 Sektionen
+- AES-256-CBC Verschlüsselung für sensitive Felder (JWT Secret, Stripe Webhook Secret) mit WordPress AUTH_KEY/SECURE_AUTH_KEY als Salt
+- Vollständige Settings-UI mit aufklappbaren Sektionen, Passwort-Toggle, Auto-Generierung
+- wp-config.php Konstanten-Override: definierte Konstanten haben Vorrang, UI-Felder werden deaktiviert
+- System-Information-Anzeige (PHP, WordPress, MySQL, OpenSSL, Cronjob-Status, API-Endpoints)
+
+**Security Hardening**
+- JWT `exp`-Claim wird jetzt strikt in allen Decode-Pfaden erzwungen (Firebase + Fallback)
+- Tokens ohne `exp`-Claim werden abgelehnt
+- CORS Origins über Settings konfigurierbar und sanitisiert
+- Enum-Validierung für Platform-Parameter (nur `nodejs`, `docker`, `wordpress`, `drupal`)
+
+**Bug Fixes**
+- Chart.js lokal gebündelt (`admin/js/chart.min.js`) — behebt Endlos-Ladeprobleme durch CDN-Blockierung
+- Dashboard Widget: try-catch + Tabellen-Prüfung verhindert Fehler bei fehlenden Tabellen
+- Wöchentlicher Cleanup-Cronjob (`cwlm_cleanup_old_data`) wird korrekt registriert
+
+**Testing**
+- 14 neue Settings-Unit-Tests (Felder, Defaults, Typen, Verschlüsselung, Konstanten)
+- 58 neue Security-Tests (SQL Injection, CORS, JWT exp, Enum Validation, Rate Limiting)
+- Regressionstests für Chart.js-Bundling, Widget-Stabilität, Cron-Hooks
+- Test-Bootstrap mit WordPress-Stubs für testbare Unit-Tests ohne WordPress-Installation
+- Gesamt: 119 Tests, 448+ Assertions
+
+**Infrastructure**
+- URL-Migration: `dashboard.cachewarmer.drossmedia.de` → `cachewarmer.drossmedia.de`
+- Plugin-ZIP neu gebaut (136 KB, exkludiert Tests/Vendor/Composer-Dev)
+
+### v1.1.0 (2026-02-28)
+
+- Initiale Implementierung des WordPress License Manager Plugins
+- 7 Admin-Seiten (Dashboard, Lizenzen, Installationen, Audit Log, Stripe Events, Produkte, Settings)
+- REST API mit 6 Endpunkten (Health, Validate, Activate, Deactivate, Check, Stripe Webhook)
+- Stripe Integration mit Webhook-Verarbeitung und Produkt-Mapping
+- JWT-basierte Token-Authentifizierung für Heartbeat
+- MaxMind GeoIP Integration
+- 7 Datenbanktabellen mit automatischer Migration
+- Rate Limiting via WordPress Transients
+- Audit-Logging für alle Lizenz-Aktionen
+- E-Mail-Templates für Lizenz-Zustellung und Ablauf-Warnungen
+- 6 WordPress Cronjobs für automatische Wartung
