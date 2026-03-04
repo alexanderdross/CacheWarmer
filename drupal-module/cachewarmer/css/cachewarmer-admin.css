@@ -264,35 +264,99 @@
 .cachewarmer-stat-count--failed { color: #d63638; }
 .cachewarmer-stat-count--skipped { color: #dba617; }
 
-/* Clickable stat counts */
-a.cw-stat-toggle {
-  text-decoration: underline;
-  cursor: pointer;
-  font-weight: 600;
+/* Results header with export button */
+.cw-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
-a.cw-stat-toggle:hover {
-  opacity: 0.7;
+.cw-results-header h4 {
+  margin: 0;
 }
 
-a.cw-stat-toggle.cw-stat-active {
-  background: #f0f0f1;
-  border-radius: 3px;
-  padding: 0 4px;
+.cw-export-failed-csv {
+  color: #d63638 !important;
+  border-color: #d63638 !important;
 }
 
-/* URL list panel in modal */
-.cw-url-list-panel {
-  margin-top: 16px;
-  border: 1px solid #dcdcde;
-  border-radius: 4px;
-  padding: 16px;
-  background: #f9f9f9;
+.cw-export-failed-csv:hover {
+  background: #d63638 !important;
+  color: #fff !important;
 }
 
-.cw-url-list-panel h4 {
+/* Accordion hint */
+.cw-accordion-hint {
+  color: #646970;
+  font-size: 12px;
+  font-style: italic;
   margin: 0 0 12px;
-  font-size: 14px;
+}
+
+/* Accordion card */
+.cw-accordion-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.cw-accordion-card:hover {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.cw-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cw-chevron {
+  color: #646970;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.cw-chevron-open {
+  transform: rotate(180deg);
+}
+
+/* Inline URL list in accordion */
+.cw-accordion-body {
+  border-top: 1px solid #ddd;
+  margin-top: 10px;
+  padding-top: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.cw-url-list-inline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cw-url-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.cw-url-badge-success {
+  background: #edfaef;
+  color: #00a32a;
+}
+
+.cw-url-badge-failed {
+  background: #fcecec;
+  color: #d63638;
+}
+
+.cw-url-badge-skipped {
+  background: #fef8e8;
+  color: #dba617;
 }
 
 #cw-url-list {

@@ -274,6 +274,10 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
               </button>
             )}
           </div>
+          <p className="text-xs text-gray-500 italic mb-4 flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg>
+            Klicke auf eine Target-Karte, um die einzelnen URLs anzuzeigen.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(statsByTarget).map(([target, stats]) => {
               const totalCount = (stats.success || 0) + (stats.failed || 0) + (stats.skipped || 0);

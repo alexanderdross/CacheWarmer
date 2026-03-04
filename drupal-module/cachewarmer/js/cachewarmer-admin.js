@@ -139,12 +139,28 @@
 
       // Stats by target
       var results = job.results || [];
+      var hasFailedOrSkipped = false;
+      if (job.stats) {
+        $.each(job.stats, function (_, counts) {
+          if ((counts.failed || 0) > 0 || (counts.skipped || 0) > 0) hasFailedOrSkipped = true;
+        });
+      }
+
       if (job.stats && Object.keys(job.stats).length > 0) {
+        html += '<div class="cw-results-header">';
         html += '<h4>' + Drupal.t('Results by Target') + '</h4>';
+        if (hasFailedOrSkipped) {
+          html += '<button class="button button--small cw-export-failed-csv" data-job-id="' + escHtml(job.id) + '">' + Drupal.t('Export Failed/Skipped (CSV)') + '</button>';
+        }
+        html += '</div>';
+        html += '<p class="cw-accordion-hint">' + Drupal.t('Click on a target card to expand and see individual URLs.') + '</p>';
         html += '<div class="cachewarmer-stats-grid">';
         $.each(job.stats, function (target, counts) {
-          html += '<div class="cachewarmer-stat-card">';
+          html += '<div class="cachewarmer-stat-card cw-accordion-card" data-target="' + escHtml(target) + '">';
+          html += '<div class="cw-accordion-header">';
           html += '<div class="cachewarmer-stat-card__title">' + capitalize(escHtml(target)) + '</div>';
+          html += '<span class="cw-chevron">&#9660;</span>';
+          html += '</div>';
           html += '<div class="cachewarmer-stat-card__counts">';
 
           var statuses = [
@@ -154,23 +170,38 @@
           ];
           $.each(statuses, function (_, st) {
             var count = counts[st.key] || 0;
-            if (count > 0) {
-              html += '<a href="#" class="cw-stat-toggle ' + st.cls + '" data-target="' + escHtml(target) + '" data-status="' + st.key + '">' + count + ' ' + st.label + '</a> ';
-            } else {
-              html += '<span class="' + st.cls + '">0 ' + st.label + '</span> ';
-            }
+            html += '<span class="' + st.cls + '">' + count + ' ' + st.label + '</span> ';
           });
 
-          html += '</div></div>';
+          html += '</div>';
+
+          // Inline accordion body (hidden by default).
+          html += '<div class="cw-accordion-body" style="display:none;">';
+          var targetResults = [];
+          $.each(results, function (_, r) {
+            if (r.target === target) targetResults.push(r);
+          });
+          if (targetResults.length > 0) {
+            html += '<ul class="cw-url-list-inline">';
+            $.each(targetResults, function (_, r) {
+              html += '<li class="cw-url-item cw-url-' + escHtml(r.status) + '">';
+              html += '<span class="cw-url-badge cw-url-badge-' + escHtml(r.status) + '">' + (r.status === 'success' ? 'OK' : r.status === 'failed' ? 'FAIL' : 'SKIP') + '</span> ';
+              if (r.http_status) html += '<span class="cw-url-http">' + r.http_status + '</span> ';
+              if (r.duration_ms) html += '<span class="cw-url-duration">' + r.duration_ms + 'ms</span> ';
+              html += '<a href="' + escHtml(r.url) + '" target="_blank" rel="noopener">' + escHtml(r.url) + '</a>';
+              if (r.error) html += '<div class="cw-url-error">' + escHtml(r.error) + '</div>';
+              html += '</li>';
+            });
+            html += '</ul>';
+          } else {
+            html += '<p class="description">' + Drupal.t('No detailed results available.') + '</p>';
+          }
+          html += '</div>';
+
+          html += '</div>';
         });
         html += '</div>';
       }
-
-      // Hidden URL list panel.
-      html += '<div id="cw-url-list-panel" class="cw-url-list-panel" style="display:none;">';
-      html += '<h4 id="cw-url-list-title"></h4>';
-      html += '<ul id="cw-url-list"></ul>';
-      html += '</div>';
 
       // Export buttons
       html += '<div style="margin-top:16px;display:flex;gap:8px">';
@@ -190,54 +221,43 @@
     $('#cachewarmer-modal').hide();
   });
 
-  // Show URLs when clicking on a stat count.
-  $(document).on('click', '.cw-stat-toggle', function (e) {
-    e.preventDefault();
+  // Accordion toggle: expand/collapse target card to show URLs.
+  $(document).on('click', '.cw-accordion-header', function (e) {
+    e.stopPropagation();
+    var $card = $(this).closest('.cw-accordion-card');
+    var $body = $card.find('.cw-accordion-body');
+    var $chevron = $card.find('.cw-chevron');
 
-    var target  = $(this).data('target');
-    var status  = $(this).data('status');
-    var results = $('#cachewarmer-modal-body').data('results') || [];
-    var $panel  = $('#cw-url-list-panel');
-    var $title  = $('#cw-url-list-title');
-    var $list   = $('#cw-url-list');
+    $body.slideToggle(200);
+    $chevron.toggleClass('cw-chevron-open');
+  });
 
-    // Toggle off if clicking the same filter.
-    if ($panel.is(':visible') && $panel.data('active-target') === target && $panel.data('active-status') === status) {
-      $panel.slideUp(200);
-      $('.cw-stat-toggle').removeClass('cw-stat-active');
-      return;
-    }
+  // Export failed/skipped URLs as CSV.
+  $(document).on('click', '.cw-export-failed-csv', function () {
+    var $btn = $(this);
+    var jobId = $btn.data('job-id');
 
-    // Filter results.
-    var filtered = [];
-    $.each(results, function (_, r) {
-      if (r.target === target && r.status === status) {
-        filtered.push(r);
+    $btn.prop('disabled', true).text(Drupal.t('Exporting...'));
+
+    $.ajax({
+      url: urls.exportResultsUrl,
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ job_id: jobId, format: 'csv', status_filter: 'failed_skipped' }),
+      success: function (data) {
+        var blob = new Blob([data.content], { type: 'text/csv' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = data.filename || ('cachewarmer-failed-' + jobId + '.csv');
+        link.click();
+      },
+      error: function () {
+        alert(Drupal.t('Export failed.'));
+      },
+      complete: function () {
+        $btn.prop('disabled', false).text(Drupal.t('Export Failed/Skipped (CSV)'));
       }
     });
-
-    $title.text(capitalize(status) + ' URLs \u2014 ' + capitalize(target) + ' (' + filtered.length + ')');
-    $list.empty();
-
-    $.each(filtered, function (_, r) {
-      var li = '<li class="cw-url-item cw-url-' + escHtml(r.status) + '">';
-      li += '<a href="' + escHtml(r.url) + '" target="_blank" rel="noopener">' + escHtml(r.url) + '</a>';
-      if (r.http_status) {
-        li += ' <span class="cw-url-http">' + r.http_status + '</span>';
-      }
-      if (r.duration_ms) {
-        li += ' <span class="cw-url-duration">' + r.duration_ms + 'ms</span>';
-      }
-      if (r.error) {
-        li += '<div class="cw-url-error">' + escHtml(r.error) + '</div>';
-      }
-      li += '</li>';
-      $list.append(li);
-    });
-
-    $('.cw-stat-toggle').removeClass('cw-stat-active');
-    $(this).addClass('cw-stat-active');
-    $panel.data('active-target', target).data('active-status', status).slideDown(200);
   });
 
   // Delete job
