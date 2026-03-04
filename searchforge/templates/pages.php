@@ -53,6 +53,10 @@ $limit    = SearchForge\Admin\Settings::get_page_limit();
 									data-page="<?php echo esc_attr( $page['page_path'] ); ?>">
 									<?php esc_html_e( 'Export Brief', 'searchforge' ); ?>
 								</button>
+								<button class="button button-small sf-ai-brief-btn"
+									data-page="<?php echo esc_attr( $page['page_path'] ); ?>">
+									<?php esc_html_e( 'AI Brief', 'searchforge' ); ?>
+								</button>
 							<?php else : ?>
 								<span class="sf-pro-badge" title="<?php esc_attr_e( 'Pro feature', 'searchforge' ); ?>">Pro</span>
 							<?php endif; ?>

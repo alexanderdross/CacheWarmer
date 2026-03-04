@@ -8,6 +8,12 @@ $settings   = SearchForge\Admin\Settings::get_all();
 $connected  = ! empty( $settings['gsc_access_token'] );
 $site_score = SearchForge\Scoring\Score::calculate_site_score();
 $decaying   = SearchForge\Trends\Engine::get_decaying_pages( 'gsc', 5 );
+$is_pro     = SearchForge\Admin\Settings::is_pro();
+$cannibal_count = 0;
+if ( $is_pro ) {
+	$cannibalization = SearchForge\Analysis\Cannibalization::detect( 5 );
+	$cannibal_count  = count( $cannibalization );
+}
 
 // Recent alerts.
 global $wpdb;
@@ -116,6 +122,42 @@ $recent_alerts = $wpdb->get_results(
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+		</div>
+	<?php endif; ?>
+
+	<!-- Cannibalization Warning -->
+	<?php if ( $is_pro && $cannibal_count > 0 ) : ?>
+		<div class="sf-cannibal-summary">
+			<h2>
+				<?php echo esc_html( sprintf(
+					__( 'Keyword Cannibalization (%d issues)', 'searchforge' ),
+					$cannibal_count
+				) ); ?>
+			</h2>
+			<p class="description">
+				<?php esc_html_e( 'Multiple pages compete for the same keywords, splitting ranking signals.', 'searchforge' ); ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-analysis&tab=cannibalization' ) ); ?>">
+					<?php esc_html_e( 'View all', 'searchforge' ); ?> &rarr;
+				</a>
+			</p>
+			<?php
+			$top_cannibal = array_filter( $cannibalization, fn( $c ) => $c['severity'] === 'high' );
+			if ( empty( $top_cannibal ) ) {
+				$top_cannibal = array_slice( $cannibalization, 0, 3 );
+			} else {
+				$top_cannibal = array_slice( $top_cannibal, 0, 3 );
+			}
+			?>
+			<?php foreach ( $top_cannibal as $item ) : ?>
+				<div class="sf-alert sf-alert-<?php echo $item['severity'] === 'high' ? 'high' : 'medium'; ?>">
+					<strong>&ldquo;<?php echo esc_html( $item['query'] ); ?>&rdquo;</strong>
+					<?php echo esc_html( sprintf(
+						__( '%d pages competing | %s impressions', 'searchforge' ),
+						$item['page_count'],
+						number_format( $item['total_impressions'] )
+					) ); ?>
+				</div>
+			<?php endforeach; ?>
 		</div>
 	<?php endif; ?>
 

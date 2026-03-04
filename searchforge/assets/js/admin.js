@@ -110,6 +110,49 @@
 		URL.revokeObjectURL(url);
 	});
 
+	// AI Content Brief button.
+	$(document).on('click', '.sf-ai-brief-btn', function () {
+		var $btn = $(this);
+		var pagePath = $btn.data('page');
+		$btn.prop('disabled', true).text('Generating...');
+
+		$.post(searchforge.ajax_url, {
+			action: 'searchforge_generate_content_brief',
+			nonce: searchforge.nonce,
+			page_path: pagePath
+		}, function (response) {
+			if (response.success) {
+				var title = 'AI Content Brief: ' + pagePath;
+				if (response.data.method === 'heuristic') {
+					title += ' (Heuristic)';
+				}
+				showModal(title, response.data.brief, response.data.filename);
+			} else {
+				alert('Brief generation failed: ' + (response.data && response.data.message || 'Unknown error'));
+			}
+			$btn.prop('disabled', false).text('AI Brief');
+		}).fail(function () {
+			alert('Network error.');
+			$btn.prop('disabled', false).text('AI Brief');
+		});
+	});
+
+	// Dismiss alert.
+	$(document).on('click', '.sf-dismiss-alert', function () {
+		var $btn = $(this);
+		var alertId = $btn.data('alert-id');
+
+		$.post(searchforge.ajax_url, {
+			action: 'searchforge_dismiss_alert',
+			nonce: searchforge.nonce,
+			alert_id: alertId
+		}, function (response) {
+			if (response.success) {
+				$btn.closest('.sf-alert').fadeOut();
+			}
+		});
+	});
+
 	// Close modal on outside click.
 	$(document).on('click', '#sf-export-modal', function (e) {
 		if (e.target === this) {

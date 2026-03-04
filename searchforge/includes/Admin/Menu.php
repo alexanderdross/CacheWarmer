@@ -50,6 +50,15 @@ class Menu {
 
 		add_submenu_page(
 			'searchforge',
+			__( 'Analysis', 'searchforge' ),
+			__( 'Analysis', 'searchforge' ),
+			'manage_options',
+			'searchforge-analysis',
+			[ $this, 'render_analysis' ]
+		);
+
+		add_submenu_page(
+			'searchforge',
 			__( 'Export', 'searchforge' ),
 			__( 'Export', 'searchforge' ),
 			'manage_options',
@@ -77,6 +86,10 @@ class Menu {
 
 	public function render_keywords(): void {
 		include SEARCHFORGE_PATH . 'templates/keywords.php';
+	}
+
+	public function render_analysis(): void {
+		include SEARCHFORGE_PATH . 'templates/analysis.php';
 	}
 
 	public function render_export(): void {
