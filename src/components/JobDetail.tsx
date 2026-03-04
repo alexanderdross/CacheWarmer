@@ -62,6 +62,7 @@ function CacheHeaderBadge({ cacheHeadersJson }: { cacheHeadersJson: string | nul
 
 export default function JobDetail({ job, onBack }: JobDetailProps) {
   const [exporting, setExporting] = useState(false);
+  const [exportingFailed, setExportingFailed] = useState(false);
   const [results, setResults] = useState<UrlResult[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -69,6 +70,10 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
+  const [expandedTargets, setExpandedTargets] = useState<Record<string, boolean>>({});
+  const [failedResults, setFailedResults] = useState<UrlResult[]>([]);
+  const [loadingFailed, setLoadingFailed] = useState(false);
+  const [failedLoaded, setFailedLoaded] = useState(false);
 
   const statsByTarget: Record<string, Record<string, number>> = {};
   for (const stat of job.stats) {
@@ -94,6 +99,51 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
       fetchResults();
     }
   }, [showResults, results.length, fetchResults]);
+
+  const fetchAllResults = useCallback(async () => {
+    if (failedLoaded) return;
+    setLoadingFailed(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}?results=true`);
+      if (res.ok) {
+        const data = await res.json();
+        setFailedResults(data.results || []);
+        setFailedLoaded(true);
+      }
+    } finally {
+      setLoadingFailed(false);
+    }
+  }, [job.id, failedLoaded]);
+
+  const toggleTarget = (target: string) => {
+    if (!failedLoaded && !loadingFailed) {
+      fetchAllResults();
+    }
+    setExpandedTargets((prev) => ({ ...prev, [target]: !prev[target] }));
+  };
+
+  const handleExportFailed = async () => {
+    setExportingFailed(true);
+    try {
+      const res = await fetch("/api/export-failed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id, format: "csv" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([data.content], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      setExportingFailed(false);
+    }
+  };
 
   const filteredResults = results.filter((r) => {
     if (filterTarget !== "all" && r.target !== filterTarget) return false;
@@ -212,33 +262,98 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
 
       {Object.keys(statsByTarget).length > 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-          <h3 className="text-md font-semibold mb-4">Ergebnisse pro Target</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-md font-semibold">Ergebnisse pro Target</h3>
+            {Object.values(statsByTarget).some((s) => s.failed || s.skipped) && (
+              <button
+                onClick={handleExportFailed}
+                disabled={exportingFailed}
+                className="bg-red-900/40 hover:bg-red-900/60 disabled:opacity-50 text-red-300 text-xs font-medium py-1.5 px-3 rounded-md transition-colors border border-red-800"
+              >
+                {exportingFailed ? "Exportiere..." : "Export Fehlgeschlagen/Uebersprungen (CSV)"}
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(statsByTarget).map(([target, stats]) => (
-              <div key={target} className="bg-gray-800 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-orange-400 mb-2 capitalize">{target}</h4>
-                <div className="space-y-1 text-sm">
-                  {stats.success && (
-                    <div className="flex justify-between">
-                      <span className="text-green-400">Erfolgreich</span>
-                      <span>{stats.success}</span>
+            {Object.entries(statsByTarget).map(([target, stats]) => {
+              const totalCount = (stats.success || 0) + (stats.failed || 0) + (stats.skipped || 0);
+              const isExpanded = expandedTargets[target] || false;
+              const targetResults = failedResults.filter(
+                (r: UrlResult) => r.target === target
+              );
+              return (
+                <div key={target} className="bg-gray-800 rounded-lg overflow-hidden">
+                  <div
+                    className="p-4 cursor-pointer hover:bg-gray-700/50 transition-colors"
+                    onClick={() => totalCount > 0 && toggleTarget(target)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-orange-400 capitalize">{target}</h4>
+                      <span className={`text-gray-500 text-xs transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}>
+                        &#9660;
+                      </span>
                     </div>
-                  )}
-                  {stats.failed && (
-                    <div className="flex justify-between">
-                      <span className="text-red-400">Fehlgeschlagen</span>
-                      <span>{stats.failed}</span>
+                    <div className="space-y-1 text-sm">
+                      {stats.success && (
+                        <div className="flex justify-between">
+                          <span className="text-green-400">Erfolgreich</span>
+                          <span>{stats.success}</span>
+                        </div>
+                      )}
+                      {stats.failed && (
+                        <div className="flex justify-between">
+                          <span className="text-red-400">Fehlgeschlagen</span>
+                          <span>{stats.failed}</span>
+                        </div>
+                      )}
+                      {stats.skipped && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Uebersprungen</span>
+                          <span>{stats.skipped}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {stats.skipped && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Uebersprungen</span>
-                      <span>{stats.skipped}</span>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="border-t border-gray-700 p-4 bg-gray-900/50 max-h-80 overflow-y-auto">
+                      {loadingFailed && !failedLoaded ? (
+                        <p className="text-xs text-gray-500">Lade Details...</p>
+                      ) : targetResults.length === 0 ? (
+                        <p className="text-xs text-gray-500">Keine Details verfuegbar.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {targetResults.map((r: UrlResult, idx: number) => (
+                            <div key={r.id || idx} className="text-xs border-b border-gray-700/50 pb-2 last:border-0 last:pb-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`px-1.5 py-0.5 rounded font-medium ${
+                                  r.status === "success" ? "bg-green-900/50 text-green-300" :
+                                  r.status === "failed" ? "bg-red-900/50 text-red-300" :
+                                  "bg-gray-700 text-gray-400"
+                                }`}>
+                                  {r.status === "success" ? "OK" : r.status === "failed" ? "FAIL" : "SKIP"}
+                                </span>
+                                {r.http_status && (
+                                  <span className="text-gray-500">{r.http_status}</span>
+                                )}
+                                {r.duration_ms && (
+                                  <span className="text-gray-600">{r.duration_ms}ms</span>
+                                )}
+                                <CacheHeaderBadge cacheHeadersJson={r.cache_headers} />
+                              </div>
+                              <div className="font-mono text-gray-300 truncate" title={r.url}>{r.url}</div>
+                              {r.error && (
+                                <div className="text-red-400/80 mt-0.5 truncate" title={r.error}>{r.error}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -285,6 +400,7 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
                 <option value="all">Alle Status</option>
                 <option value="success">Erfolgreich</option>
                 <option value="failed">Fehlgeschlagen</option>
+                <option value="skipped">Uebersprungen</option>
               </select>
             </div>
 
@@ -312,8 +428,8 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
                       <td className="py-1.5 pr-3 capitalize">{r.target}</td>
                       <td className="py-1.5 pr-3 text-gray-400">{r.viewport || "-"}</td>
                       <td className="py-1.5 pr-3">
-                        <span className={r.status === "success" ? "text-green-400" : "text-red-400"}>
-                          {r.status === "success" ? "OK" : "FAIL"}
+                        <span className={r.status === "success" ? "text-green-400" : r.status === "skipped" ? "text-gray-400" : "text-red-400"}>
+                          {r.status === "success" ? "OK" : r.status === "skipped" ? "SKIP" : "FAIL"}
                         </span>
                       </td>
                       <td className="py-1.5 pr-3 text-gray-400">{r.http_status || "-"}</td>
