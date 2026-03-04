@@ -172,3 +172,67 @@
 @keyframes sf-spin {
 	to { transform: rotate(360deg); }
 }
+
+/* SearchForge Score */
+.sf-card-score {
+	border-color: #667eea;
+}
+
+.sf-score-good {
+	color: #155724;
+}
+
+.sf-score-ok {
+	color: #856404;
+}
+
+.sf-score-low {
+	color: #721c24;
+}
+
+/* Alerts */
+.sf-alerts-section {
+	margin: 20px 0;
+}
+
+.sf-alert {
+	padding: 10px 16px;
+	border-left: 4px solid #c3c4c7;
+	background: #fff;
+	margin-bottom: 8px;
+	border-radius: 0 4px 4px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.sf-alert-high {
+	border-left-color: #d63638;
+	background: #fef1f1;
+}
+
+.sf-alert-medium {
+	border-left-color: #dba617;
+	background: #fef8ee;
+}
+
+.sf-alert-info {
+	border-left-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.sf-alert-date {
+	margin-left: auto;
+	color: #646970;
+	font-size: 12px;
+}
+
+/* Content Decay */
+.sf-decay-section {
+	margin: 20px 0;
+}
+
+.sf-decay-value {
+	color: #d63638;
+	font-weight: 600;
+}

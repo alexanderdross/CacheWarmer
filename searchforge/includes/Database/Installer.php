@@ -80,6 +80,19 @@ class Installer {
 				KEY idx_expires (expires_at)
 			) {$charset};
 
+			CREATE TABLE {$wpdb->prefix}sf_alerts (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				alert_type VARCHAR(30) NOT NULL,
+				title VARCHAR(255) NOT NULL,
+				severity VARCHAR(10) NOT NULL DEFAULT 'info',
+				data LONGTEXT DEFAULT NULL,
+				is_read TINYINT(1) NOT NULL DEFAULT 0,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (id),
+				KEY idx_type_read (alert_type, is_read),
+				KEY idx_created (created_at)
+			) {$charset};
+
 			CREATE TABLE {$wpdb->prefix}sf_settings (
 				setting_name VARCHAR(100) NOT NULL,
 				setting_value LONGTEXT DEFAULT NULL,

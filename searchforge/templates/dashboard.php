@@ -1,11 +1,20 @@
 <?php
 defined( 'ABSPATH' ) || exit;
 
-$summary  = SearchForge\Admin\Dashboard::get_summary();
-$pages    = SearchForge\Admin\Dashboard::get_top_pages( 10 );
-$keywords = SearchForge\Admin\Dashboard::get_top_keywords( 15 );
-$settings = SearchForge\Admin\Settings::get_all();
-$connected = ! empty( $settings['gsc_access_token'] );
+$summary    = SearchForge\Admin\Dashboard::get_summary();
+$pages      = SearchForge\Admin\Dashboard::get_top_pages( 10 );
+$keywords   = SearchForge\Admin\Dashboard::get_top_keywords( 15 );
+$settings   = SearchForge\Admin\Settings::get_all();
+$connected  = ! empty( $settings['gsc_access_token'] );
+$site_score = SearchForge\Scoring\Score::calculate_site_score();
+$decaying   = SearchForge\Trends\Engine::get_decaying_pages( 'gsc', 5 );
+
+// Recent alerts.
+global $wpdb;
+$recent_alerts = $wpdb->get_results(
+	"SELECT * FROM {$wpdb->prefix}sf_alerts ORDER BY created_at DESC LIMIT 5",
+	ARRAY_A
+);
 ?>
 
 <div class="wrap searchforge-wrap">
@@ -59,7 +68,56 @@ $connected = ! empty( $settings['gsc_access_token'] );
 			<h3><?php esc_html_e( 'Keywords', 'searchforge' ); ?></h3>
 			<span class="sf-card-value"><?php echo esc_html( number_format( $summary['total_keywords'] ) ); ?></span>
 		</div>
+		<?php if ( $site_score ) : ?>
+			<div class="sf-card sf-card-score">
+				<h3><?php esc_html_e( 'SearchForge Score', 'searchforge' ); ?></h3>
+				<span class="sf-card-value sf-score-<?php echo $site_score['total'] >= 70 ? 'good' : ( $site_score['total'] >= 40 ? 'ok' : 'low' ); ?>">
+					<?php echo esc_html( $site_score['total'] ); ?>/100
+				</span>
+			</div>
+		<?php endif; ?>
 	</div>
+
+	<!-- Recent Alerts -->
+	<?php if ( ! empty( $recent_alerts ) ) : ?>
+		<div class="sf-alerts-section">
+			<h2><?php esc_html_e( 'Recent Alerts', 'searchforge' ); ?></h2>
+			<?php foreach ( $recent_alerts as $alert ) : ?>
+				<div class="sf-alert sf-alert-<?php echo esc_attr( $alert['severity'] ); ?>">
+					<strong>[<?php echo esc_html( strtoupper( $alert['severity'] ) ); ?>]</strong>
+					<?php echo esc_html( $alert['title'] ); ?>
+					<span class="sf-alert-date"><?php echo esc_html( wp_date( 'M j, H:i', strtotime( $alert['created_at'] ) ) ); ?></span>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	<?php endif; ?>
+
+	<!-- Content Decay Warning -->
+	<?php if ( ! empty( $decaying ) ) : ?>
+		<div class="sf-decay-section">
+			<h2><?php esc_html_e( 'Content Decay Warning', 'searchforge' ); ?></h2>
+			<table class="widefat sf-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+						<th><?php esc_html_e( 'Recent Clicks', 'searchforge' ); ?></th>
+						<th><?php esc_html_e( 'Previous Clicks', 'searchforge' ); ?></th>
+						<th><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $decaying as $page ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $page['page_path'] ); ?></code></td>
+							<td><?php echo esc_html( number_format( (int) $page['recent_clicks'] ) ); ?></td>
+							<td><?php echo esc_html( number_format( (int) $page['prev_clicks'] ) ); ?></td>
+							<td class="sf-decay-value"><?php echo esc_html( $page['decline_pct'] ); ?>%</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+	<?php endif; ?>
 
 	<?php if ( $summary['last_sync'] ) : ?>
 		<p class="sf-last-sync">

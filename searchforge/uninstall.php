@@ -14,6 +14,7 @@ $tables = [
 	'sf_keywords',
 	'sf_sync_log',
 	'sf_briefs_cache',
+	'sf_alerts',
 	'sf_settings',
 ];
 
@@ -27,3 +28,4 @@ delete_option( 'searchforge_db_version' );
 
 // Remove scheduled events.
 wp_clear_scheduled_hook( 'searchforge_daily_sync' );
+wp_clear_scheduled_hook( 'searchforge_weekly_digest' );

@@ -16,6 +16,14 @@ class Settings {
 		'gsc_token_expires' => 0,
 		'gsc_property'      => '',
 		'gsc_max_pages'     => 0, // 0 = unlimited (Pro), limited in Free.
+		'bing_api_key'      => '',
+		'bing_site_url'     => '',
+		'bing_enabled'      => false,
+		'alerts_enabled'    => false,
+		'alert_email'       => '',
+		'alert_ranking_drop_threshold' => 3, // positions
+		'alert_traffic_anomaly'        => true,
+		'weekly_digest_enabled'        => false,
 		'sync_frequency'    => 'daily',
 		'data_retention'    => 30, // days. Free = 30, Pro = 365.
 		'llms_txt_enabled'  => true,
@@ -50,6 +58,14 @@ class Settings {
 		$sanitized['gsc_token_expires'] = $current['gsc_token_expires'];
 
 		$sanitized['gsc_max_pages']   = absint( $input['gsc_max_pages'] ?? $current['gsc_max_pages'] );
+		$sanitized['bing_api_key']    = sanitize_text_field( $input['bing_api_key'] ?? $current['bing_api_key'] );
+		$sanitized['bing_site_url']   = esc_url_raw( $input['bing_site_url'] ?? $current['bing_site_url'] );
+		$sanitized['bing_enabled']    = ! empty( $input['bing_enabled'] );
+		$sanitized['alerts_enabled']  = ! empty( $input['alerts_enabled'] );
+		$sanitized['alert_email']     = sanitize_email( $input['alert_email'] ?? $current['alert_email'] );
+		$sanitized['alert_ranking_drop_threshold'] = absint( $input['alert_ranking_drop_threshold'] ?? $current['alert_ranking_drop_threshold'] );
+		$sanitized['alert_traffic_anomaly']        = ! empty( $input['alert_traffic_anomaly'] );
+		$sanitized['weekly_digest_enabled']        = ! empty( $input['weekly_digest_enabled'] );
 		$sanitized['sync_frequency']  = in_array( $input['sync_frequency'] ?? '', [ 'daily', 'twicedaily', 'weekly' ], true )
 			? $input['sync_frequency']
 			: $current['sync_frequency'];

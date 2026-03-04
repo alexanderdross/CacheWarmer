@@ -8,8 +8,10 @@ class Ajax {
 
 	public function __construct() {
 		add_action( 'wp_ajax_searchforge_sync_gsc', [ $this, 'sync_gsc' ] );
+		add_action( 'wp_ajax_searchforge_sync_bing', [ $this, 'sync_bing' ] );
 		add_action( 'wp_ajax_searchforge_disconnect_gsc', [ $this, 'disconnect_gsc' ] );
 		add_action( 'wp_ajax_searchforge_export_brief', [ $this, 'export_brief' ] );
+		add_action( 'wp_ajax_searchforge_dismiss_alert', [ $this, 'dismiss_alert' ] );
 	}
 
 	public function sync_gsc(): void {
@@ -49,6 +51,45 @@ class Ajax {
 		] );
 
 		wp_send_json_success( [ 'message' => __( 'GSC disconnected.', 'searchforge' ) ] );
+	}
+
+	public function sync_bing(): void {
+		check_ajax_referer( 'searchforge_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'searchforge' ) ], 403 );
+		}
+
+		if ( ! Settings::is_pro() ) {
+			wp_send_json_error( [ 'message' => __( 'Bing integration requires a Pro license.', 'searchforge' ) ] );
+		}
+
+		$syncer = new \SearchForge\Integrations\Bing\Syncer();
+		$result = $syncer->sync_all();
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	public function dismiss_alert(): void {
+		check_ajax_referer( 'searchforge_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'searchforge' ) ], 403 );
+		}
+
+		$alert_id = absint( $_POST['alert_id'] ?? 0 );
+		if ( ! $alert_id ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid alert ID.', 'searchforge' ) ] );
+		}
+
+		global $wpdb;
+		$wpdb->update( "{$wpdb->prefix}sf_alerts", [ 'is_read' => 1 ], [ 'id' => $alert_id ] );
+
+		wp_send_json_success();
 	}
 
 	public function export_brief(): void {
