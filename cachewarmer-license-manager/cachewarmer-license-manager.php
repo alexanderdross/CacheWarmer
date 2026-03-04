@@ -79,6 +79,7 @@ function cwlm_init() {
 
     // Autoload-Klassen laden
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-loader.php';
+    require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-settings.php';
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-database.php';
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-license-manager.php';
     require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-installation-tracker.php';

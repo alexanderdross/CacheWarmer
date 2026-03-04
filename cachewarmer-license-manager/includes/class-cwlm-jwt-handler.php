@@ -70,8 +70,12 @@ class CWLM_JWT_Handler {
 
         if ( $this->use_firebase ) {
             try {
-                $decoded = \Firebase\JWT\JWT::decode( $token, new \Firebase\JWT\Key( $this->secret, 'HS256' ) );
-                return (array) $decoded;
+                $decoded = (array) \Firebase\JWT\JWT::decode( $token, new \Firebase\JWT\Key( $this->secret, 'HS256' ) );
+                // exp-Claim erzwingen (Firebase prüft exp wenn vorhanden, erzwingt es aber nicht)
+                if ( ! isset( $decoded['exp'] ) ) {
+                    return false;
+                }
+                return $decoded;
             } catch ( \Exception $e ) {
                 return false;
             }

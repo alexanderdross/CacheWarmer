@@ -81,8 +81,52 @@ if ( ! function_exists( 'stripslashes_deep' ) ) {
     }
 }
 
+// WordPress i18n Stub
+if ( ! function_exists( '__' ) ) {
+    function __( $text, $domain = 'default' ) {
+        return $text;
+    }
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+    function esc_html__( $text, $domain = 'default' ) {
+        return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+    }
+}
+
+// wp_options Stubs (backed by global array for test isolation)
+if ( ! function_exists( 'get_option' ) ) {
+    function get_option( $option, $default = false ) {
+        global $cwlm_test_options;
+        return $cwlm_test_options[ $option ] ?? $default;
+    }
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+    function update_option( $option, $value, $autoload = null ) {
+        global $cwlm_test_options;
+        $cwlm_test_options[ $option ] = $value;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_generate_password' ) ) {
+    function wp_generate_password( $length = 12, $special_chars = true, $extra_special_chars = false ) {
+        return bin2hex( random_bytes( (int) ceil( $length / 2 ) ) );
+    }
+}
+
+// Auth salts for encryption tests
+if ( ! defined( 'AUTH_KEY' ) ) {
+    define( 'AUTH_KEY', 'test-auth-key-for-unit-tests' );
+}
+if ( ! defined( 'SECURE_AUTH_KEY' ) ) {
+    define( 'SECURE_AUTH_KEY', 'test-secure-auth-key-for-unit-tests' );
+}
+
 // ── Autoload testbare Klassen ──────────────────────────────────────────
 
 // Nur Klassen die ohne DB/wpdb funktionieren
 require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-feature-flags.php';
 require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-jwt-handler.php';
+require_once CWLM_PLUGIN_DIR . 'includes/class-cwlm-settings.php';
