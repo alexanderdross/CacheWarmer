@@ -93,6 +93,25 @@ class Installer {
 				KEY idx_created (created_at)
 			) {$charset};
 
+			CREATE TABLE {$wpdb->prefix}sf_ga4_metrics (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				page_path VARCHAR(512) NOT NULL,
+				snapshot_date DATE NOT NULL,
+				sessions INT UNSIGNED NOT NULL DEFAULT 0,
+				bounce_rate DECIMAL(5,1) DEFAULT NULL,
+				avg_session_dur DECIMAL(8,1) DEFAULT NULL,
+				engaged_sessions INT UNSIGNED NOT NULL DEFAULT 0,
+				conversions INT UNSIGNED NOT NULL DEFAULT 0,
+				pageviews INT UNSIGNED NOT NULL DEFAULT 0,
+				organic_sessions INT UNSIGNED NOT NULL DEFAULT 0,
+				organic_bounce DECIMAL(5,1) DEFAULT NULL,
+				organic_conversions INT UNSIGNED NOT NULL DEFAULT 0,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (id),
+				KEY idx_page_date (page_path, snapshot_date),
+				KEY idx_snapshot_date (snapshot_date)
+			) {$charset};
+
 			CREATE TABLE {$wpdb->prefix}sf_settings (
 				setting_name VARCHAR(100) NOT NULL,
 				setting_value LONGTEXT DEFAULT NULL,

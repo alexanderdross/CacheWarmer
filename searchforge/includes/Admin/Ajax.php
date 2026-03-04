@@ -12,6 +12,7 @@ class Ajax {
 		add_action( 'wp_ajax_searchforge_disconnect_gsc', [ $this, 'disconnect_gsc' ] );
 		add_action( 'wp_ajax_searchforge_export_brief', [ $this, 'export_brief' ] );
 		add_action( 'wp_ajax_searchforge_dismiss_alert', [ $this, 'dismiss_alert' ] );
+		add_action( 'wp_ajax_searchforge_generate_content_brief', [ $this, 'generate_content_brief' ] );
 	}
 
 	public function sync_gsc(): void {
@@ -116,6 +117,34 @@ class Ajax {
 		wp_send_json_success( [
 			'markdown' => $markdown,
 			'filename' => 'searchforge-' . sanitize_file_name( trim( $page_path, '/' ) ?: 'homepage' ) . '.md',
+		] );
+	}
+
+	public function generate_content_brief(): void {
+		check_ajax_referer( 'searchforge_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'searchforge' ) ], 403 );
+		}
+
+		if ( ! Settings::is_pro() ) {
+			wp_send_json_error( [ 'message' => __( 'Content briefs require a Pro license.', 'searchforge' ) ] );
+		}
+
+		$page_path = sanitize_text_field( $_POST['page_path'] ?? '' );
+		if ( empty( $page_path ) ) {
+			wp_send_json_error( [ 'message' => __( 'Page path is required.', 'searchforge' ) ] );
+		}
+
+		$result = \SearchForge\Analysis\ContentBrief::generate( $page_path );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+		}
+
+		wp_send_json_success( [
+			'brief'    => $result['brief'],
+			'method'   => $result['method'],
+			'filename' => 'content-brief-' . sanitize_file_name( trim( $page_path, '/' ) ?: 'homepage' ) . '.md',
 		] );
 	}
 }

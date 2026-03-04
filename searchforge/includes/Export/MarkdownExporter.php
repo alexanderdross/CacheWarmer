@@ -61,6 +61,9 @@ class MarkdownExporter {
 		// Historical trend (if data exists).
 		$md .= $this->render_trend_section( $page_path );
 
+		// GA4 behavior data (if available).
+		$md .= $this->render_ga4_section( $page_path );
+
 		// Insights.
 		$all_keywords = $this->get_keywords( $page_path, $latest_date, 'gsc' );
 		$page_data    = $this->get_page_data( $page_path, $latest_date, 'gsc' );
@@ -370,6 +373,40 @@ class MarkdownExporter {
 				. abs( $trend['decay_percentage'] ) . "% clicks over the last "
 				. $trend['decay_period_days'] . " days.\n";
 		}
+
+		$md .= "\n";
+		return $md;
+	}
+
+	/**
+	 * Render GA4 on-page behavior section.
+	 */
+	private function render_ga4_section( string $page_path ): string {
+		if ( ! Settings::is_pro() || ! Settings::get( 'ga4_enabled' ) ) {
+			return '';
+		}
+
+		$ga4 = \SearchForge\Integrations\GA4\Syncer::get_page_behavior( $page_path );
+		if ( ! $ga4 ) {
+			return '';
+		}
+
+		$md  = "## On-Page Behavior (GA4)\n";
+		$md .= "| Metric | Value | Signal |\n";
+		$md .= "|--------|-------|--------|\n";
+
+		$bounce = (float) $ga4['bounce_rate'];
+		$bounce_signal = $bounce > 60 ? 'High — content mismatch' : ( $bounce > 40 ? 'Normal' : 'Good' );
+		$md .= "| Bounce Rate | {$bounce}% | {$bounce_signal} |\n";
+
+		$dur = (float) $ga4['avg_session_dur'];
+		$dur_signal = $dur < 60 ? 'Low — users leave quickly' : ( $dur < 180 ? 'Average' : 'Good engagement' );
+		$md .= "| Avg Session Duration | " . gmdate( 'i:s', (int) $dur ) . " | {$dur_signal} |\n";
+
+		$md .= "| Sessions | " . number_format( (int) $ga4['sessions'] ) . " | — |\n";
+		$md .= "| Organic Sessions | " . number_format( (int) $ga4['organic_sessions'] ) . " | — |\n";
+		$md .= "| Conversions | " . (int) $ga4['conversions'] . " | "
+			. ( (int) $ga4['conversions'] > 0 ? 'Converting' : 'No conversions' ) . " |\n";
 
 		$md .= "\n";
 		return $md;

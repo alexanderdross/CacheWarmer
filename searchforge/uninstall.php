@@ -15,6 +15,7 @@ $tables = [
 	'sf_sync_log',
 	'sf_briefs_cache',
 	'sf_alerts',
+	'sf_ga4_metrics',
 	'sf_settings',
 ];
 

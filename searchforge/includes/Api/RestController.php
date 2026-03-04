@@ -54,6 +54,48 @@ class RestController {
 			'callback'            => [ $this, 'trigger_sync' ],
 			'permission_callback' => [ $this, 'check_admin_permissions' ],
 		] );
+
+		register_rest_route( self::NAMESPACE, '/cannibalization', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_cannibalization' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/clusters', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_clusters' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/content-brief', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_content_brief' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+			'args'                => [
+				'path' => [
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+			],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/content-gaps', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_content_gaps' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/trends', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_trends' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+			'args'                => [
+				'keyword' => [
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+			],
+		] );
 	}
 
 	public function check_permissions(): bool {
@@ -137,5 +179,68 @@ class RestController {
 		}
 
 		return new \WP_REST_Response( $result );
+	}
+
+	public function get_cannibalization( \WP_REST_Request $request ): \WP_REST_Response {
+		$limit  = min( absint( $request->get_param( 'limit' ) ?: 50 ), 200 );
+		$result = \SearchForge\Analysis\Cannibalization::detect( $limit );
+
+		return new \WP_REST_Response( [
+			'cannibalization' => $result,
+			'total'           => count( $result ),
+		] );
+	}
+
+	public function get_clusters( \WP_REST_Request $request ): \WP_REST_Response {
+		$limit  = min( absint( $request->get_param( 'limit' ) ?: 500 ), 1000 );
+		$result = \SearchForge\Analysis\Clustering::cluster_keywords( 0.3, $limit );
+
+		return new \WP_REST_Response( [
+			'clusters' => $result,
+			'total'    => count( $result ),
+		] );
+	}
+
+	public function get_content_brief( \WP_REST_Request $request ): \WP_REST_Response {
+		$path   = $request->get_param( 'path' );
+		$result = \SearchForge\Analysis\ContentBrief::generate( $path );
+
+		if ( is_wp_error( $result ) ) {
+			return new \WP_REST_Response( [
+				'error' => $result->get_error_message(),
+			], 400 );
+		}
+
+		return new \WP_REST_Response( $result );
+	}
+
+	public function get_content_gaps( \WP_REST_Request $request ): \WP_REST_Response {
+		$limit   = min( absint( $request->get_param( 'limit' ) ?: 20 ), 100 );
+		$enricher = new \SearchForge\Integrations\KeywordPlanner\Enricher();
+		$result   = $enricher->get_content_gaps( $limit );
+
+		return new \WP_REST_Response( [
+			'gaps'  => $result,
+			'total' => count( $result ),
+		] );
+	}
+
+	public function get_trends( \WP_REST_Request $request ): \WP_REST_Response {
+		$keyword = $request->get_param( 'keyword' );
+		$geo     = sanitize_text_field( $request->get_param( 'geo' ) ?? '' );
+
+		$interest = \SearchForge\Integrations\Trends\Client::get_interest_over_time( $keyword, $geo );
+		if ( is_wp_error( $interest ) ) {
+			return new \WP_REST_Response( [ 'error' => $interest->get_error_message() ], 400 );
+		}
+
+		$related = \SearchForge\Integrations\Trends\Client::get_related_queries( $keyword, $geo );
+		$seasonality = \SearchForge\Integrations\Trends\Client::detect_seasonality( $keyword, $geo );
+
+		return new \WP_REST_Response( [
+			'interest'    => $interest,
+			'related'     => is_wp_error( $related ) ? null : $related,
+			'seasonality' => $seasonality,
+		] );
 	}
 }

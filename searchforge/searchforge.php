@@ -2,8 +2,8 @@
 /**
  * Plugin Name: SearchForge
  * Plugin URI:  https://forge.drossmedia.de
- * Description: Unifies search data sources (GSC, Bing, Keyword Planner, Trends) into LLM-ready markdown briefs.
- * Version:     1.1.0
+ * Description: Unifies search data sources (GSC, Bing, Keyword Planner, Trends, GA4) into LLM-ready markdown briefs with AI content analysis.
+ * Version:     1.2.0
  * Author:      Dross Media
  * Author URI:  https://drossmedia.de
  * License:     GPL-2.0-or-later
@@ -15,12 +15,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SEARCHFORGE_VERSION', '1.1.0' );
+define( 'SEARCHFORGE_VERSION', '1.2.0' );
 define( 'SEARCHFORGE_FILE', __FILE__ );
 define( 'SEARCHFORGE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SEARCHFORGE_URL', plugin_dir_url( __FILE__ ) );
 define( 'SEARCHFORGE_SLUG', 'searchforge' );
-define( 'SEARCHFORGE_DB_VERSION', '1.1.0' );
+define( 'SEARCHFORGE_DB_VERSION', '1.2.0' );
 
 require_once SEARCHFORGE_PATH . 'includes/Autoloader.php';
 
@@ -126,6 +126,24 @@ final class SearchForge {
 		) {
 			$bing_syncer = new SearchForge\Integrations\Bing\Syncer();
 			$bing_syncer->sync_all();
+		}
+
+		// GA4 sync (Pro only).
+		if ( SearchForge\Admin\Settings::is_pro()
+			&& ! empty( $settings['ga4_enabled'] )
+			&& ! empty( $settings['ga4_property_id'] )
+		) {
+			$ga4_syncer = new SearchForge\Integrations\GA4\Syncer();
+			$ga4_syncer->sync();
+		}
+
+		// Keyword Planner enrichment (Pro only).
+		if ( SearchForge\Admin\Settings::is_pro()
+			&& ! empty( $settings['kwp_enabled'] )
+			&& ! empty( $settings['kwp_customer_id'] )
+		) {
+			$enricher = new SearchForge\Integrations\KeywordPlanner\Enricher();
+			$enricher->enrich_keywords();
 		}
 	}
 

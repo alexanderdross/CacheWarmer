@@ -19,6 +19,22 @@ class Settings {
 		'bing_api_key'      => '',
 		'bing_site_url'     => '',
 		'bing_enabled'      => false,
+		// Keyword Planner (Pro).
+		'kwp_customer_id'     => '',
+		'kwp_developer_token' => '',
+		'kwp_language_id'     => '1000',
+		'kwp_geo_target'      => '2840',
+		'kwp_enabled'         => false,
+		// Google Trends (Pro).
+		'serpapi_key'         => '',
+		'trends_enabled'      => false,
+		// GA4 (Pro).
+		'ga4_property_id'     => '',
+		'ga4_enabled'         => false,
+		// AI Content Briefs (Pro).
+		'ai_api_key'          => '',
+		'ai_provider'         => 'openai',
+		// Alerts.
 		'alerts_enabled'    => false,
 		'alert_email'       => '',
 		'alert_ranking_drop_threshold' => 3, // positions
@@ -61,6 +77,28 @@ class Settings {
 		$sanitized['bing_api_key']    = sanitize_text_field( $input['bing_api_key'] ?? $current['bing_api_key'] );
 		$sanitized['bing_site_url']   = esc_url_raw( $input['bing_site_url'] ?? $current['bing_site_url'] );
 		$sanitized['bing_enabled']    = ! empty( $input['bing_enabled'] );
+
+		// Keyword Planner.
+		$sanitized['kwp_customer_id']     = sanitize_text_field( $input['kwp_customer_id'] ?? $current['kwp_customer_id'] );
+		$sanitized['kwp_developer_token'] = sanitize_text_field( $input['kwp_developer_token'] ?? $current['kwp_developer_token'] );
+		$sanitized['kwp_language_id']     = sanitize_text_field( $input['kwp_language_id'] ?? $current['kwp_language_id'] );
+		$sanitized['kwp_geo_target']      = sanitize_text_field( $input['kwp_geo_target'] ?? $current['kwp_geo_target'] );
+		$sanitized['kwp_enabled']         = ! empty( $input['kwp_enabled'] );
+
+		// Google Trends.
+		$sanitized['serpapi_key']    = sanitize_text_field( $input['serpapi_key'] ?? $current['serpapi_key'] );
+		$sanitized['trends_enabled'] = ! empty( $input['trends_enabled'] );
+
+		// GA4.
+		$sanitized['ga4_property_id'] = sanitize_text_field( $input['ga4_property_id'] ?? $current['ga4_property_id'] );
+		$sanitized['ga4_enabled']     = ! empty( $input['ga4_enabled'] );
+
+		// AI Content Briefs.
+		$sanitized['ai_api_key']  = sanitize_text_field( $input['ai_api_key'] ?? $current['ai_api_key'] );
+		$sanitized['ai_provider'] = in_array( $input['ai_provider'] ?? '', [ 'openai', 'anthropic' ], true )
+			? $input['ai_provider']
+			: $current['ai_provider'];
+
 		$sanitized['alerts_enabled']  = ! empty( $input['alerts_enabled'] );
 		$sanitized['alert_email']     = sanitize_email( $input['alert_email'] ?? $current['alert_email'] );
 		$sanitized['alert_ranking_drop_threshold'] = absint( $input['alert_ranking_drop_threshold'] ?? $current['alert_ranking_drop_threshold'] );

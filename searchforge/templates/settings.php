@@ -152,6 +152,161 @@ if ( isset( $_GET['gsc_connected'] ) ) : ?>
 			</tr>
 		</table>
 
+		<!-- Google Keyword Planner (Pro) -->
+		<h2><?php esc_html_e( 'Google Keyword Planner', 'searchforge' ); ?>
+			<?php if ( ! SearchForge\Admin\Settings::is_pro() ) : ?>
+				<span class="sf-pro-badge">Pro</span>
+			<?php endif; ?>
+		</h2>
+		<table class="form-table">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Enable', 'searchforge' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="searchforge_settings[kwp_enabled]" value="1"
+							<?php checked( $settings['kwp_enabled'] ); ?>
+							<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+						<?php esc_html_e( 'Enable Keyword Planner integration (volume enrichment & content gaps)', 'searchforge' ); ?>
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="kwp_customer_id"><?php esc_html_e( 'Customer ID', 'searchforge' ); ?></label>
+				</th>
+				<td>
+					<input type="text" name="searchforge_settings[kwp_customer_id]" id="kwp_customer_id"
+						value="<?php echo esc_attr( $settings['kwp_customer_id'] ); ?>" class="regular-text"
+						placeholder="123-456-7890"
+						<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+					<p class="description">
+						<?php esc_html_e( 'Google Ads Customer ID (requires active Ads account, even with $0 spend)', 'searchforge' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="kwp_developer_token"><?php esc_html_e( 'Developer Token', 'searchforge' ); ?></label>
+				</th>
+				<td>
+					<input type="password" name="searchforge_settings[kwp_developer_token]" id="kwp_developer_token"
+						value="<?php echo esc_attr( $settings['kwp_developer_token'] ); ?>" class="regular-text"
+						<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+					<p class="description">
+						<?php esc_html_e( 'From Google Ads > Tools > API Center', 'searchforge' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<!-- Google Trends (Pro) -->
+		<h2><?php esc_html_e( 'Google Trends', 'searchforge' ); ?>
+			<?php if ( ! SearchForge\Admin\Settings::is_pro() ) : ?>
+				<span class="sf-pro-badge">Pro</span>
+			<?php endif; ?>
+		</h2>
+		<table class="form-table">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Enable', 'searchforge' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="searchforge_settings[trends_enabled]" value="1"
+							<?php checked( $settings['trends_enabled'] ); ?>
+							<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+						<?php esc_html_e( 'Enable Google Trends integration (seasonality, rising queries)', 'searchforge' ); ?>
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="serpapi_key"><?php esc_html_e( 'SerpApi Key', 'searchforge' ); ?></label>
+				</th>
+				<td>
+					<input type="password" name="searchforge_settings[serpapi_key]" id="serpapi_key"
+						value="<?php echo esc_attr( $settings['serpapi_key'] ); ?>" class="regular-text"
+						<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+					<p class="description">
+						<?php esc_html_e( 'From serpapi.com — used for Google Trends data', 'searchforge' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<!-- Google Analytics 4 (Pro) -->
+		<h2><?php esc_html_e( 'Google Analytics 4', 'searchforge' ); ?>
+			<?php if ( ! SearchForge\Admin\Settings::is_pro() ) : ?>
+				<span class="sf-pro-badge">Pro</span>
+			<?php endif; ?>
+		</h2>
+		<table class="form-table">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Enable', 'searchforge' ); ?></th>
+				<td>
+					<label>
+						<input type="checkbox" name="searchforge_settings[ga4_enabled]" value="1"
+							<?php checked( $settings['ga4_enabled'] ); ?>
+							<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+						<?php esc_html_e( 'Enable GA4 integration (bounce rate, engagement, conversions)', 'searchforge' ); ?>
+					</label>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="ga4_property_id"><?php esc_html_e( 'Property ID', 'searchforge' ); ?></label>
+				</th>
+				<td>
+					<input type="text" name="searchforge_settings[ga4_property_id]" id="ga4_property_id"
+						value="<?php echo esc_attr( $settings['ga4_property_id'] ); ?>" class="regular-text"
+						placeholder="123456789"
+						<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+					<p class="description">
+						<?php esc_html_e( 'GA4 Property ID (numeric). Uses the same Google OAuth connection as GSC.', 'searchforge' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
+
+		<!-- AI Content Briefs (Pro) -->
+		<h2><?php esc_html_e( 'AI Content Briefs', 'searchforge' ); ?>
+			<?php if ( ! SearchForge\Admin\Settings::is_pro() ) : ?>
+				<span class="sf-pro-badge">Pro</span>
+			<?php endif; ?>
+		</h2>
+		<table class="form-table">
+			<tr>
+				<th scope="row">
+					<label for="ai_provider"><?php esc_html_e( 'AI Provider', 'searchforge' ); ?></label>
+				</th>
+				<td>
+					<select name="searchforge_settings[ai_provider]" id="ai_provider"
+						<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?>>
+						<option value="openai" <?php selected( $settings['ai_provider'], 'openai' ); ?>>
+							<?php esc_html_e( 'OpenAI', 'searchforge' ); ?>
+						</option>
+						<option value="anthropic" <?php selected( $settings['ai_provider'], 'anthropic' ); ?>>
+							<?php esc_html_e( 'Anthropic (Claude)', 'searchforge' ); ?>
+						</option>
+					</select>
+					<p class="description">
+						<?php esc_html_e( 'Optional. Without an API key, briefs use built-in heuristic analysis.', 'searchforge' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="ai_api_key"><?php esc_html_e( 'API Key', 'searchforge' ); ?></label>
+				</th>
+				<td>
+					<input type="password" name="searchforge_settings[ai_api_key]" id="ai_api_key"
+						value="<?php echo esc_attr( $settings['ai_api_key'] ); ?>" class="regular-text"
+						<?php disabled( ! SearchForge\Admin\Settings::is_pro() ); ?> />
+					<p class="description">
+						<?php esc_html_e( 'Your own API key. Briefs work without it using heuristic analysis.', 'searchforge' ); ?>
+					</p>
+				</td>
+			</tr>
+		</table>
+
 		<!-- Alerts & Monitoring (Pro) -->
 		<h2><?php esc_html_e( 'Alerts & Monitoring', 'searchforge' ); ?>
 			<?php if ( ! SearchForge\Admin\Settings::is_pro() ) : ?>
