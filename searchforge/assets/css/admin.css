@@ -1,0 +1,174 @@
+/* SearchForge Admin Styles */
+
+.searchforge-wrap {
+	max-width: 1200px;
+}
+
+/* Summary Cards */
+.sf-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 16px;
+	margin: 20px 0;
+}
+
+.sf-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px;
+	text-align: center;
+}
+
+.sf-card h3 {
+	margin: 0 0 8px;
+	font-size: 12px;
+	color: #646970;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.sf-card-value {
+	font-size: 28px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* Tables */
+.sf-table {
+	margin-top: 12px;
+}
+
+.sf-table th {
+	font-weight: 600;
+}
+
+.sf-table td code {
+	font-size: 12px;
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* Status indicators */
+.sf-status {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 3px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.sf-status-connected {
+	background: #d4edda;
+	color: #155724;
+}
+
+.sf-status-disconnected {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+/* Pro badge */
+.sf-pro-badge {
+	display: inline-block;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	cursor: default;
+}
+
+/* Last sync info */
+.sf-last-sync {
+	color: #646970;
+	font-size: 13px;
+	margin: 8px 0 20px;
+}
+
+.sf-last-sync .button {
+	margin-left: 8px;
+}
+
+/* Export actions */
+.sf-export-actions {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
+	margin: 20px 0;
+}
+
+/* Modal */
+.sf-modal {
+	position: fixed;
+	z-index: 100000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.sf-modal-content {
+	background: #fff;
+	margin: 5% auto;
+	padding: 30px;
+	border-radius: 6px;
+	max-width: 800px;
+	max-height: 80vh;
+	overflow-y: auto;
+	position: relative;
+}
+
+.sf-modal-close {
+	position: absolute;
+	top: 10px;
+	right: 16px;
+	font-size: 28px;
+	cursor: pointer;
+	color: #646970;
+}
+
+.sf-modal-close:hover {
+	color: #1d2327;
+}
+
+#sf-modal-body {
+	background: #f6f7f7;
+	padding: 16px;
+	border-radius: 4px;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	font-size: 13px;
+	max-height: 50vh;
+	overflow-y: auto;
+	margin: 16px 0;
+}
+
+/* Error */
+.sf-error {
+	color: #d63638;
+	font-weight: 500;
+}
+
+/* Spinner */
+.sf-spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid #c3c4c7;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: sf-spin 0.6s linear infinite;
+	vertical-align: middle;
+	margin-left: 8px;
+}
+
+@keyframes sf-spin {
+	to { transform: rotate(360deg); }
+}
