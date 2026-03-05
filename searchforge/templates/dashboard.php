@@ -191,7 +191,11 @@ $recent_alerts = $wpdb->get_results(
 			<tbody>
 				<?php foreach ( $pages as $page ) : ?>
 					<tr>
-						<td><code><?php echo esc_html( $page['page_path'] ); ?></code></td>
+						<td>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-page-detail&path=' . urlencode( $page['page_path'] ) ) ); ?>">
+								<code><?php echo esc_html( $page['page_path'] ); ?></code>
+							</a>
+						</td>
 						<td><?php echo esc_html( number_format( (int) $page['clicks'] ) ); ?></td>
 						<td><?php echo esc_html( number_format( (int) $page['impressions'] ) ); ?></td>
 						<td><?php echo esc_html( round( (float) $page['ctr'] * 100, 1 ) ); ?>%</td>

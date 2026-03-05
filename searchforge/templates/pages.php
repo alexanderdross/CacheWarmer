@@ -69,9 +69,10 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 				<?php foreach ( $pages as $page ) : ?>
 					<tr>
 						<td>
-							<a href="<?php echo esc_url( home_url( $page['page_path'] ) ); ?>" target="_blank">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-page-detail&path=' . urlencode( $page['page_path'] ) ) ); ?>">
 								<?php echo esc_html( $page['page_path'] ); ?>
 							</a>
+							<a href="<?php echo esc_url( home_url( $page['page_path'] ) ); ?>" target="_blank" class="sf-external-link" title="<?php esc_attr_e( 'View page', 'searchforge' ); ?>">&#8599;</a>
 						</td>
 						<td><?php echo esc_html( number_format( (int) $page['clicks'] ) ); ?></td>
 						<td><?php echo esc_html( number_format( (int) $page['impressions'] ) ); ?></td>

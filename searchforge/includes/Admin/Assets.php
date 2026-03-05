@@ -35,5 +35,24 @@ class Assets {
 			'nonce'    => wp_create_nonce( 'searchforge_nonce' ),
 			'rest_url' => rest_url( 'searchforge/v1/' ),
 		] );
+
+		// Chart.js + page detail charts on the detail page.
+		if ( false !== strpos( $hook, 'searchforge-page-detail' ) ) {
+			wp_enqueue_script(
+				'chartjs',
+				'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',
+				[],
+				'4.4.7',
+				true
+			);
+
+			wp_enqueue_script(
+				'searchforge-charts',
+				SEARCHFORGE_URL . 'assets/js/charts.js',
+				[ 'jquery', 'chartjs' ],
+				SEARCHFORGE_VERSION,
+				true
+			);
+		}
 	}
 }

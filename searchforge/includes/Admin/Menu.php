@@ -83,6 +83,16 @@ class Menu {
 			'searchforge-settings',
 			[ $this, 'render_settings' ]
 		);
+
+		// Hidden page detail view (no menu entry).
+		add_submenu_page(
+			null,
+			__( 'Page Detail', 'searchforge' ),
+			__( 'Page Detail', 'searchforge' ),
+			'manage_options',
+			'searchforge-page-detail',
+			[ $this, 'render_page_detail' ]
+		);
 	}
 
 	public function render_dashboard(): void {
@@ -111,5 +121,9 @@ class Menu {
 
 	public function render_settings(): void {
 		include SEARCHFORGE_PATH . 'templates/settings.php';
+	}
+
+	public function render_page_detail(): void {
+		include SEARCHFORGE_PATH . 'templates/page-detail.php';
 	}
 }

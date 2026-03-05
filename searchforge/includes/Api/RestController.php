@@ -130,6 +130,18 @@ class RestController {
 				],
 			],
 		] );
+
+		register_rest_route( self::NAMESPACE, '/page-detail', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_page_detail' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+			'args'                => [
+				'path' => [
+					'required'          => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				],
+			],
+		] );
 	}
 
 	public function check_permissions( \WP_REST_Request $request = null ): bool {
@@ -313,5 +325,39 @@ class RestController {
 			'related'     => is_wp_error( $related ) ? null : $related,
 			'seasonality' => $seasonality,
 		] );
+	}
+
+	public function get_page_detail( \WP_REST_Request $request ): \WP_REST_Response {
+		$path = $request->get_param( 'path' );
+
+		$page_data = \SearchForge\Admin\PageDetail::get_page_data( $path );
+		if ( ! $page_data ) {
+			return new \WP_REST_Response( [ 'error' => 'No data for this page.' ], 404 );
+		}
+
+		$response = [
+			'page'         => $page_data,
+			'keywords'     => \SearchForge\Admin\PageDetail::get_page_keywords( $path ),
+			'devices'      => \SearchForge\Admin\PageDetail::get_device_breakdown( $path ),
+			'daily_trend'  => \SearchForge\Admin\PageDetail::get_daily_trend( $path ),
+			'position_distribution' => \SearchForge\Admin\PageDetail::get_position_distribution( $path ),
+		];
+
+		$bing = \SearchForge\Admin\PageDetail::get_bing_data( $path );
+		if ( $bing ) {
+			$response['bing'] = $bing;
+		}
+
+		$ga4 = \SearchForge\Admin\PageDetail::get_ga4_data( $path );
+		if ( $ga4 ) {
+			$response['ga4'] = $ga4;
+		}
+
+		$score = \SearchForge\Scoring\Score::calculate_page_score( $path );
+		if ( $score ) {
+			$response['score'] = $score;
+		}
+
+		return new \WP_REST_Response( $response );
 	}
 }
