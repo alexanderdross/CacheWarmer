@@ -279,9 +279,153 @@
 	});
 
 	// Close modal on outside click.
-	$(document).on('click', '#sf-export-modal', function (e) {
+	$(document).on('click', '#sf-export-modal, #sf-bulk-modal', function (e) {
 		if (e.target === this) {
 			$(this).hide();
 		}
+	});
+
+	// Close bulk modal.
+	$(document).on('click', '#sf-bulk-modal .sf-modal-close', function () {
+		$('#sf-bulk-modal').hide();
+	});
+
+	// Bulk select: checkboxes.
+	function updateBulkButtons() {
+		var count = $('.sf-page-check:checked').length;
+		$('#sf-bulk-export, #sf-bulk-ai-brief').prop('disabled', count === 0);
+		$('#sf-bulk-count').text(count > 0 ? count + ' selected' : '');
+	}
+
+	$(document).on('change', '#sf-select-all, .sf-select-all-th', function () {
+		$('.sf-page-check').prop('checked', this.checked);
+		updateBulkButtons();
+	});
+
+	$(document).on('change', '.sf-page-check', function () {
+		var total = $('.sf-page-check').length;
+		var checked = $('.sf-page-check:checked').length;
+		$('#sf-select-all, .sf-select-all-th').prop('checked', checked === total);
+		updateBulkButtons();
+	});
+
+	// Bulk export briefs.
+	$(document).on('click', '#sf-bulk-export', function () {
+		var paths = $('.sf-page-check:checked').map(function () { return $(this).val(); }).get();
+		if (!paths.length) return;
+
+		$('#sf-bulk-modal-title').text('Exporting ' + paths.length + ' briefs...');
+		$('#sf-bulk-progress').show();
+		$('#sf-bulk-output, #sf-bulk-download').hide();
+		$('#sf-bulk-fill').css('width', '0%');
+		$('#sf-bulk-status').text('Starting...');
+		$('#sf-bulk-modal').show();
+
+		var results = [];
+		var completed = 0;
+
+		function exportNext() {
+			if (completed >= paths.length) {
+				// All done — combine and offer download.
+				var combined = results.join('\n\n---\n\n');
+				$('#sf-bulk-status').text('Done! ' + paths.length + ' briefs exported.');
+				$('#sf-bulk-output').text(combined).show();
+				$('#sf-bulk-download').data('content', combined).data('filename', 'searchforge-bulk-briefs.md').show();
+				return;
+			}
+
+			var path = paths[completed];
+			$('#sf-bulk-status').text('Exporting: ' + path + ' (' + (completed + 1) + '/' + paths.length + ')');
+
+			$.post(searchforge.ajax_url, {
+				action: 'searchforge_export_brief',
+				nonce: searchforge.nonce,
+				page_path: path,
+				brief_type: 'page'
+			}, function (response) {
+				if (response.success) {
+					results.push(response.data.markdown);
+				} else {
+					results.push('# Error: ' + path + '\n\n' + (response.data && response.data.message || 'Failed'));
+				}
+				completed++;
+				$('#sf-bulk-fill').css('width', (completed / paths.length * 100) + '%');
+				exportNext();
+			}).fail(function () {
+				results.push('# Error: ' + path + '\n\nNetwork error');
+				completed++;
+				$('#sf-bulk-fill').css('width', (completed / paths.length * 100) + '%');
+				exportNext();
+			});
+		}
+
+		exportNext();
+	});
+
+	// Bulk AI brief.
+	$(document).on('click', '#sf-bulk-ai-brief', function () {
+		var paths = $('.sf-page-check:checked').map(function () { return $(this).val(); }).get();
+		if (!paths.length) return;
+		if (!confirm('Generate AI briefs for ' + paths.length + ' pages? This may take a while.')) return;
+
+		$('#sf-bulk-modal-title').text('Generating ' + paths.length + ' AI briefs...');
+		$('#sf-bulk-progress').show();
+		$('#sf-bulk-output, #sf-bulk-download').hide();
+		$('#sf-bulk-fill').css('width', '0%');
+		$('#sf-bulk-status').text('Starting...');
+		$('#sf-bulk-modal').show();
+
+		var results = [];
+		var completed = 0;
+
+		function generateNext() {
+			if (completed >= paths.length) {
+				var combined = results.join('\n\n---\n\n');
+				$('#sf-bulk-status').text('Done! ' + paths.length + ' AI briefs generated.');
+				$('#sf-bulk-output').text(combined).show();
+				$('#sf-bulk-download').data('content', combined).data('filename', 'searchforge-bulk-ai-briefs.md').show();
+				return;
+			}
+
+			var path = paths[completed];
+			$('#sf-bulk-status').text('Generating: ' + path + ' (' + (completed + 1) + '/' + paths.length + ')');
+
+			$.post(searchforge.ajax_url, {
+				action: 'searchforge_generate_content_brief',
+				nonce: searchforge.nonce,
+				page_path: path
+			}, function (response) {
+				if (response.success) {
+					results.push(response.data.brief);
+				} else {
+					results.push('# Error: ' + path + '\n\n' + (response.data && response.data.message || 'Failed'));
+				}
+				completed++;
+				$('#sf-bulk-fill').css('width', (completed / paths.length * 100) + '%');
+				generateNext();
+			}).fail(function () {
+				results.push('# Error: ' + path + '\n\nNetwork error');
+				completed++;
+				$('#sf-bulk-fill').css('width', (completed / paths.length * 100) + '%');
+				generateNext();
+			});
+		}
+
+		generateNext();
+	});
+
+	// Bulk download button.
+	$(document).on('click', '#sf-bulk-download', function () {
+		var content = $(this).data('content');
+		var filename = $(this).data('filename');
+		var blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+		var url = URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
 	});
 })(jQuery);

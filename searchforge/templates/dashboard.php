@@ -9,6 +9,9 @@ $connected  = ! empty( $settings['gsc_access_token'] );
 $site_score = SearchForge\Scoring\Score::calculate_site_score();
 $decaying   = SearchForge\Trends\Engine::get_decaying_pages( 'gsc', 5 );
 $is_pro     = SearchForge\Admin\Settings::is_pro();
+
+// 14-day trend for dashboard chart.
+$daily_trend = SearchForge\Monitoring\PerformanceTrend::get_daily_trends( 14 );
 $cannibal_count = 0;
 if ( $is_pro ) {
 	$cannibalization = SearchForge\Analysis\Cannibalization::detect( 5 );
@@ -83,6 +86,17 @@ $recent_alerts = $wpdb->get_results(
 			</div>
 		<?php endif; ?>
 	</div>
+
+	<!-- 14-Day Trend Chart -->
+	<?php if ( ! empty( $daily_trend ) ) : ?>
+		<div class="sf-chart-container">
+			<h2><?php esc_html_e( '14-Day Performance', 'searchforge' ); ?></h2>
+			<canvas id="sf-dashboard-chart" height="200"></canvas>
+		</div>
+		<script>
+			var sfDashboardTrend = <?php echo wp_json_encode( $daily_trend ); ?>;
+		</script>
+	<?php endif; ?>
 
 	<!-- Recent Alerts -->
 	<?php if ( ! empty( $recent_alerts ) ) : ?>

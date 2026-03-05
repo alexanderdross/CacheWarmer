@@ -54,9 +54,32 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 	<?php if ( empty( $pages ) ) : ?>
 		<p><?php esc_html_e( 'No page data available. Run a GSC sync first.', 'searchforge' ); ?></p>
 	<?php else : ?>
+
+		<!-- Bulk Actions -->
+		<?php if ( $is_pro ) : ?>
+			<div class="sf-bulk-actions">
+				<label class="sf-bulk-select-label">
+					<input type="checkbox" id="sf-select-all" />
+					<?php esc_html_e( 'Select all', 'searchforge' ); ?>
+				</label>
+				<button type="button" class="button" id="sf-bulk-export" disabled>
+					<?php esc_html_e( 'Export Selected Briefs', 'searchforge' ); ?>
+				</button>
+				<button type="button" class="button" id="sf-bulk-ai-brief" disabled>
+					<?php esc_html_e( 'Bulk AI Brief', 'searchforge' ); ?>
+				</button>
+				<span id="sf-bulk-count" class="sf-bulk-count"></span>
+			</div>
+		<?php endif; ?>
+
 		<table class="widefat sf-table">
 			<thead>
 				<tr>
+					<?php if ( $is_pro ) : ?>
+						<th class="sf-check-col">
+							<input type="checkbox" class="sf-select-all-th" />
+						</th>
+					<?php endif; ?>
 					<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
 					<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
 					<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
@@ -68,6 +91,12 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 			<tbody>
 				<?php foreach ( $pages as $page ) : ?>
 					<tr>
+						<?php if ( $is_pro ) : ?>
+							<td class="sf-check-col">
+								<input type="checkbox" class="sf-page-check"
+									value="<?php echo esc_attr( $page['page_path'] ); ?>" />
+							</td>
+						<?php endif; ?>
 						<td>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-page-detail&path=' . urlencode( $page['page_path'] ) ) ); ?>">
 								<?php echo esc_html( $page['page_path'] ); ?>
@@ -127,4 +156,34 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 			</div>
 		<?php endif; ?>
 	<?php endif; ?>
+</div>
+
+<!-- Bulk progress modal -->
+<div id="sf-bulk-modal" class="sf-modal" style="display:none;">
+	<div class="sf-modal-content">
+		<span class="sf-modal-close">&times;</span>
+		<h2 id="sf-bulk-modal-title"></h2>
+		<div id="sf-bulk-progress">
+			<div class="sf-bulk-progress-bar">
+				<div class="sf-bulk-progress-fill" id="sf-bulk-fill"></div>
+			</div>
+			<p id="sf-bulk-status"></p>
+		</div>
+		<pre id="sf-bulk-output" style="display:none;"></pre>
+		<button class="button button-primary" id="sf-bulk-download" style="display:none;">
+			<?php esc_html_e( 'Download All', 'searchforge' ); ?>
+		</button>
+	</div>
+</div>
+
+<!-- Export Modal -->
+<div id="sf-export-modal" class="sf-modal" style="display:none;">
+	<div class="sf-modal-content">
+		<span class="sf-modal-close">&times;</span>
+		<h2 id="sf-modal-title"></h2>
+		<pre id="sf-modal-body"></pre>
+		<button class="button button-primary" id="sf-modal-download">
+			<?php esc_html_e( 'Download', 'searchforge' ); ?>
+		</button>
+	</div>
 </div>

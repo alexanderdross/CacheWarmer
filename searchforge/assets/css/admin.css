@@ -768,3 +768,61 @@
 .sf-decay-notice {
 	margin: 16px 0;
 }
+
+/* Bulk Actions */
+.sf-bulk-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 0;
+	padding: 8px 12px;
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.sf-bulk-select-label {
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.sf-bulk-count {
+	color: #2271b1;
+	font-weight: 600;
+	font-size: 13px;
+	margin-left: auto;
+}
+
+.sf-check-col {
+	width: 30px;
+	text-align: center;
+}
+
+/* Bulk Progress */
+.sf-bulk-progress-bar {
+	height: 12px;
+	background: #f0f0f1;
+	border-radius: 6px;
+	overflow: hidden;
+	margin: 16px 0 8px;
+}
+
+.sf-bulk-progress-fill {
+	height: 100%;
+	background: #2271b1;
+	border-radius: 6px;
+	transition: width 0.3s ease;
+	width: 0;
+}
+
+#sf-bulk-output {
+	background: #f6f7f7;
+	padding: 16px;
+	border-radius: 4px;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	font-size: 13px;
+	max-height: 40vh;
+	overflow-y: auto;
+	margin: 16px 0;
+}

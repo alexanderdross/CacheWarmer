@@ -36,8 +36,11 @@ class Assets {
 			'rest_url' => rest_url( 'searchforge/v1/' ),
 		] );
 
-		// Chart.js + page detail charts on the detail page.
-		if ( false !== strpos( $hook, 'searchforge-page-detail' ) ) {
+		// Chart.js on dashboard and page detail pages.
+		$needs_charts = false !== strpos( $hook, 'searchforge-page-detail' )
+			|| 'toplevel_page_searchforge' === $hook;
+
+		if ( $needs_charts ) {
 			wp_enqueue_script(
 				'chartjs',
 				'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',

@@ -1,7 +1,65 @@
-/* global Chart, sfChartData, jQuery */
+/* global Chart, sfChartData, sfDashboardTrend, jQuery */
 (function ($) {
 	'use strict';
 
+	// Dashboard chart (14-day overview).
+	$(document).ready(function () {
+		renderDashboardChart();
+	});
+
+	var dashboardChartInstance = null;
+
+	function renderDashboardChart() {
+		if (typeof sfDashboardTrend === 'undefined' || !sfDashboardTrend || !sfDashboardTrend.length) {
+			return;
+		}
+		var canvas = document.getElementById('sf-dashboard-chart');
+		if (!canvas) return;
+
+		if (dashboardChartInstance) {
+			dashboardChartInstance.destroy();
+		}
+
+		var labels = sfDashboardTrend.map(function (d) { return d.date; });
+		var clicks = sfDashboardTrend.map(function (d) { return parseInt(d.clicks, 10); });
+		var impressions = sfDashboardTrend.map(function (d) { return parseInt(d.impressions, 10); });
+
+		dashboardChartInstance = new Chart(canvas.getContext('2d'), {
+			type: 'line',
+			data: {
+				labels: labels,
+				datasets: [
+					{
+						label: 'Clicks',
+						data: clicks,
+						borderColor: '#2271b1',
+						backgroundColor: 'rgba(34, 113, 177, 0.1)',
+						fill: true,
+						tension: 0.3
+					},
+					{
+						label: 'Impressions',
+						data: impressions,
+						borderColor: '#72aee6',
+						backgroundColor: 'transparent',
+						borderDash: [5, 5],
+						tension: 0.3
+					}
+				]
+			},
+			options: {
+				responsive: true,
+				interaction: { mode: 'index', intersect: false },
+				plugins: { legend: { position: 'top' } },
+				scales: {
+					y: { beginAtZero: true },
+					x: { ticks: { maxTicksLimit: 7 } }
+				}
+			}
+		});
+	}
+
+	// Page detail charts require sfChartData.
 	if (typeof sfChartData === 'undefined') {
 		return;
 	}
