@@ -59,6 +59,15 @@ class Menu {
 
 		add_submenu_page(
 			'searchforge',
+			__( 'Competitors', 'searchforge' ),
+			__( 'Competitors', 'searchforge' ),
+			'manage_options',
+			'searchforge-competitors',
+			[ $this, 'render_competitors' ]
+		);
+
+		add_submenu_page(
+			'searchforge',
 			__( 'Monitoring', 'searchforge' ),
 			__( 'Monitoring', 'searchforge' ),
 			'manage_options',
@@ -121,6 +130,10 @@ class Menu {
 
 	public function render_settings(): void {
 		include SEARCHFORGE_PATH . 'templates/settings.php';
+	}
+
+	public function render_competitors(): void {
+		include SEARCHFORGE_PATH . 'templates/competitors.php';
 	}
 
 	public function render_page_detail(): void {

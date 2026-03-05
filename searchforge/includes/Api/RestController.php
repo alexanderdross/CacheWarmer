@@ -142,6 +142,36 @@ class RestController {
 				],
 			],
 		] );
+
+		register_rest_route( self::NAMESPACE, '/competitors', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_competitors' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/competitors/overlap', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_competitor_overlap' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+			'args'                => [
+				'limit' => [ 'default' => 50, 'sanitize_callback' => 'absint' ],
+			],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/competitors/gaps', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_competitor_gaps' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+			'args'                => [
+				'limit' => [ 'default' => 50, 'sanitize_callback' => 'absint' ],
+			],
+		] );
+
+		register_rest_route( self::NAMESPACE, '/competitors/visibility', [
+			'methods'             => 'GET',
+			'callback'            => [ $this, 'get_competitor_visibility' ],
+			'permission_callback' => [ $this, 'check_permissions' ],
+		] );
 	}
 
 	public function check_permissions( \WP_REST_Request $request = null ): bool {
@@ -325,6 +355,37 @@ class RestController {
 			'related'     => is_wp_error( $related ) ? null : $related,
 			'seasonality' => $seasonality,
 		] );
+	}
+
+	public function get_competitors(): \WP_REST_Response {
+		$competitors = \SearchForge\Analysis\Competitors::get_all();
+
+		return new \WP_REST_Response( [
+			'competitors' => $competitors,
+			'total'       => count( $competitors ),
+		] );
+	}
+
+	public function get_competitor_overlap( \WP_REST_Request $request ): \WP_REST_Response {
+		$limit = min( absint( $request->get_param( 'limit' ) ?: 50 ), 200 );
+
+		return new \WP_REST_Response( [
+			'overlap' => \SearchForge\Analysis\Competitors::get_keyword_overlap( $limit ),
+		] );
+	}
+
+	public function get_competitor_gaps( \WP_REST_Request $request ): \WP_REST_Response {
+		$limit = min( absint( $request->get_param( 'limit' ) ?: 50 ), 200 );
+
+		return new \WP_REST_Response( [
+			'gaps' => \SearchForge\Analysis\Competitors::get_competitor_only_keywords( $limit ),
+		] );
+	}
+
+	public function get_competitor_visibility(): \WP_REST_Response {
+		return new \WP_REST_Response(
+			\SearchForge\Analysis\Competitors::get_visibility_comparison()
+		);
 	}
 
 	public function get_page_detail( \WP_REST_Request $request ): \WP_REST_Response {

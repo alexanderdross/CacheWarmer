@@ -54,6 +54,8 @@ class Settings {
 		'llms_txt_enabled'  => true,
 		'license_key'       => '',
 		'license_tier'      => 'free',
+		// Competitor tracking (Pro).
+		'competitors'       => [],
 	];
 
 	public function __construct() {

@@ -18,6 +18,9 @@ class Ajax {
 		add_action( 'wp_ajax_searchforge_scan_broken_links', [ $this, 'scan_broken_links' ] );
 		add_action( 'wp_ajax_searchforge_generate_api_key', [ $this, 'generate_api_key' ] );
 		add_action( 'wp_ajax_searchforge_revoke_api_key', [ $this, 'revoke_api_key' ] );
+		add_action( 'wp_ajax_searchforge_add_competitor', [ $this, 'add_competitor' ] );
+		add_action( 'wp_ajax_searchforge_remove_competitor', [ $this, 'remove_competitor' ] );
+		add_action( 'wp_ajax_searchforge_sync_competitor', [ $this, 'sync_competitor' ] );
 	}
 
 	public function sync_gsc(): void {
@@ -264,5 +267,73 @@ class Ajax {
 		\SearchForge\Api\ApiKeyAuth::revoke();
 
 		wp_send_json_success( [ 'message' => __( 'API key revoked.', 'searchforge' ) ] );
+	}
+
+	public function add_competitor(): void {
+		check_ajax_referer( 'searchforge_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'searchforge' ) ], 403 );
+		}
+
+		if ( ! Settings::is_pro() ) {
+			wp_send_json_error( [ 'message' => __( 'Competitor tracking requires a Pro license.', 'searchforge' ) ] );
+		}
+
+		$domain = sanitize_text_field( $_POST['domain'] ?? '' );
+		$label  = sanitize_text_field( $_POST['label'] ?? '' );
+
+		if ( empty( $domain ) ) {
+			wp_send_json_error( [ 'message' => __( 'Domain is required.', 'searchforge' ) ] );
+		}
+
+		$result = \SearchForge\Analysis\Competitors::add( $domain, $label );
+
+		if ( ! $result ) {
+			wp_send_json_error( [ 'message' => __( 'Could not add competitor. Limit reached or domain already exists.', 'searchforge' ) ] );
+		}
+
+		wp_send_json_success( [ 'message' => __( 'Competitor added.', 'searchforge' ) ] );
+	}
+
+	public function remove_competitor(): void {
+		check_ajax_referer( 'searchforge_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'searchforge' ) ], 403 );
+		}
+
+		$id = absint( $_POST['competitor_id'] ?? 0 );
+		if ( ! $id ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid competitor ID.', 'searchforge' ) ] );
+		}
+
+		\SearchForge\Analysis\Competitors::remove( $id );
+
+		wp_send_json_success( [ 'message' => __( 'Competitor removed.', 'searchforge' ) ] );
+	}
+
+	public function sync_competitor(): void {
+		check_ajax_referer( 'searchforge_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( [ 'message' => __( 'Unauthorized.', 'searchforge' ) ], 403 );
+		}
+
+		if ( ! Settings::is_pro() ) {
+			wp_send_json_error( [ 'message' => __( 'Competitor tracking requires a Pro license.', 'searchforge' ) ] );
+		}
+
+		$id = absint( $_POST['competitor_id'] ?? 0 );
+		if ( ! $id ) {
+			wp_send_json_error( [ 'message' => __( 'Invalid competitor ID.', 'searchforge' ) ] );
+		}
+
+		$count = \SearchForge\Analysis\Competitors::sync_from_gsc( $id );
+
+		wp_send_json_success( [
+			'message'  => sprintf( __( 'Synced %d keywords.', 'searchforge' ), $count ),
+			'keywords' => $count,
+		] );
 	}
 }

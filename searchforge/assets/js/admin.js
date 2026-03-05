@@ -428,4 +428,89 @@
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
 	});
+
+	// Competitor tab navigation.
+	$(document).on('click', '.searchforge-wrap .nav-tab', function (e) {
+		var tab = $(this).data('tab');
+		if (!tab) return;
+		e.preventDefault();
+		$(this).closest('.nav-tab-wrapper').find('.nav-tab').removeClass('nav-tab-active');
+		$(this).addClass('nav-tab-active');
+		$('.sf-tab-panel').removeClass('sf-tab-active');
+		$('#' + tab).addClass('sf-tab-active');
+	});
+
+	// Add competitor.
+	$(document).on('click', '#sf-add-competitor', function () {
+		var domain = $('#sf-competitor-domain').val().trim();
+		var label = $('#sf-competitor-label').val().trim();
+		if (!domain) {
+			alert('Please enter a competitor domain.');
+			return;
+		}
+		var $btn = $(this);
+		$btn.prop('disabled', true);
+
+		$.post(searchforge.ajax_url, {
+			action: 'searchforge_add_competitor',
+			nonce: searchforge.nonce,
+			domain: domain,
+			label: label
+		}, function (response) {
+			if (response.success) {
+				location.reload();
+			} else {
+				alert(response.data && response.data.message || 'Failed to add competitor.');
+				$btn.prop('disabled', false);
+			}
+		}).fail(function () {
+			alert('Network error.');
+			$btn.prop('disabled', false);
+		});
+	});
+
+	// Remove competitor.
+	$(document).on('click', '.sf-remove-competitor', function () {
+		if (!confirm('Remove this competitor and all its keyword data?')) return;
+		var $btn = $(this);
+		var id = $btn.data('id');
+		$btn.prop('disabled', true);
+
+		$.post(searchforge.ajax_url, {
+			action: 'searchforge_remove_competitor',
+			nonce: searchforge.nonce,
+			competitor_id: id
+		}, function (response) {
+			if (response.success) {
+				location.reload();
+			} else {
+				alert(response.data && response.data.message || 'Failed.');
+				$btn.prop('disabled', false);
+			}
+		});
+	});
+
+	// Sync competitor keywords.
+	$(document).on('click', '.sf-sync-competitor', function () {
+		var $btn = $(this);
+		var id = $btn.data('id');
+		$btn.prop('disabled', true).text('Syncing...');
+
+		$.post(searchforge.ajax_url, {
+			action: 'searchforge_sync_competitor',
+			nonce: searchforge.nonce,
+			competitor_id: id
+		}, function (response) {
+			if (response.success) {
+				alert(response.data.message);
+				location.reload();
+			} else {
+				alert(response.data && response.data.message || 'Sync failed.');
+				$btn.prop('disabled', false).text('Sync Keywords');
+			}
+		}).fail(function () {
+			alert('Network error.');
+			$btn.prop('disabled', false).text('Sync Keywords');
+		});
+	});
 })(jQuery);

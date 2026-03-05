@@ -130,6 +130,27 @@ class Installer {
 				KEY idx_action (action),
 				KEY idx_created (created_at)
 			) {$charset};
+
+			CREATE TABLE {$wpdb->prefix}sf_competitors (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				domain VARCHAR(255) NOT NULL,
+				label VARCHAR(100) DEFAULT NULL,
+				added_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (id),
+				UNIQUE KEY idx_domain (domain)
+			) {$charset};
+
+			CREATE TABLE {$wpdb->prefix}sf_competitor_keywords (
+				id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+				competitor_id BIGINT UNSIGNED NOT NULL,
+				query VARCHAR(512) NOT NULL,
+				position DECIMAL(6,2) DEFAULT NULL,
+				snapshot_date DATE NOT NULL,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				PRIMARY KEY (id),
+				KEY idx_competitor_date (competitor_id, snapshot_date),
+				KEY idx_query (query(100))
+			) {$charset};
 		";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

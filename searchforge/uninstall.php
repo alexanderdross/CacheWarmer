@@ -18,6 +18,8 @@ $tables = [
 	'sf_ga4_metrics',
 	'sf_settings',
 	'sf_audit_log',
+	'sf_competitors',
+	'sf_competitor_keywords',
 ];
 
 foreach ( $tables as $table ) {
