@@ -302,14 +302,26 @@
 	color: #d63638;
 }
 
+.sf-severity-high::before {
+	content: "\25B2 ";
+}
+
 .sf-severity-medium {
 	background: #fef8ee;
 	color: #996800;
 }
 
+.sf-severity-medium::before {
+	content: "\25CF ";
+}
+
 .sf-severity-low {
 	background: #f0f6fc;
 	color: #2271b1;
+}
+
+.sf-severity-low::before {
+	content: "\2014 ";
 }
 
 /* Analysis: Clusters */
@@ -917,4 +929,12 @@
 .sf-comp-tied {
 	background: #f0f0f1;
 	color: #646970;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
 }

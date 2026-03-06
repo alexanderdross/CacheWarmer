@@ -32,7 +32,7 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 			&larr; <?php esc_html_e( 'Pages', 'searchforge' ); ?>
 		</a>
 		<?php echo esc_html( $page_path ); ?>
-		<a href="<?php echo esc_url( home_url( $page_path ) ); ?>" target="_blank" class="sf-external-link">&#8599;</a>
+		<a href="<?php echo esc_url( home_url( $page_path ) ); ?>" target="_blank" class="sf-external-link" aria-label="<?php esc_attr_e( 'View page in new tab', 'searchforge' ); ?>">&#8599;</a>
 	</h1>
 
 	<p class="sf-page-meta">
@@ -114,9 +114,18 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 
 		<!-- Trend Chart -->
 		<?php if ( ! empty( $daily_trend ) ) : ?>
-			<div class="sf-chart-container">
+			<div class="sf-chart-container" aria-label="<?php esc_attr_e( '30-day trend chart showing clicks and impressions over time', 'searchforge' ); ?>">
 				<h2><?php esc_html_e( '30-Day Trend', 'searchforge' ); ?></h2>
 				<canvas id="sf-trend-chart" height="280"></canvas>
+				<span class="screen-reader-text">
+					<?php echo esc_html( sprintf(
+						__( 'Line chart displaying the 30-day trend for page %s. Current clicks: %s, impressions: %s, position: %s.', 'searchforge' ),
+						$page_path,
+						number_format( $page_data['clicks'] ),
+						number_format( $page_data['impressions'] ),
+						round( $page_data['position'], 1 )
+					) ); ?>
+				</span>
 			</div>
 		<?php endif; ?>
 
@@ -143,11 +152,11 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 				<table class="widefat sf-table">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Engine', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Engine', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -197,9 +206,15 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 
 		<!-- Position Distribution Chart -->
 		<?php if ( ! empty( $pos_dist ) && array_sum( $pos_dist ) > 0 ) : ?>
-			<div class="sf-chart-container">
+			<div class="sf-chart-container" aria-label="<?php esc_attr_e( 'Keyword position distribution chart', 'searchforge' ); ?>">
 				<h2><?php esc_html_e( 'Keyword Position Distribution', 'searchforge' ); ?></h2>
 				<canvas id="sf-position-chart" height="200"></canvas>
+				<span class="screen-reader-text">
+					<?php echo esc_html( sprintf(
+						__( 'Bar chart showing keyword position distribution: %d keywords total across position ranges.', 'searchforge' ),
+						array_sum( $pos_dist )
+					) ); ?>
+				</span>
 			</div>
 		<?php endif; ?>
 
@@ -210,10 +225,10 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 				<table class="widefat sf-table">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Metric', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'This Year', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Last Year', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Metric', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'This Year', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Last Year', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -256,12 +271,12 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 			<table class="widefat sf-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -302,12 +317,12 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 				<table class="widefat sf-table">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Your Pos.', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Your Clicks', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Competing Page', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Their Pos.', 'searchforge' ); ?></th>
-							<th><?php esc_html_e( 'Their Clicks', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Your Pos.', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Your Clicks', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Competing Page', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Their Pos.', 'searchforge' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Their Clicks', 'searchforge' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -338,9 +353,12 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 				<p><?php esc_html_e( 'Trend analysis requires a Pro license.', 'searchforge' ); ?></p>
 			</div>
 		<?php elseif ( $trend && ! empty( $trend['snapshots'] ) ) : ?>
-			<div class="sf-chart-container">
+			<div class="sf-chart-container" aria-label="<?php esc_attr_e( 'Weekly click trend chart', 'searchforge' ); ?>">
 				<h2><?php esc_html_e( 'Weekly Click Trend', 'searchforge' ); ?></h2>
 				<canvas id="sf-weekly-trend-chart" height="280"></canvas>
+				<span class="screen-reader-text">
+					<?php esc_html_e( 'Line chart displaying weekly click trends over time for this page.', 'searchforge' ); ?>
+				</span>
 			</div>
 
 			<?php if ( $trend['decay_detected'] ) : ?>
@@ -359,11 +377,11 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 			<table class="widefat sf-table" style="margin-top: 16px;">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Week', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Week', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -431,9 +449,9 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 </div>
 
 <!-- Export Modal (reuse from admin.js) -->
-<div id="sf-export-modal" class="sf-modal" style="display:none;">
+<div id="sf-export-modal" class="sf-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sf-modal-title">
 	<div class="sf-modal-content">
-		<span class="sf-modal-close">&times;</span>
+		<span class="sf-modal-close" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Close modal', 'searchforge' ); ?>">&times;</span>
 		<h2 id="sf-modal-title"></h2>
 		<pre id="sf-modal-body"></pre>
 		<button class="button button-primary" id="sf-modal-download">

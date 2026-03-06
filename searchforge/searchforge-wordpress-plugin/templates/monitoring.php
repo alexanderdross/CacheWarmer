@@ -156,10 +156,10 @@ $tab        = sanitize_text_field( $_GET['tab'] ?? 'overview' );
 			<table class="widefat sf-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Broken URL', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Type', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Broken URL', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Type', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -189,11 +189,11 @@ $tab        = sanitize_text_field( $_GET['tab'] ?? 'overview' );
 			<table class="widefat sf-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Date', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Avg Position', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Date', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Avg Position', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -223,11 +223,11 @@ $tab        = sanitize_text_field( $_GET['tab'] ?? 'overview' );
 			<table class="widefat sf-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Date', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'User', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Action', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Details', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'IP', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Date', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'User', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Action', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Details', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'IP', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>

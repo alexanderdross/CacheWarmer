@@ -52,12 +52,12 @@ $base_url    = admin_url( 'admin.php?page=searchforge-keywords' );
 		<table class="widefat sf-table">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -87,7 +87,7 @@ $base_url    = admin_url( 'admin.php?page=searchforge-keywords' );
 					</span>
 					<span class="pagination-links">
 						<?php if ( $paged > 1 ) : ?>
-							<a class="prev-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged - 1, 's' => $search ], $base_url ) ); ?>">
+							<a class="prev-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged - 1, 's' => $search ], $base_url ) ); ?>" aria-label="<?php esc_attr_e( 'Previous page', 'searchforge' ); ?>">
 								&lsaquo;
 							</a>
 						<?php endif; ?>
@@ -95,7 +95,7 @@ $base_url    = admin_url( 'admin.php?page=searchforge-keywords' );
 							<?php echo esc_html( $paged ); ?> / <?php echo esc_html( $total_pages ); ?>
 						</span>
 						<?php if ( $paged < $total_pages ) : ?>
-							<a class="next-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged + 1, 's' => $search ], $base_url ) ); ?>">
+							<a class="next-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged + 1, 's' => $search ], $base_url ) ); ?>" aria-label="<?php esc_attr_e( 'Next page', 'searchforge' ); ?>">
 								&rsaquo;
 							</a>
 						<?php endif; ?>

@@ -177,8 +177,8 @@ class RestController {
 	public function check_permissions( \WP_REST_Request $request = null ) {
 		if ( ! Settings::is_pro() ) {
 			return new \WP_Error(
-				'searchforge_pro_required',
-				'This endpoint requires a SearchForge Pro license.',
+				'rest_forbidden',
+				'You do not have permission to access this endpoint.',
 				[ 'status' => 403 ]
 			);
 		}

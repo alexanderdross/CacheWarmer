@@ -80,12 +80,12 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 							<input type="checkbox" class="sf-select-all-th" />
 						</th>
 					<?php endif; ?>
-					<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -101,7 +101,7 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-page-detail&path=' . urlencode( $page['page_path'] ) ) ); ?>">
 								<?php echo esc_html( $page['page_path'] ); ?>
 							</a>
-							<a href="<?php echo esc_url( home_url( $page['page_path'] ) ); ?>" target="_blank" class="sf-external-link" title="<?php esc_attr_e( 'View page', 'searchforge' ); ?>">&#8599;</a>
+							<a href="<?php echo esc_url( home_url( $page['page_path'] ) ); ?>" target="_blank" class="sf-external-link" title="<?php esc_attr_e( 'View page', 'searchforge' ); ?>" aria-label="<?php esc_attr_e( 'View page in new tab', 'searchforge' ); ?>">&#8599;</a>
 						</td>
 						<td><?php echo esc_html( number_format( (int) $page['clicks'] ) ); ?></td>
 						<td><?php echo esc_html( number_format( (int) $page['impressions'] ) ); ?></td>
@@ -139,7 +139,7 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 					</span>
 					<span class="pagination-links">
 						<?php if ( $paged > 1 ) : ?>
-							<a class="prev-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged - 1, 's' => $search ], $base_url ) ); ?>">
+							<a class="prev-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged - 1, 's' => $search ], $base_url ) ); ?>" aria-label="<?php esc_attr_e( 'Previous page', 'searchforge' ); ?>">
 								&lsaquo;
 							</a>
 						<?php endif; ?>
@@ -147,7 +147,7 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 							<?php echo esc_html( $paged ); ?> / <?php echo esc_html( $total_pages ); ?>
 						</span>
 						<?php if ( $paged < $total_pages ) : ?>
-							<a class="next-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged + 1, 's' => $search ], $base_url ) ); ?>">
+							<a class="next-page button" href="<?php echo esc_url( add_query_arg( [ 'paged' => $paged + 1, 's' => $search ], $base_url ) ); ?>" aria-label="<?php esc_attr_e( 'Next page', 'searchforge' ); ?>">
 								&rsaquo;
 							</a>
 						<?php endif; ?>
@@ -159,9 +159,9 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 </div>
 
 <!-- Bulk progress modal -->
-<div id="sf-bulk-modal" class="sf-modal" style="display:none;">
+<div id="sf-bulk-modal" class="sf-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sf-bulk-modal-title">
 	<div class="sf-modal-content">
-		<span class="sf-modal-close">&times;</span>
+		<span class="sf-modal-close" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Close modal', 'searchforge' ); ?>">&times;</span>
 		<h2 id="sf-bulk-modal-title"></h2>
 		<div id="sf-bulk-progress">
 			<div class="sf-bulk-progress-bar">
@@ -177,9 +177,9 @@ $base_url    = admin_url( 'admin.php?page=searchforge-pages' );
 </div>
 
 <!-- Export Modal -->
-<div id="sf-export-modal" class="sf-modal" style="display:none;">
+<div id="sf-export-modal" class="sf-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sf-modal-title">
 	<div class="sf-modal-content">
-		<span class="sf-modal-close">&times;</span>
+		<span class="sf-modal-close" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Close modal', 'searchforge' ); ?>">&times;</span>
 		<h2 id="sf-modal-title"></h2>
 		<pre id="sf-modal-body"></pre>
 		<button class="button button-primary" id="sf-modal-download">

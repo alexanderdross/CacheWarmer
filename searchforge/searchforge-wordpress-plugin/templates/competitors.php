@@ -56,10 +56,10 @@ $can_add = count( $competitors ) < $limit;
 			<table class="widefat sf-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Domain', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Label', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Added', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Domain', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Label', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Added', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -133,7 +133,7 @@ $can_add = count( $competitors ) < $limit;
 			</div>
 
 			<!-- Tab: Keyword Overlap -->
-			<div id="sf-tab-overlap" class="sf-tab-panel">
+			<div id="sf-tab-overlap" class="sf-tab-panel" role="tabpanel" aria-labelledby="sf-tab-overlap-tab" tabindex="0">
 				<?php
 				$overlap = SearchForge\Analysis\Competitors::get_keyword_overlap( 50 );
 				if ( ! empty( $overlap ) ) : ?>
@@ -143,12 +143,12 @@ $can_add = count( $competitors ) < $limit;
 					<table class="widefat sf-table">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Your Position', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Your Clicks', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Competitor', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Their Position', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Status', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Your Position', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Your Clicks', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Competitor', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Their Position', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Status', 'searchforge' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -183,7 +183,7 @@ $can_add = count( $competitors ) < $limit;
 			</div>
 
 			<!-- Tab: Content Gaps -->
-			<div id="sf-tab-gaps" class="sf-tab-panel">
+			<div id="sf-tab-gaps" class="sf-tab-panel" role="tabpanel" aria-labelledby="sf-tab-gaps-tab" tabindex="0">
 				<?php
 				$gaps = SearchForge\Analysis\Competitors::get_competitor_only_keywords( 50 );
 				if ( ! empty( $gaps ) ) : ?>
@@ -193,9 +193,9 @@ $can_add = count( $competitors ) < $limit;
 					<table class="widefat sf-table">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Competitor', 'searchforge' ); ?></th>
-								<th><?php esc_html_e( 'Their Position', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Competitor', 'searchforge' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Their Position', 'searchforge' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>

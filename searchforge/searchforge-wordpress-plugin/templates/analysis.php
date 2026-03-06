@@ -71,11 +71,11 @@ if ( $is_pro ) {
 							<table class="widefat sf-table sf-cannibal-table">
 								<thead>
 									<tr>
-										<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -120,10 +120,10 @@ if ( $is_pro ) {
 							<table class="widefat sf-table sf-cluster-table">
 								<thead>
 									<tr>
-										<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-										<th><?php esc_html_e( 'Avg Position', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Avg Position', 'searchforge' ); ?></th>
 									</tr>
 								</thead>
 								<tbody>

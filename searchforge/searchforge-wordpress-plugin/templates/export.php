@@ -76,9 +76,9 @@ $is_pro = SearchForge\Admin\Settings::is_pro();
 		<table class="widefat sf-table">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -100,9 +100,9 @@ $is_pro = SearchForge\Admin\Settings::is_pro();
 	<?php endif; ?>
 
 	<!-- Modal for preview / download -->
-	<div id="sf-export-modal" class="sf-modal" style="display:none;">
+	<div id="sf-export-modal" class="sf-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sf-modal-title">
 		<div class="sf-modal-content">
-			<span class="sf-modal-close">&times;</span>
+			<span class="sf-modal-close" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Close modal', 'searchforge' ); ?>">&times;</span>
 			<h2 id="sf-modal-title"></h2>
 			<pre id="sf-modal-body"></pre>
 			<button type="button" class="button button-primary" id="sf-modal-download">

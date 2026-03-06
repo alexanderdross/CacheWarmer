@@ -85,15 +85,43 @@
 	});
 
 	// Modal.
+	var sfModalTrigger = null;
+
 	function showModal(title, content, filename) {
+		sfModalTrigger = document.activeElement;
 		$('#sf-modal-title').text(title);
 		$('#sf-modal-body').text(content);
 		$('#sf-modal-download').data('content', content).data('filename', filename);
 		$('#sf-export-modal').show();
+		// Focus the first focusable element in the modal.
+		var $modal = $('#sf-export-modal');
+		var $focusable = $modal.find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])').filter(':visible');
+		if ($focusable.length) {
+			$focusable.first().trigger('focus');
+		}
+	}
+
+	function closeModal($modal) {
+		$modal.hide();
+		// Return focus to the element that triggered the modal.
+		if (sfModalTrigger) {
+			sfModalTrigger.focus();
+			sfModalTrigger = null;
+		}
 	}
 
 	$(document).on('click', '.sf-modal-close', function () {
-		$('#sf-export-modal').hide();
+		closeModal($(this).closest('.sf-modal'));
+	});
+
+	// Close modals with Escape key.
+	$(document).on('keydown', function (e) {
+		if (e.key === 'Escape' || e.keyCode === 27) {
+			var $visibleModal = $('.sf-modal:visible');
+			if ($visibleModal.length) {
+				closeModal($visibleModal);
+			}
+		}
 	});
 
 	$(document).on('click', '#sf-modal-download', function () {
@@ -281,13 +309,8 @@
 	// Close modal on outside click.
 	$(document).on('click', '#sf-export-modal, #sf-bulk-modal', function (e) {
 		if (e.target === this) {
-			$(this).hide();
+			closeModal($(this));
 		}
-	});
-
-	// Close bulk modal.
-	$(document).on('click', '#sf-bulk-modal .sf-modal-close', function () {
-		$('#sf-bulk-modal').hide();
 	});
 
 	// Bulk select: checkboxes.
@@ -434,8 +457,8 @@
 		var tab = $(this).data('tab');
 		if (!tab) return;
 		e.preventDefault();
-		$(this).closest('.nav-tab-wrapper').find('.nav-tab').removeClass('nav-tab-active');
-		$(this).addClass('nav-tab-active');
+		$(this).closest('.nav-tab-wrapper').find('.nav-tab').removeClass('nav-tab-active').attr('aria-selected', 'false');
+		$(this).addClass('nav-tab-active').attr('aria-selected', 'true');
 		$('.sf-tab-panel').removeClass('sf-tab-active');
 		$('#' + tab).addClass('sf-tab-active');
 	});

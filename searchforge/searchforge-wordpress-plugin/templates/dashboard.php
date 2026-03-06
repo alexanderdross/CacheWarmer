@@ -89,9 +89,16 @@ $recent_alerts = $wpdb->get_results(
 
 	<!-- 14-Day Trend Chart -->
 	<?php if ( ! empty( $daily_trend ) ) : ?>
-		<div class="sf-chart-container">
+		<div class="sf-chart-container" aria-label="<?php esc_attr_e( '14-day performance trend chart showing clicks and impressions over time', 'searchforge' ); ?>">
 			<h2><?php esc_html_e( '14-Day Performance', 'searchforge' ); ?></h2>
 			<canvas id="sf-dashboard-chart" height="200"></canvas>
+			<span class="screen-reader-text">
+				<?php echo esc_html( sprintf(
+					__( 'Line chart displaying daily clicks and impressions for the last 14 days. Total clicks: %s, Total impressions: %s.', 'searchforge' ),
+					number_format( $summary['total_clicks'] ),
+					number_format( $summary['total_impressions'] )
+				) ); ?>
+			</span>
 		</div>
 		<script>
 			var sfDashboardTrend = <?php echo wp_json_encode( $daily_trend ); ?>;
@@ -119,10 +126,10 @@ $recent_alerts = $wpdb->get_results(
 			<table class="widefat sf-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Recent Clicks', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Previous Clicks', 'searchforge' ); ?></th>
-						<th><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Recent Clicks', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Previous Clicks', 'searchforge' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Change', 'searchforge' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -194,12 +201,12 @@ $recent_alerts = $wpdb->get_results(
 		<table class="widefat sf-table">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Actions', 'searchforge' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -232,12 +239,12 @@ $recent_alerts = $wpdb->get_results(
 		<table class="widefat sf-table">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
-					<th><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Keyword', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Page', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Clicks', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Impressions', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'CTR', 'searchforge' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Position', 'searchforge' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
