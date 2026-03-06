@@ -133,18 +133,18 @@ class WeeklyDigest {
 						<div class="metric">
 							<div class="metric-value"><?php echo esc_html( number_format( $summary['total_clicks'] ) ); ?></div>
 							<div class="metric-label">Clicks</div>
-							<?php if ( $comparison && isset( $comparison['clicks'] ) ) : ?>
-								<div class="metric-change <?php echo $comparison['clicks']['change_pct'] >= 0 ? 'change-up' : 'change-down'; ?>">
-									<?php echo esc_html( ( $comparison['clicks']['change_pct'] >= 0 ? '+' : '' ) . round( $comparison['clicks']['change_pct'], 1 ) ); ?>%
+							<?php if ( $comparison && isset( $comparison['changes']['clicks'] ) && $comparison['changes']['clicks'] !== null ) : ?>
+								<div class="metric-change <?php echo $comparison['changes']['clicks'] >= 0 ? 'change-up' : 'change-down'; ?>">
+									<?php echo esc_html( ( $comparison['changes']['clicks'] >= 0 ? '+' : '' ) . round( $comparison['changes']['clicks'], 1 ) ); ?>%
 								</div>
 							<?php endif; ?>
 						</div>
 						<div class="metric">
 							<div class="metric-value"><?php echo esc_html( number_format( $summary['total_impressions'] ) ); ?></div>
 							<div class="metric-label">Impressions</div>
-							<?php if ( $comparison && isset( $comparison['impressions'] ) ) : ?>
-								<div class="metric-change <?php echo $comparison['impressions']['change_pct'] >= 0 ? 'change-up' : 'change-down'; ?>">
-									<?php echo esc_html( ( $comparison['impressions']['change_pct'] >= 0 ? '+' : '' ) . round( $comparison['impressions']['change_pct'], 1 ) ); ?>%
+							<?php if ( $comparison && isset( $comparison['changes']['impressions'] ) && $comparison['changes']['impressions'] !== null ) : ?>
+								<div class="metric-change <?php echo $comparison['changes']['impressions'] >= 0 ? 'change-up' : 'change-down'; ?>">
+									<?php echo esc_html( ( $comparison['changes']['impressions'] >= 0 ? '+' : '' ) . round( $comparison['changes']['impressions'], 1 ) ); ?>%
 								</div>
 							<?php endif; ?>
 						</div>

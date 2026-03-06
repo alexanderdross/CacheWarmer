@@ -91,19 +91,21 @@ class ContentBrief {
 			$ga4 = \SearchForge\Integrations\GA4\Syncer::get_page_behavior( $page_path );
 		}
 
-		// Cannibalization check.
+		// Cannibalization check — batch query instead of per-keyword.
 		$cannibalizing = [];
-		foreach ( $keywords as $kw ) {
-			$count = $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(DISTINCT page_path)
+		if ( ! empty( $keywords ) ) {
+			$query_list    = array_column( $keywords, 'query' );
+			$placeholders  = implode( ',', array_fill( 0, count( $query_list ), '%s' ) );
+			$prepare_args  = array_merge( $query_list, [ $latest_date ] );
+
+			$cannibalizing = $wpdb->get_col( $wpdb->prepare(
+				"SELECT query
 				FROM {$wpdb->prefix}sf_keywords
-				WHERE query = %s AND source = 'gsc' AND snapshot_date = %s",
-				$kw['query'],
-				$latest_date
-			) );
-			if ( (int) $count > 1 ) {
-				$cannibalizing[] = $kw['query'];
-			}
+				WHERE query IN ({$placeholders}) AND source = 'gsc' AND snapshot_date = %s
+				GROUP BY query
+				HAVING COUNT(DISTINCT page_path) > 1",
+				$prepare_args
+			) ) ?: [];
 		}
 
 		return [

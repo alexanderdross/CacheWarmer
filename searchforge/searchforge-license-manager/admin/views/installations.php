@@ -61,7 +61,7 @@ $params[]  = $offset;
 $installations = $wpdb->get_results( $wpdb->prepare( $query, ...$params ) );
 $total_pages   = (int) ceil( $total / $per_page );
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1><?php esc_html_e( 'Installationen', 'sflm' ); ?></h1>
 
     <form method="get" class="sflm-filter-bar">
@@ -102,9 +102,8 @@ $total_pages   = (int) ceil( $total / $per_page );
                 <?php foreach ( $installations as $inst ) : ?>
                     <tr>
                         <td>
-                            <span class="sflm-platform-<?php echo esc_attr( $inst->platform ); ?>">
-                                <?php echo esc_html( $inst->platform ); ?>
-                            </span>
+                            <span class="sflm-platform-<?php echo esc_attr( $inst->platform ); ?>" aria-hidden="true"></span>
+                            <?php echo esc_html( $inst->platform ); ?>
                             <?php if ( $inst->platform_version ) : ?>
                                 <small><?php echo esc_html( $inst->platform_version ); ?></small>
                             <?php endif; ?>
@@ -122,7 +121,7 @@ $total_pages   = (int) ceil( $total / $per_page );
                             <?php endif; ?>
                         </td>
                         <td><code style="font-size:10px;"><?php echo esc_html( substr( $inst->fingerprint, 0, 16 ) . '...' ); ?></code></td>
-                        <td><?php echo esc_html( $inst->cachewarmer_version ?: '–' ); ?></td>
+                        <td><?php echo esc_html( $inst->product_version ?: '–' ); ?></td>
                         <td>
                             <?php if ( $inst->is_active ) : ?>
                                 <span class="sflm-badge sflm-badge-active"><?php esc_html_e( 'Aktiv', 'sflm' ); ?></span>

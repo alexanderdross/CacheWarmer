@@ -155,5 +155,11 @@ class Installer {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
+
+		// Add additional performance indexes (IF NOT EXISTS prevents duplicate errors).
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_keywords_page ON {$wpdb->prefix}sf_keywords (page_path, data_date)" );
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_keywords_query ON {$wpdb->prefix}sf_keywords (query, engine)" );
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_snapshots_page ON {$wpdb->prefix}sf_snapshots (page_path, snapshot_date)" );
+		$wpdb->query( "CREATE INDEX IF NOT EXISTS idx_alerts_status ON {$wpdb->prefix}sf_alerts (status, created_at)" );
 	}
 }

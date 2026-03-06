@@ -29,13 +29,15 @@ if ( $is_pro ) {
 		</div>
 	<?php else : ?>
 
-		<nav class="nav-tab-wrapper">
+		<nav class="nav-tab-wrapper" role="tablist">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-analysis&tab=cannibalization' ) ); ?>"
-				class="nav-tab <?php echo $tab === 'cannibalization' ? 'nav-tab-active' : ''; ?>">
+				class="nav-tab <?php echo $tab === 'cannibalization' ? 'nav-tab-active' : ''; ?>"
+				role="tab" aria-selected="<?php echo $tab === 'cannibalization' ? 'true' : 'false'; ?>">
 				<?php esc_html_e( 'Cannibalization', 'searchforge' ); ?>
 			</a>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-analysis&tab=clusters' ) ); ?>"
-				class="nav-tab <?php echo $tab === 'clusters' ? 'nav-tab-active' : ''; ?>">
+				class="nav-tab <?php echo $tab === 'clusters' ? 'nav-tab-active' : ''; ?>"
+				role="tab" aria-selected="<?php echo $tab === 'clusters' ? 'true' : 'false'; ?>">
 				<?php esc_html_e( 'Keyword Clusters', 'searchforge' ); ?>
 			</a>
 		</nav>

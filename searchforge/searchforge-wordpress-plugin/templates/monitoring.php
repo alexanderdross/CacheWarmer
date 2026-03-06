@@ -17,17 +17,23 @@ $tab        = sanitize_text_field( $_GET['tab'] ?? 'overview' );
 		<?php endif; ?>
 	</h1>
 
-	<nav class="nav-tab-wrapper">
+	<nav class="nav-tab-wrapper" role="tablist">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-monitoring&tab=overview' ) ); ?>"
-			class="nav-tab <?php echo $tab === 'overview' ? 'nav-tab-active' : ''; ?>">
+			class="nav-tab <?php echo $tab === 'overview' ? 'nav-tab-active' : ''; ?>"
+			role="tab" aria-selected="<?php echo $tab === 'overview' ? 'true' : 'false'; ?>"
+			aria-controls="sf-monitoring-overview">
 			<?php esc_html_e( 'Overview', 'searchforge' ); ?>
 		</a>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-monitoring&tab=performance' ) ); ?>"
-			class="nav-tab <?php echo $tab === 'performance' ? 'nav-tab-active' : ''; ?>">
+			class="nav-tab <?php echo $tab === 'performance' ? 'nav-tab-active' : ''; ?>"
+			role="tab" aria-selected="<?php echo $tab === 'performance' ? 'true' : 'false'; ?>"
+			aria-controls="sf-monitoring-performance">
 			<?php esc_html_e( 'Performance', 'searchforge' ); ?>
 		</a>
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=searchforge-monitoring&tab=audit' ) ); ?>"
-			class="nav-tab <?php echo $tab === 'audit' ? 'nav-tab-active' : ''; ?>">
+			class="nav-tab <?php echo $tab === 'audit' ? 'nav-tab-active' : ''; ?>"
+			role="tab" aria-selected="<?php echo $tab === 'audit' ? 'true' : 'false'; ?>"
+			aria-controls="sf-monitoring-audit">
 			<?php esc_html_e( 'Audit Log', 'searchforge' ); ?>
 		</a>
 	</nav>

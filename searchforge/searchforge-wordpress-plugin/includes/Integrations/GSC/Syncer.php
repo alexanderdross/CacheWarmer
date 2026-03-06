@@ -84,30 +84,43 @@ class Syncer {
 		$table = "{$wpdb->prefix}sf_snapshots";
 		$count = 0;
 
-		foreach ( $pages as $page ) {
-			$page_url  = $page['page'];
-			$page_path = wp_parse_url( $page_url, PHP_URL_PATH ) ?: '/';
+		$wpdb->query( 'START TRANSACTION' );
 
-			// Upsert: delete existing for this page+date+source, then insert.
-			$wpdb->query( $wpdb->prepare(
-				"DELETE FROM {$table} WHERE page_path = %s AND snapshot_date = %s AND source = 'gsc' AND device = 'all'",
-				$page_path,
-				$snapshot_date
-			) );
+		try {
+			foreach ( $pages as $page ) {
+				$page_url  = $page['page'];
+				$page_path = wp_parse_url( $page_url, PHP_URL_PATH ) ?: '/';
 
-			$wpdb->insert( $table, [
-				'page_url'      => $page_url,
-				'page_path'     => $page_path,
-				'snapshot_date' => $snapshot_date,
-				'clicks'        => $page['clicks'],
-				'impressions'   => $page['impressions'],
-				'ctr'           => $page['ctr'],
-				'position'      => $page['position'],
-				'device'        => 'all',
-				'source'        => 'gsc',
-			] );
+				// Upsert: delete existing for this page+date+source, then insert.
+				$wpdb->query( $wpdb->prepare(
+					"DELETE FROM {$table} WHERE page_path = %s AND snapshot_date = %s AND source = 'gsc' AND device = 'all'",
+					$page_path,
+					$snapshot_date
+				) );
 
-			$count++;
+				$result = $wpdb->insert( $table, [
+					'page_url'      => $page_url,
+					'page_path'     => $page_path,
+					'snapshot_date' => $snapshot_date,
+					'clicks'        => $page['clicks'],
+					'impressions'   => $page['impressions'],
+					'ctr'           => $page['ctr'],
+					'position'      => $page['position'],
+					'device'        => 'all',
+					'source'        => 'gsc',
+				] );
+
+				if ( false === $result ) {
+					throw new \RuntimeException( "Failed to insert page data for: {$page_path}" );
+				}
+
+				$count++;
+			}
+
+			$wpdb->query( 'COMMIT' );
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			throw $e;
 		}
 
 		return $count;
@@ -118,28 +131,41 @@ class Syncer {
 		$table = "{$wpdb->prefix}sf_keywords";
 		$count = 0;
 
-		// Delete existing keywords for this snapshot date.
-		$wpdb->query( $wpdb->prepare(
-			"DELETE FROM {$table} WHERE snapshot_date = %s AND source = 'gsc'",
-			$snapshot_date
-		) );
+		$wpdb->query( 'START TRANSACTION' );
 
-		foreach ( $keywords as $kw ) {
-			$page_path = wp_parse_url( $kw['page'], PHP_URL_PATH ) ?: '/';
+		try {
+			// Delete existing keywords for this snapshot date.
+			$wpdb->query( $wpdb->prepare(
+				"DELETE FROM {$table} WHERE snapshot_date = %s AND source = 'gsc'",
+				$snapshot_date
+			) );
 
-			$wpdb->insert( $table, [
-				'page_path'     => $page_path,
-				'query'         => $kw['query'],
-				'snapshot_date' => $snapshot_date,
-				'clicks'        => $kw['clicks'],
-				'impressions'   => $kw['impressions'],
-				'ctr'           => $kw['ctr'],
-				'position'      => $kw['position'],
-				'device'        => 'all',
-				'source'        => 'gsc',
-			] );
+			foreach ( $keywords as $kw ) {
+				$page_path = wp_parse_url( $kw['page'], PHP_URL_PATH ) ?: '/';
 
-			$count++;
+				$result = $wpdb->insert( $table, [
+					'page_path'     => $page_path,
+					'query'         => $kw['query'],
+					'snapshot_date' => $snapshot_date,
+					'clicks'        => $kw['clicks'],
+					'impressions'   => $kw['impressions'],
+					'ctr'           => $kw['ctr'],
+					'position'      => $kw['position'],
+					'device'        => 'all',
+					'source'        => 'gsc',
+				] );
+
+				if ( false === $result ) {
+					throw new \RuntimeException( "Failed to insert keyword data for: {$kw['query']}" );
+				}
+
+				$count++;
+			}
+
+			$wpdb->query( 'COMMIT' );
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			throw $e;
 		}
 
 		return $count;

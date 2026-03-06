@@ -13,7 +13,6 @@ global $wpdb;
 $prefix = $wpdb->prefix . 'sflm_';
 
 $tables = [
-    'rate_limits',
     'stripe_events',
     'stripe_product_map',
     'audit_logs',
@@ -31,6 +30,5 @@ delete_option( 'sflm_version' );
 // Cronjobs entfernen
 wp_clear_scheduled_hook( 'sflm_check_expired_licenses' );
 wp_clear_scheduled_hook( 'sflm_cleanup_old_data' );
-wp_clear_scheduled_hook( 'sflm_cleanup_rate_limits' );
 wp_clear_scheduled_hook( 'sflm_check_stale_installations' );
 wp_clear_scheduled_hook( 'sflm_send_expiry_warnings' );

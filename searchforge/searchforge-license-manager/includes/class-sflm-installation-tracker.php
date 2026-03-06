@@ -62,7 +62,7 @@ class SFLM_Installation_Tracker {
                     'hostname'            => $data['hostname'] ?? $existing->hostname,
                     'platform'            => $data['platform'],
                     'platform_version'    => $data['platform_version'] ?? null,
-                    'cachewarmer_version' => $data['cachewarmer_version'] ?? null,
+                    'product_version' => $data['product_version'] ?? null,
                     'os_platform'         => $data['os_platform'] ?? null,
                     'os_version'          => $data['os_version'] ?? null,
                     'ip_address'          => $data['ip_address'] ?? null,
@@ -117,7 +117,7 @@ class SFLM_Installation_Tracker {
                 'fingerprint'         => $fingerprint,
                 'platform'            => $data['platform'],
                 'platform_version'    => $data['platform_version'] ?? null,
-                'cachewarmer_version' => $data['cachewarmer_version'] ?? null,
+                'product_version' => $data['product_version'] ?? null,
                 'os_platform'         => $data['os_platform'] ?? null,
                 'os_version'          => $data['os_version'] ?? null,
                 'ip_address'          => $data['ip_address'] ?? null,
@@ -219,7 +219,7 @@ class SFLM_Installation_Tracker {
     /**
      * Heartbeat verarbeiten.
      */
-    public function update_heartbeat( int $license_id, string $fingerprint, ?string $cachewarmer_version = null ): bool {
+    public function update_heartbeat( int $license_id, string $fingerprint, ?string $product_version = null ): bool {
         global $wpdb;
 
         $update_data = [
@@ -227,8 +227,8 @@ class SFLM_Installation_Tracker {
         ];
         $formats = [ '%s' ];
 
-        if ( $cachewarmer_version ) {
-            $update_data['cachewarmer_version'] = $cachewarmer_version;
+        if ( $product_version ) {
+            $update_data['product_version'] = $product_version;
             $formats[] = '%s';
         }
 

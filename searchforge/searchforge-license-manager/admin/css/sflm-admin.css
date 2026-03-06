@@ -32,7 +32,7 @@
 }
 
 .sflm-kpi-card.sflm-kpi-warning .sflm-kpi-value {
-    color: #dba617;
+    color: #946c00;
 }
 
 /* Status Badges */
@@ -48,7 +48,7 @@
 
 .sflm-badge-active { background: #d4edda; color: #155724; }
 .sflm-badge-inactive { background: #e2e3e5; color: #383d41; }
-.sflm-badge-grace_period { background: #fff3cd; color: #856404; }
+.sflm-badge-grace_period { background: #fff3cd; color: #6b5100; }
 .sflm-badge-expired { background: #f8d7da; color: #721c24; }
 .sflm-badge-revoked { background: #721c24; color: #fff; }
 
@@ -59,10 +59,10 @@
 .sflm-tier-development { background: #e2d5f1; color: #4a1f8e; }
 
 /* Platform Icons */
-.sflm-platform-nodejs::before { content: "⬢ "; }
-.sflm-platform-docker::before { content: "🐳 "; }
-.sflm-platform-wordpress::before { content: "W "; font-weight: bold; }
-.sflm-platform-drupal::before { content: "💧 "; }
+.sflm-platform-nodejs::before { content: "⬢ "; speak: none; }
+.sflm-platform-docker::before { content: "🐳 "; speak: none; }
+.sflm-platform-wordpress::before { content: "W "; font-weight: bold; speak: none; }
+.sflm-platform-drupal::before { content: "💧 "; speak: none; }
 
 /* Charts */
 .sflm-chart-container {
@@ -388,5 +388,15 @@
 
     .sflm-kpi-card .sflm-kpi-value {
         font-size: 20px;
+    }
+}
+
+/* ==========================================================================
+   Accessibility — Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
     }
 }

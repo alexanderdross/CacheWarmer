@@ -61,7 +61,11 @@ class BrokenLinks {
 			$links = self::extract_links( $body, $site_url );
 
 			foreach ( $links as $link ) {
-				$link_response = wp_remote_head( $link, [
+				if ( ! self::is_safe_url( $link ) ) {
+					continue;
+				}
+
+				$link_response = wp_safe_remote_head( $link, [
 					'timeout'     => 10,
 					'redirection' => 3,
 					'user-agent'  => 'SearchForge/' . SEARCHFORGE_VERSION,
@@ -161,6 +165,90 @@ class BrokenLinks {
 			'created_at' => current_time( 'mysql', true ),
 			'is_read'    => 0,
 		] );
+	}
+
+	/**
+	 * Check if a URL is safe to request (not targeting private/internal IPs).
+	 */
+	private static function is_safe_url( string $url ): bool {
+		$parsed = wp_parse_url( $url );
+		if ( ! $parsed || empty( $parsed['host'] ) ) {
+			return false;
+		}
+
+		// Only allow http and https schemes.
+		$scheme = strtolower( $parsed['scheme'] ?? '' );
+		if ( $scheme !== 'http' && $scheme !== 'https' ) {
+			return false;
+		}
+
+		$host = $parsed['host'];
+
+		// Resolve hostname to IP.
+		$ip = gethostbyname( $host );
+		if ( $ip === $host ) {
+			// Resolution failed — could also be an IPv6 literal.
+			$ips = [];
+		} else {
+			$ips = [ $ip ];
+		}
+
+		// Also check DNS records for IPv6.
+		$dns_records = @dns_get_record( $host, DNS_AAAA );
+		if ( is_array( $dns_records ) ) {
+			foreach ( $dns_records as $record ) {
+				if ( isset( $record['ipv6'] ) ) {
+					$ips[] = $record['ipv6'];
+				}
+			}
+		}
+
+		foreach ( $ips as $resolved_ip ) {
+			if ( self::is_private_ip( $resolved_ip ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if an IP address is in a private/reserved range.
+	 */
+	private static function is_private_ip( string $ip ): bool {
+		// IPv6 loopback.
+		if ( $ip === '::1' ) {
+			return true;
+		}
+
+		// IPv6 unique local (fc00::/7).
+		if ( preg_match( '/^f[cd]/i', $ip ) ) {
+			return true;
+		}
+
+		// IPv4 private and reserved ranges.
+		$private_ranges = [
+			[ '127.0.0.0', '127.255.255.255' ],     // 127.0.0.0/8
+			[ '10.0.0.0', '10.255.255.255' ],        // 10.0.0.0/8
+			[ '172.16.0.0', '172.31.255.255' ],       // 172.16.0.0/12
+			[ '192.168.0.0', '192.168.255.255' ],     // 192.168.0.0/16
+			[ '169.254.0.0', '169.254.255.255' ],     // 169.254.0.0/16
+			[ '0.0.0.0', '0.255.255.255' ],           // 0.0.0.0/8
+		];
+
+		$ip_long = ip2long( $ip );
+		if ( $ip_long === false ) {
+			// Not a valid IPv4 — could be IPv6, already checked above.
+			return false;
+		}
+
+		foreach ( $private_ranges as [ $start, $end ] ) {
+			if ( $ip_long >= ip2long( $start ) && $ip_long <= ip2long( $end ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

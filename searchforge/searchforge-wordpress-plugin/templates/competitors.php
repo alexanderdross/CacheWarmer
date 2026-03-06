@@ -86,20 +86,23 @@ $can_add = count( $competitors ) < $limit;
 
 		<!-- Tabs -->
 		<?php if ( ! empty( $competitors ) ) : ?>
-			<nav class="nav-tab-wrapper" style="margin-top: 24px;">
-				<a href="#sf-tab-visibility" class="nav-tab nav-tab-active" data-tab="sf-tab-visibility">
+			<nav class="nav-tab-wrapper" role="tablist" style="margin-top: 24px;">
+				<a href="#sf-tab-visibility" class="nav-tab nav-tab-active" data-tab="sf-tab-visibility"
+					role="tab" aria-selected="true" aria-controls="sf-tab-visibility" id="sf-tab-visibility-tab">
 					<?php esc_html_e( 'Visibility', 'searchforge' ); ?>
 				</a>
-				<a href="#sf-tab-overlap" class="nav-tab" data-tab="sf-tab-overlap">
+				<a href="#sf-tab-overlap" class="nav-tab" data-tab="sf-tab-overlap"
+					role="tab" aria-selected="false" aria-controls="sf-tab-overlap" id="sf-tab-overlap-tab">
 					<?php esc_html_e( 'Keyword Overlap', 'searchforge' ); ?>
 				</a>
-				<a href="#sf-tab-gaps" class="nav-tab" data-tab="sf-tab-gaps">
+				<a href="#sf-tab-gaps" class="nav-tab" data-tab="sf-tab-gaps"
+					role="tab" aria-selected="false" aria-controls="sf-tab-gaps" id="sf-tab-gaps-tab">
 					<?php esc_html_e( 'Content Gaps', 'searchforge' ); ?>
 				</a>
 			</nav>
 
 			<!-- Tab: Visibility -->
-			<div id="sf-tab-visibility" class="sf-tab-panel sf-tab-active">
+			<div id="sf-tab-visibility" class="sf-tab-panel sf-tab-active" role="tabpanel" aria-labelledby="sf-tab-visibility-tab" tabindex="0">
 				<?php if ( $visibility ) : ?>
 					<div class="sf-visibility-grid">
 						<div class="sf-visibility-card sf-visibility-you">

@@ -174,9 +174,13 @@ class RestController {
 		] );
 	}
 
-	public function check_permissions( \WP_REST_Request $request = null ): bool {
+	public function check_permissions( \WP_REST_Request $request = null ) {
 		if ( ! Settings::is_pro() ) {
-			return false;
+			return new \WP_Error(
+				'searchforge_pro_required',
+				'This endpoint requires a SearchForge Pro license.',
+				[ 'status' => 403 ]
+			);
 		}
 
 		// Allow API key auth for external access.

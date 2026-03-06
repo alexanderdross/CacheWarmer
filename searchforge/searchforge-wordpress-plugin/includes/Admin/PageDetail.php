@@ -158,8 +158,8 @@ class PageDetail {
 		}
 
 		return $wpdb->get_row( $wpdb->prepare(
-			"SELECT page_path, sessions, bounce_rate, avg_session_duration,
-				conversions, page_views
+			"SELECT page_path, sessions, bounce_rate, avg_session_dur,
+				conversions, pageviews
 			FROM {$table}
 			WHERE page_path = %s
 			ORDER BY snapshot_date DESC

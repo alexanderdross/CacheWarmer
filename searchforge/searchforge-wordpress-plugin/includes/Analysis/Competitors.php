@@ -31,6 +31,11 @@ class Competitors {
 			return false;
 		}
 
+		// Validate domain format.
+		if ( ! preg_match( '/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/', $domain ) ) {
+			return false;
+		}
+
 		// Limit: Free = 0, Pro = 3, Enterprise = unlimited.
 		$tier  = Settings::get( 'license_tier' );
 		$limit = match ( $tier ) {

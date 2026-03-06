@@ -35,7 +35,7 @@ $sections = SFLM_Settings::get_sections();
 $geoip_path   = SFLM_Settings::get( 'maxmind_db_path' );
 $geoip_exists = $geoip_path && file_exists( $geoip_path );
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1><?php esc_html_e( 'Einstellungen', 'sflm' ); ?></h1>
 
     <p class="description" style="font-size: 14px; margin-bottom: 20px;">
@@ -106,8 +106,8 @@ $geoip_exists = $geoip_path && file_exists( $geoip_path );
                                            value=""
                                            placeholder="<?php echo $current_value ? esc_attr__( '••••••••  (unverändert wenn leer)', 'sflm' ) : ''; ?>"
                                            autocomplete="new-password">
-                                    <button type="button" class="button button-small sflm-toggle-password" data-target="<?php echo esc_attr( $input_name ); ?>">
-                                        <span class="dashicons dashicons-visibility" style="vertical-align: middle; font-size: 16px;"></span>
+                                    <button type="button" class="button button-small sflm-toggle-password" data-target="<?php echo esc_attr( $input_name ); ?>" aria-label="<?php esc_attr_e( 'Passwort anzeigen/verbergen', 'sflm' ); ?>">
+                                        <span class="dashicons dashicons-visibility" style="vertical-align: middle; font-size: 16px;" aria-hidden="true"></span>
                                     </button>
                                     <?php if ( 'jwt_secret' === $key ) : ?>
                                         <button type="button" class="button button-small sflm-generate-secret" data-target="<?php echo esc_attr( $input_name ); ?>" data-length="64">

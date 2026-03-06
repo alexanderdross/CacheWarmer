@@ -50,7 +50,74 @@ class Clustering {
 			$ngrams[ $i ] = self::get_ngrams( $kw['query'], 2 );
 		}
 
-		// Single-pass greedy clustering.
+		// Build inverted index: bigram -> list of keyword indices.
+		$bigram_index = [];
+		foreach ( $ngrams as $i => $grams ) {
+			foreach ( $grams as $gram ) {
+				// Only index bigrams (contain a space) for candidate pair generation.
+				if ( str_contains( $gram, ' ' ) ) {
+					$bigram_index[ $gram ][] = $i;
+				}
+			}
+		}
+
+		// Build candidate pairs: only compare keywords sharing at least one bigram.
+		$candidates = [];
+		foreach ( $bigram_index as $indices ) {
+			$count = count( $indices );
+			for ( $a = 0; $a < $count; $a++ ) {
+				for ( $b = $a + 1; $b < $count; $b++ ) {
+					$i = $indices[ $a ];
+					$j = $indices[ $b ];
+					$key = $i < $j ? "{$i}:{$j}" : "{$j}:{$i}";
+					$candidates[ $key ] = true;
+				}
+			}
+		}
+
+		// Also consider keywords sharing unigrams (single words) for short queries.
+		// Build unigram index for keywords with no bigrams.
+		$unigram_index = [];
+		foreach ( $ngrams as $i => $grams ) {
+			$has_bigram = false;
+			foreach ( $grams as $gram ) {
+				if ( str_contains( $gram, ' ' ) ) {
+					$has_bigram = true;
+					break;
+				}
+			}
+			if ( ! $has_bigram ) {
+				foreach ( $grams as $gram ) {
+					$unigram_index[ $gram ][] = $i;
+				}
+			}
+		}
+		foreach ( $unigram_index as $indices ) {
+			$count = count( $indices );
+			for ( $a = 0; $a < $count; $a++ ) {
+				for ( $b = $a + 1; $b < $count; $b++ ) {
+					$i = $indices[ $a ];
+					$j = $indices[ $b ];
+					$key = $i < $j ? "{$i}:{$j}" : "{$j}:{$i}";
+					$candidates[ $key ] = true;
+				}
+			}
+		}
+
+		// Precompute similarity only for candidate pairs.
+		$similar_pairs = [];
+		foreach ( $candidates as $key => $_ ) {
+			[ $i, $j ] = explode( ':', $key );
+			$i = (int) $i;
+			$j = (int) $j;
+			$similarity = self::jaccard( $ngrams[ $i ], $ngrams[ $j ] );
+			if ( $similarity >= $threshold ) {
+				$similar_pairs[ $i ][] = $j;
+				$similar_pairs[ $j ][] = $i;
+			}
+		}
+
+		// Single-pass greedy clustering using precomputed similar pairs.
 		$assigned  = [];
 		$clusters  = [];
 
@@ -66,17 +133,16 @@ class Clustering {
 			];
 			$assigned[ $i ] = true;
 
-			foreach ( $keywords as $j => $other ) {
-				if ( isset( $assigned[ $j ] ) || $i === $j ) {
-					continue;
-				}
+			if ( isset( $similar_pairs[ $i ] ) ) {
+				foreach ( $similar_pairs[ $i ] as $j ) {
+					if ( isset( $assigned[ $j ] ) ) {
+						continue;
+					}
 
-				$similarity = self::jaccard( $ngrams[ $i ], $ngrams[ $j ] );
-				if ( $similarity >= $threshold ) {
-					$cluster['keywords'][]      = $other;
-					$cluster['total_clicks']     += (int) $other['total_clicks'];
-					$cluster['total_impressions'] += (int) $other['total_impressions'];
-					$assigned[ $j ]              = true;
+					$cluster['keywords'][]        = $keywords[ $j ];
+					$cluster['total_clicks']      += (int) $keywords[ $j ]['total_clicks'];
+					$cluster['total_impressions'] += (int) $keywords[ $j ]['total_impressions'];
+					$assigned[ $j ]               = true;
 				}
 			}
 

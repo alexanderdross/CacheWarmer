@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.2",
         "geoip2/geoip2": "^3.0",
         "firebase/php-jwt": "^6.0",
         "stripe/stripe-php": "^13.0"

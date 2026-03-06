@@ -94,7 +94,7 @@ class SFLM_Activate_Endpoint extends SFLM_REST_Controller {
             'fingerprint'         => $fingerprint,
             'platform'            => $platform,
             'platform_version'    => sanitize_text_field( $request->get_param( 'platform_version' ) ?? '' ),
-            'cachewarmer_version' => sanitize_text_field( $request->get_param( 'cachewarmer_version' ) ?? '' ),
+            'product_version'     => sanitize_text_field( $request->get_param( 'product_version' ) ?? '' ),
             'domain'              => sanitize_text_field( $request->get_param( 'domain' ) ?? '' ),
             'hostname'            => sanitize_text_field( $request->get_param( 'hostname' ) ?? '' ),
             'os_platform'         => sanitize_text_field( $request->get_param( 'os_platform' ) ?? '' ),

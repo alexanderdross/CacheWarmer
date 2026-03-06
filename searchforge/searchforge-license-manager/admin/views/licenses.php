@@ -87,7 +87,7 @@ $licenses   = $result['items'];
 $total      = $result['total'];
 $total_pages = (int) ceil( $total / $per_page );
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1>
         <?php esc_html_e( 'Lizenzen', 'sflm' ); ?>
         <button class="page-title-action" id="sflm-new-license-btn"><?php esc_html_e( 'Neue Lizenz', 'sflm' ); ?></button>
@@ -180,8 +180,8 @@ $total_pages = (int) ceil( $total / $per_page );
                     <tr>
                         <td>
                             <span class="sflm-license-key"><?php echo esc_html( $license->license_key ); ?></span>
-                            <button class="button-link sflm-copy-key" data-key="<?php echo esc_attr( $license->license_key ); ?>" title="<?php esc_attr_e( 'Kopieren', 'sflm' ); ?>">
-                                <span class="dashicons dashicons-clipboard"></span>
+                            <button class="button-link sflm-copy-key" data-key="<?php echo esc_attr( $license->license_key ); ?>" title="<?php esc_attr_e( 'Kopieren', 'sflm' ); ?>" aria-label="<?php esc_attr_e( 'Lizenzschlüssel kopieren', 'sflm' ); ?>">
+                                <span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
                             </button>
                         </td>
                         <td>
@@ -200,8 +200,8 @@ $total_pages = (int) ceil( $total / $per_page );
                                     <input type="hidden" name="sflm_action" value="extend">
                                     <input type="hidden" name="license_id" value="<?php echo esc_attr( $license->id ); ?>">
                                     <input type="hidden" name="days" value="365">
-                                    <button type="submit" class="button button-small" title="<?php esc_attr_e( '+1 Jahr', 'sflm' ); ?>">
-                                        <span class="dashicons dashicons-calendar-alt"></span>
+                                    <button type="submit" class="button button-small" title="<?php esc_attr_e( '+1 Jahr', 'sflm' ); ?>" aria-label="<?php esc_attr_e( 'Lizenz um 1 Jahr verlängern', 'sflm' ); ?>">
+                                        <span class="dashicons dashicons-calendar-alt" aria-hidden="true"></span>
                                     </button>
                                 </form>
                                 <form method="post" style="display:inline;">
@@ -209,8 +209,8 @@ $total_pages = (int) ceil( $total / $per_page );
                                     <input type="hidden" name="sflm_action" value="revoke">
                                     <input type="hidden" name="license_id" value="<?php echo esc_attr( $license->id ); ?>">
                                     <input type="hidden" name="reason" value="Admin-Aktion">
-                                    <button type="submit" class="button button-small sflm-confirm-action" data-confirm="<?php esc_attr_e( 'Lizenz wirklich sperren?', 'sflm' ); ?>" title="<?php esc_attr_e( 'Sperren', 'sflm' ); ?>">
-                                        <span class="dashicons dashicons-lock"></span>
+                                    <button type="submit" class="button button-small sflm-confirm-action" data-confirm="<?php esc_attr_e( 'Lizenz wirklich sperren?', 'sflm' ); ?>" title="<?php esc_attr_e( 'Sperren', 'sflm' ); ?>" aria-label="<?php esc_attr_e( 'Lizenz sperren', 'sflm' ); ?>">
+                                        <span class="dashicons dashicons-lock" aria-hidden="true"></span>
                                     </button>
                                 </form>
                             <?php endif; ?>
@@ -246,10 +246,3 @@ $total_pages = (int) ceil( $total / $per_page );
     <?php endif; ?>
 </div>
 
-<script>
-jQuery(function($) {
-    $('#sflm-new-license-btn').on('click', function() {
-        $('#sflm-new-license-form').slideToggle();
-    });
-});
-</script>

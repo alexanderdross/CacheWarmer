@@ -207,11 +207,11 @@ if ( $table_exists ) {
     }
 }
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1><?php esc_html_e( 'SearchForge License Manager – Dashboard', 'sflm' ); ?></h1>
 
     <!-- KPI Cards -->
-    <div class="sflm-kpi-grid">
+    <div class="sflm-kpi-grid" aria-live="polite">
         <div class="sflm-kpi-card">
             <div class="sflm-kpi-value"><?php echo esc_html( $total_licenses ); ?></div>
             <div class="sflm-kpi-label"><?php esc_html_e( 'Lizenzen gesamt', 'sflm' ); ?></div>

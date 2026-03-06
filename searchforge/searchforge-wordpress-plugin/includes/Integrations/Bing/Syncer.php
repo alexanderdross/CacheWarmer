@@ -80,39 +80,52 @@ class Syncer {
 		// Bing returns an array of page stat objects.
 		$pages = is_array( $stats ) ? $stats : [];
 
-		foreach ( $pages as $entry ) {
-			$page_url  = $entry['Query'] ?? $entry['Url'] ?? '';
-			if ( empty( $page_url ) ) {
-				continue;
+		$wpdb->query( 'START TRANSACTION' );
+
+		try {
+			foreach ( $pages as $entry ) {
+				$page_url  = $entry['Query'] ?? $entry['Url'] ?? '';
+				if ( empty( $page_url ) ) {
+					continue;
+				}
+
+				$page_path = wp_parse_url( $page_url, PHP_URL_PATH ) ?: '/';
+
+				$clicks      = (int) ( $entry['Clicks'] ?? 0 );
+				$impressions = (int) ( $entry['Impressions'] ?? 0 );
+				$ctr         = $impressions > 0 ? $clicks / $impressions : 0;
+				$position    = (float) ( $entry['AvgImpressionPosition'] ?? $entry['Position'] ?? 0 );
+
+				// Upsert.
+				$wpdb->query( $wpdb->prepare(
+					"DELETE FROM {$table} WHERE page_path = %s AND snapshot_date = %s AND source = 'bing' AND device = 'all'",
+					$page_path,
+					$snapshot_date
+				) );
+
+				$result = $wpdb->insert( $table, [
+					'page_url'      => $page_url,
+					'page_path'     => $page_path,
+					'snapshot_date' => $snapshot_date,
+					'clicks'        => $clicks,
+					'impressions'   => $impressions,
+					'ctr'           => $ctr,
+					'position'      => $position,
+					'device'        => 'all',
+					'source'        => 'bing',
+				] );
+
+				if ( false === $result ) {
+					throw new \RuntimeException( "Failed to insert Bing page data for: {$page_path}" );
+				}
+
+				$count++;
 			}
 
-			$page_path = wp_parse_url( $page_url, PHP_URL_PATH ) ?: '/';
-
-			$clicks      = (int) ( $entry['Clicks'] ?? 0 );
-			$impressions = (int) ( $entry['Impressions'] ?? 0 );
-			$ctr         = $impressions > 0 ? $clicks / $impressions : 0;
-			$position    = (float) ( $entry['AvgImpressionPosition'] ?? $entry['Position'] ?? 0 );
-
-			// Upsert.
-			$wpdb->query( $wpdb->prepare(
-				"DELETE FROM {$table} WHERE page_path = %s AND snapshot_date = %s AND source = 'bing' AND device = 'all'",
-				$page_path,
-				$snapshot_date
-			) );
-
-			$wpdb->insert( $table, [
-				'page_url'      => $page_url,
-				'page_path'     => $page_path,
-				'snapshot_date' => $snapshot_date,
-				'clicks'        => $clicks,
-				'impressions'   => $impressions,
-				'ctr'           => $ctr,
-				'position'      => $position,
-				'device'        => 'all',
-				'source'        => 'bing',
-			] );
-
-			$count++;
+			$wpdb->query( 'COMMIT' );
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			throw $e;
 		}
 
 		return $count;
@@ -123,44 +136,57 @@ class Syncer {
 		$table = "{$wpdb->prefix}sf_keywords";
 		$count = 0;
 
-		// Delete existing Bing keywords for this date.
-		$wpdb->query( $wpdb->prepare(
-			"DELETE FROM {$table} WHERE snapshot_date = %s AND source = 'bing'",
-			$snapshot_date
-		) );
-
 		$queries = is_array( $stats ) ? $stats : [];
 
-		foreach ( $queries as $entry ) {
-			$query = $entry['Query'] ?? '';
-			if ( empty( $query ) ) {
-				continue;
+		$wpdb->query( 'START TRANSACTION' );
+
+		try {
+			// Delete existing Bing keywords for this date.
+			$wpdb->query( $wpdb->prepare(
+				"DELETE FROM {$table} WHERE snapshot_date = %s AND source = 'bing'",
+				$snapshot_date
+			) );
+
+			foreach ( $queries as $entry ) {
+				$query = $entry['Query'] ?? '';
+				if ( empty( $query ) ) {
+					continue;
+				}
+
+				$clicks      = (int) ( $entry['Clicks'] ?? 0 );
+				$impressions = (int) ( $entry['Impressions'] ?? 0 );
+				$ctr         = $impressions > 0 ? $clicks / $impressions : 0;
+				$position    = (float) ( $entry['AvgImpressionPosition'] ?? $entry['Position'] ?? 0 );
+
+				// Bing query stats don't always include page info.
+				$page_path = '/';
+				if ( ! empty( $entry['Url'] ) ) {
+					$page_path = wp_parse_url( $entry['Url'], PHP_URL_PATH ) ?: '/';
+				}
+
+				$result = $wpdb->insert( $table, [
+					'page_path'     => $page_path,
+					'query'         => $query,
+					'snapshot_date' => $snapshot_date,
+					'clicks'        => $clicks,
+					'impressions'   => $impressions,
+					'ctr'           => $ctr,
+					'position'      => $position,
+					'device'        => 'all',
+					'source'        => 'bing',
+				] );
+
+				if ( false === $result ) {
+					throw new \RuntimeException( "Failed to insert Bing keyword data for: {$query}" );
+				}
+
+				$count++;
 			}
 
-			$clicks      = (int) ( $entry['Clicks'] ?? 0 );
-			$impressions = (int) ( $entry['Impressions'] ?? 0 );
-			$ctr         = $impressions > 0 ? $clicks / $impressions : 0;
-			$position    = (float) ( $entry['AvgImpressionPosition'] ?? $entry['Position'] ?? 0 );
-
-			// Bing query stats don't always include page info.
-			$page_path = '/';
-			if ( ! empty( $entry['Url'] ) ) {
-				$page_path = wp_parse_url( $entry['Url'], PHP_URL_PATH ) ?: '/';
-			}
-
-			$wpdb->insert( $table, [
-				'page_path'     => $page_path,
-				'query'         => $query,
-				'snapshot_date' => $snapshot_date,
-				'clicks'        => $clicks,
-				'impressions'   => $impressions,
-				'ctr'           => $ctr,
-				'position'      => $position,
-				'device'        => 'all',
-				'source'        => 'bing',
-			] );
-
-			$count++;
+			$wpdb->query( 'COMMIT' );
+		} catch ( \Exception $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			throw $e;
 		}
 
 		return $count;

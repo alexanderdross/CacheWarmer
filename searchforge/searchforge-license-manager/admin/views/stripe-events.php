@@ -46,7 +46,7 @@ $total_pages = (int) ceil( $total / $per_page );
 // Event-Typen für Dropdown
 $event_types = $wpdb->get_col( "SELECT DISTINCT event_type FROM {$prefix}stripe_events ORDER BY event_type ASC" );
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1><?php esc_html_e( 'Stripe Webhook Events', 'sflm' ); ?></h1>
 
     <form method="get" class="sflm-filter-bar">

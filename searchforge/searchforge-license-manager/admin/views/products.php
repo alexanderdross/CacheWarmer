@@ -67,7 +67,7 @@ if ( isset( $_POST['sflm_product_action'] ) && current_user_can( 'manage_options
 
 $products = $wpdb->get_results( "SELECT * FROM {$prefix}stripe_product_map ORDER BY tier ASC, plan ASC" );
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1>
         <?php esc_html_e( 'Stripe Produkt-Mapping', 'sflm' ); ?>
         <button class="page-title-action" id="sflm-new-product-btn"><?php esc_html_e( 'Neues Mapping', 'sflm' ); ?></button>
@@ -160,16 +160,16 @@ $products = $wpdb->get_results( "SELECT * FROM {$prefix}stripe_product_map ORDER
                                 <?php wp_nonce_field( 'sflm_product_action', '_sflm_product_nonce' ); ?>
                                 <input type="hidden" name="sflm_product_action" value="toggle">
                                 <input type="hidden" name="product_id" value="<?php echo esc_attr( $product->id ); ?>">
-                                <button type="submit" class="button button-small" title="<?php echo $product->is_active ? esc_attr__( 'Deaktivieren', 'sflm' ) : esc_attr__( 'Aktivieren', 'sflm' ); ?>">
-                                    <span class="dashicons dashicons-<?php echo $product->is_active ? 'hidden' : 'visibility'; ?>"></span>
+                                <button type="submit" class="button button-small" title="<?php echo $product->is_active ? esc_attr__( 'Deaktivieren', 'sflm' ) : esc_attr__( 'Aktivieren', 'sflm' ); ?>" aria-label="<?php echo $product->is_active ? esc_attr__( 'Mapping deaktivieren', 'sflm' ) : esc_attr__( 'Mapping aktivieren', 'sflm' ); ?>">
+                                    <span class="dashicons dashicons-<?php echo $product->is_active ? 'hidden' : 'visibility'; ?>" aria-hidden="true"></span>
                                 </button>
                             </form>
                             <form method="post" style="display:inline;">
                                 <?php wp_nonce_field( 'sflm_product_action', '_sflm_product_nonce' ); ?>
                                 <input type="hidden" name="sflm_product_action" value="delete">
                                 <input type="hidden" name="product_id" value="<?php echo esc_attr( $product->id ); ?>">
-                                <button type="submit" class="button button-small sflm-confirm-action" data-confirm="<?php esc_attr_e( 'Mapping wirklich löschen?', 'sflm' ); ?>">
-                                    <span class="dashicons dashicons-trash"></span>
+                                <button type="submit" class="button button-small sflm-confirm-action" data-confirm="<?php esc_attr_e( 'Mapping wirklich löschen?', 'sflm' ); ?>" aria-label="<?php esc_attr_e( 'Mapping löschen', 'sflm' ); ?>">
+                                    <span class="dashicons dashicons-trash" aria-hidden="true"></span>
                                 </button>
                             </form>
                         </td>
@@ -180,10 +180,3 @@ $products = $wpdb->get_results( "SELECT * FROM {$prefix}stripe_product_map ORDER
     </table>
 </div>
 
-<script>
-jQuery(function($) {
-    $('#sflm-new-product-btn').on('click', function() {
-        $('#sflm-new-product-form').slideToggle();
-    });
-});
-</script>

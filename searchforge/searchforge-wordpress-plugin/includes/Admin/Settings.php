@@ -172,6 +172,11 @@ class Settings {
 	}
 
 	public static function get_retention_days(): int {
+		$user_setting = (int) self::get( 'data_retention' );
+		if ( $user_setting > 0 ) {
+			return $user_setting;
+		}
+
 		$tier = self::get( 'license_tier' );
 		return match ( $tier ) {
 			'enterprise' => 730,

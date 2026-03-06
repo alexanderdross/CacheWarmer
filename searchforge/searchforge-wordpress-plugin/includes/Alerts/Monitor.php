@@ -279,54 +279,10 @@ class Monitor {
 
 	/**
 	 * Send weekly digest email.
+	 *
+	 * Delegates to the dedicated WeeklyDigest class to avoid duplicate implementations.
 	 */
 	public function send_weekly_digest(): void {
-		if ( ! Settings::is_pro() || ! Settings::get( 'weekly_digest_enabled' ) ) {
-			return;
-		}
-
-		$email = Settings::get( 'alert_email' ) ?: get_option( 'admin_email' );
-
-		$summary = \SearchForge\Admin\Dashboard::get_summary();
-		$decaying = Engine::get_decaying_pages( 'gsc', 5 );
-		$new_kw   = Engine::get_new_keyword_pages( 'gsc', 7 );
-		$score    = \SearchForge\Scoring\Score::calculate_site_score();
-
-		$site_name = get_bloginfo( 'name' );
-		$subject   = sprintf( '[SearchForge] Weekly Digest for %s', $site_name );
-
-		$body  = "SearchForge Weekly Digest\n";
-		$body .= "========================\n\n";
-		$body .= "Site: " . home_url() . "\n";
-		$body .= "Period: " . wp_date( 'Y-m-d', strtotime( '-7 days' ) ) . " to " . wp_date( 'Y-m-d' ) . "\n\n";
-
-		if ( $score ) {
-			$body .= "SearchForge Score: {$score['total']}/100\n\n";
-		}
-
-		$body .= "Overview:\n";
-		$body .= "  Total Clicks:      " . number_format( $summary['total_clicks'] ) . "\n";
-		$body .= "  Total Impressions: " . number_format( $summary['total_impressions'] ) . "\n";
-		$body .= "  Avg Position:      {$summary['avg_position']}\n";
-		$body .= "  Avg CTR:           {$summary['avg_ctr']}%\n";
-		$body .= "  Total Keywords:    " . number_format( $summary['total_keywords'] ) . "\n\n";
-
-		if ( ! empty( $new_kw ) ) {
-			$total_new = array_sum( array_column( $new_kw, 'new_keywords' ) );
-			$body .= "New Keywords: {$total_new} across " . count( $new_kw ) . " pages\n\n";
-		}
-
-		if ( ! empty( $decaying ) ) {
-			$body .= "Content Decay Warning:\n";
-			foreach ( $decaying as $page ) {
-				$body .= "  - {$page['page_path']}: {$page['decline_pct']}% clicks\n";
-			}
-			$body .= "\n";
-		}
-
-		$body .= "---\n";
-		$body .= "Dashboard: " . admin_url( 'admin.php?page=searchforge' ) . "\n";
-
-		wp_mail( $email, $subject, $body );
+		\SearchForge\Notifications\WeeklyDigest::send();
 	}
 }

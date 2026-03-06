@@ -36,5 +36,24 @@
         $('.sflm-filter-bar select').on('change', function () {
             $(this).closest('form').submit();
         });
+
+        // Focus management: move focus to first input when toggle forms open
+        $('#sflm-new-license-btn').on('click', function () {
+            var form = $('#sflm-new-license-form');
+            form.slideToggle(200, function () {
+                if (form.is(':visible')) {
+                    form.find('input:visible, select:visible, textarea:visible').first().trigger('focus');
+                }
+            });
+        });
+
+        $('#sflm-new-product-btn').on('click', function () {
+            var form = $('#sflm-new-product-form');
+            form.slideToggle(200, function () {
+                if (form.is(':visible')) {
+                    form.find('input:visible, select:visible, textarea:visible').first().trigger('focus');
+                }
+            });
+        });
     });
 })(jQuery);

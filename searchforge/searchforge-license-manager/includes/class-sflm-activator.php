@@ -70,7 +70,7 @@ class SFLM_Activator {
             fingerprint     VARCHAR(64) NOT NULL,
             platform        VARCHAR(20) NOT NULL,
             platform_version VARCHAR(20) DEFAULT NULL,
-            cachewarmer_version VARCHAR(20) DEFAULT NULL,
+            product_version     VARCHAR(20) DEFAULT NULL,
             os_platform     VARCHAR(50) DEFAULT NULL,
             os_version      VARCHAR(50) DEFAULT NULL,
             ip_address      VARCHAR(45) DEFAULT NULL,
@@ -165,18 +165,5 @@ class SFLM_Activator {
         ) $charset_collate;";
         dbDelta( $sql );
 
-        // 7. Rate Limits
-        $sql = "CREATE TABLE {$prefix}rate_limits (
-            id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            ip_address      VARCHAR(45) NOT NULL,
-            endpoint        VARCHAR(100) NOT NULL,
-            request_count   INT UNSIGNED NOT NULL DEFAULT 1,
-            window_start    DATETIME NOT NULL,
-            window_end      DATETIME NOT NULL,
-            PRIMARY KEY (id),
-            UNIQUE KEY uk_ip_endpoint_window (ip_address, endpoint, window_start),
-            KEY idx_window_end (window_end)
-        ) $charset_collate;";
-        dbDelta( $sql );
     }
 }

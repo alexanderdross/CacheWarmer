@@ -39,7 +39,7 @@ global $wpdb;
 $prefix  = $wpdb->prefix . SFLM_DB_PREFIX;
 $actions = $wpdb->get_col( "SELECT DISTINCT action FROM {$prefix}audit_logs ORDER BY action ASC" );
 ?>
-<div class="wrap">
+<div class="wrap" role="main">
     <h1><?php esc_html_e( 'Audit Log', 'sflm' ); ?></h1>
 
     <form method="get" class="sflm-filter-bar">

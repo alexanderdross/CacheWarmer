@@ -87,26 +87,30 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 	</div>
 
 	<!-- Tabs -->
-	<nav class="nav-tab-wrapper">
-		<a href="#sf-tab-overview" class="nav-tab nav-tab-active" data-tab="sf-tab-overview">
+	<nav class="nav-tab-wrapper" role="tablist">
+		<a href="#sf-tab-overview" class="nav-tab nav-tab-active" data-tab="sf-tab-overview"
+			role="tab" aria-selected="true" aria-controls="sf-tab-overview" id="sf-tab-overview-tab">
 			<?php esc_html_e( 'Overview', 'searchforge' ); ?>
 		</a>
-		<a href="#sf-tab-keywords" class="nav-tab" data-tab="sf-tab-keywords">
+		<a href="#sf-tab-keywords" class="nav-tab" data-tab="sf-tab-keywords"
+			role="tab" aria-selected="false" aria-controls="sf-tab-keywords" id="sf-tab-keywords-tab">
 			<?php esc_html_e( 'Keywords', 'searchforge' ); ?>
 			<span class="sf-tab-count">(<?php echo esc_html( count( $keywords ) ); ?>)</span>
 		</a>
-		<a href="#sf-tab-trends" class="nav-tab" data-tab="sf-tab-trends">
+		<a href="#sf-tab-trends" class="nav-tab" data-tab="sf-tab-trends"
+			role="tab" aria-selected="false" aria-controls="sf-tab-trends" id="sf-tab-trends-tab">
 			<?php esc_html_e( 'Trends', 'searchforge' ); ?>
 		</a>
 		<?php if ( $score && $is_pro ) : ?>
-			<a href="#sf-tab-score" class="nav-tab" data-tab="sf-tab-score">
+			<a href="#sf-tab-score" class="nav-tab" data-tab="sf-tab-score"
+				role="tab" aria-selected="false" aria-controls="sf-tab-score" id="sf-tab-score-tab">
 				<?php esc_html_e( 'Score', 'searchforge' ); ?>
 			</a>
 		<?php endif; ?>
 	</nav>
 
 	<!-- Tab: Overview -->
-	<div id="sf-tab-overview" class="sf-tab-panel sf-tab-active">
+	<div id="sf-tab-overview" class="sf-tab-panel sf-tab-active" role="tabpanel" aria-labelledby="sf-tab-overview-tab" tabindex="0">
 
 		<!-- Trend Chart -->
 		<?php if ( ! empty( $daily_trend ) ) : ?>
@@ -245,7 +249,7 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 	</div>
 
 	<!-- Tab: Keywords -->
-	<div id="sf-tab-keywords" class="sf-tab-panel">
+	<div id="sf-tab-keywords" class="sf-tab-panel" role="tabpanel" aria-labelledby="sf-tab-keywords-tab" tabindex="0">
 		<?php if ( empty( $keywords ) ) : ?>
 			<p><?php esc_html_e( 'No keyword data for this page.', 'searchforge' ); ?></p>
 		<?php else : ?>
@@ -328,7 +332,7 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 	</div>
 
 	<!-- Tab: Trends -->
-	<div id="sf-tab-trends" class="sf-tab-panel">
+	<div id="sf-tab-trends" class="sf-tab-panel" role="tabpanel" aria-labelledby="sf-tab-trends-tab" tabindex="0">
 		<?php if ( ! $is_pro ) : ?>
 			<div class="notice notice-info">
 				<p><?php esc_html_e( 'Trend analysis requires a Pro license.', 'searchforge' ); ?></p>
@@ -389,7 +393,7 @@ $cannibal     = $is_pro ? SearchForge\Admin\PageDetail::get_page_cannibalization
 
 	<!-- Tab: Score Breakdown -->
 	<?php if ( $score && $is_pro ) : ?>
-		<div id="sf-tab-score" class="sf-tab-panel">
+		<div id="sf-tab-score" class="sf-tab-panel" role="tabpanel" aria-labelledby="sf-tab-score-tab" tabindex="0">
 			<div class="sf-score-overview">
 				<div class="sf-score-big sf-score-<?php echo $score['total'] >= 70 ? 'good' : ( $score['total'] >= 40 ? 'ok' : 'low' ); ?>">
 					<?php echo esc_html( $score['total'] ); ?><span class="sf-score-max">/100</span>

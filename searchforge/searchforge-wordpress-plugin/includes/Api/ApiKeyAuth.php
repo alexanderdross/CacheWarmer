@@ -23,7 +23,6 @@ class ApiKeyAuth {
 	 * Accepts key via:
 	 * - Authorization: Bearer sf_xxx header
 	 * - X-SearchForge-Key: sf_xxx header
-	 * - ?api_key=sf_xxx query parameter
 	 */
 	public static function validate( \WP_REST_Request $request ): bool {
 		$key = self::extract_key( $request );
@@ -53,12 +52,6 @@ class ApiKeyAuth {
 		$custom_header = $request->get_header( 'x-searchforge-key' );
 		if ( $custom_header && str_starts_with( $custom_header, 'sf_' ) ) {
 			return $custom_header;
-		}
-
-		// ?api_key=sf_xxx
-		$query_key = $request->get_param( 'api_key' );
-		if ( $query_key && str_starts_with( $query_key, 'sf_' ) ) {
-			return $query_key;
 		}
 
 		return '';
