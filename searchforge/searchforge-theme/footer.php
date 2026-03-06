@@ -21,29 +21,29 @@
 				<h3>Documentation</h3>
 				<ul>
 					<li><a href="/docs/">Getting Started</a></li>
-					<li><a href="/docs/api/">REST API</a></li>
-					<li><a href="/docs/wp-cli/">WP-CLI</a></li>
-					<li><a href="/docs/configuration/">Configuration</a></li>
+					<li><a href="/docs/searchforge-rest-api-reference/">REST API</a></li>
+					<li><a href="/docs/searchforge-wp-cli-commands/">WP-CLI</a></li>
+					<li><a href="/docs/searchforge-installation-guide/">Configuration</a></li>
 				</ul>
 			</div>
 			<div class="sf-footer__column">
 				<h3>Data Sources</h3>
 				<ul>
-					<li><a href="/docs/gsc/">Google Search Console</a></li>
-					<li><a href="/docs/bing/">Bing Webmaster Tools</a></li>
-					<li><a href="/docs/ga4/">Google Analytics 4</a></li>
-					<li><a href="/docs/trends/">Google Trends</a></li>
-					<li><a href="/docs/kwp/">Keyword Planner</a></li>
-					<li><a href="/docs/gbp/">Business Profile</a></li>
+					<li><a href="/docs/google-search-console-integration/">Google Search Console</a></li>
+					<li><a href="/docs/bing-webmaster-tools-integration/">Bing Webmaster Tools</a></li>
+					<li><a href="/docs/google-analytics-4-integration/">Google Analytics 4</a></li>
+					<li><a href="/docs/google-trends-integration/">Google Trends</a></li>
+					<li><a href="/docs/google-keyword-planner-integration/">Keyword Planner</a></li>
+					<li><a href="/docs/google-business-profile-integration/">Business Profile</a></li>
 				</ul>
 			</div>
 			<div class="sf-footer__column">
 				<h3>Integrations</h3>
 				<ul>
-					<li><a href="/docs/yoast/">Yoast SEO</a></li>
-					<li><a href="/docs/rank-math/">Rank Math</a></li>
-					<li><a href="/docs/cachewarmer/">CacheWarmer</a></li>
-					<li><a href="/docs/github/">GitHub Export</a></li>
+					<li><a href="/docs/yoast-seo-integration/">Yoast SEO</a></li>
+					<li><a href="/docs/rank-math-integration/">Rank Math</a></li>
+					<li><a href="/docs/cachewarmer-integration/">CacheWarmer</a></li>
+					<li><a href="/docs/github-gitlab-export/">GitHub Export</a></li>
 				</ul>
 			</div>
 		</div>

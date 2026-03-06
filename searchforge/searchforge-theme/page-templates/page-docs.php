@@ -28,11 +28,11 @@ get_header();
 				</div>
 				<h3 class="sf-card__title">Getting Started</h3>
 				<ul style="list-style: none; margin-top: var(--space-md);">
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/installation/">Installation</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/activation/">License Activation</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/gsc-setup/">Connecting Google Search Console</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/first-sync/">Your First Data Sync</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/first-brief/">Exporting Your First Brief</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-installation-guide/">How to Install SearchForge</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-license-activation/">Activate Your License Key</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/connect-google-search-console/">Connect Google Search Console</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/first-seo-data-sync/">Run Your First SEO Data Sync</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/export-first-seo-content-brief/">Export Your First Content Brief</a></li>
 				</ul>
 			</div>
 
@@ -43,13 +43,13 @@ get_header();
 				</div>
 				<h3 class="sf-card__title">Data Sources</h3>
 				<ul style="list-style: none; margin-top: var(--space-md);">
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/gsc/">Google Search Console</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/bing/">Bing Webmaster Tools</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/ga4/">Google Analytics 4</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/kwp/">Google Keyword Planner</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/trends/">Google Trends</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/gbp/">Google Business Profile</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/bing-places/">Bing Places for Business</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/google-search-console-integration/">Google Search Console Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/bing-webmaster-tools-integration/">Bing Webmaster Tools Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/google-analytics-4-integration/">Google Analytics 4 Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/google-keyword-planner-integration/">Google Keyword Planner Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/google-trends-integration/">Google Trends Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/google-business-profile-integration/">Google Business Profile Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/bing-places-integration/">Bing Places for Business Integration</a></li>
 				</ul>
 			</div>
 
@@ -60,13 +60,13 @@ get_header();
 				</div>
 				<h3 class="sf-card__title">Features</h3>
 				<ul style="list-style: none; margin-top: var(--space-md);">
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/score/">SearchForge Score</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/aeo/">AI Visibility Monitor</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/competitors/">Competitor Intelligence</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/briefs/">AI Content Briefs</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/clustering/">Keyword Clustering</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/cannibalization/">Cannibalization Detection</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/alerts/">Alerts &amp; Monitoring</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-seo-score/">SearchForge SEO Score Explained</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/ai-visibility-monitor/">AI Visibility Monitor (AEO Tracking)</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/seo-competitor-intelligence/">SEO Competitor Intelligence</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/ai-seo-content-briefs/">AI-Powered SEO Content Briefs</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/keyword-clustering-wordpress/">Keyword Clustering for WordPress</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/keyword-cannibalization-detection/">Keyword Cannibalization Detection</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/seo-alerts-monitoring/">SEO Alerts &amp; Content Decay Monitoring</a></li>
 				</ul>
 			</div>
 
@@ -77,11 +77,11 @@ get_header();
 				</div>
 				<h3 class="sf-card__title">Export &amp; Output</h3>
 				<ul style="list-style: none; margin-top: var(--space-md);">
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/markdown-export/">Markdown Briefs</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/master-brief/">Combined Master Brief</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/llms-txt/">llms.txt Generation</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/zip-export/">ZIP Bulk Export</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/scheduled-exports/">Scheduled Exports</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/markdown-seo-brief-export/">Markdown SEO Brief Export</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/combined-master-brief/">Combined Master Brief</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/llms-txt-generation/">llms.txt Generation for LLMs</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/bulk-seo-data-export/">Bulk SEO Data ZIP Export</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/scheduled-seo-exports/">Scheduled SEO Data Exports</a></li>
 				</ul>
 			</div>
 
@@ -92,11 +92,11 @@ get_header();
 				</div>
 				<h3 class="sf-card__title">Developer</h3>
 				<ul style="list-style: none; margin-top: var(--space-md);">
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/rest-api/">REST API Reference</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/wp-cli/">WP-CLI Commands</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/hooks/">Actions &amp; Filters</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/api-keys/">API Key Authentication</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/webhooks/">Webhook Events</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-rest-api-reference/">REST API Reference</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-wp-cli-commands/">WP-CLI Commands</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-hooks-actions-filters/">Actions &amp; Filters Reference</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-api-key-authentication/">API Key Authentication</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/searchforge-webhook-events/">Webhook Events Reference</a></li>
 				</ul>
 			</div>
 
@@ -107,13 +107,13 @@ get_header();
 				</div>
 				<h3 class="sf-card__title">Integrations</h3>
 				<ul style="list-style: none; margin-top: var(--space-md);">
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/yoast/">Yoast SEO</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/rank-math/">Rank Math</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/aioseo/">AIOSEO</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/cachewarmer/">CacheWarmer</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/github/">GitHub / GitLab</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/notion/">Notion Export</a></li>
-					<li style="padding: var(--space-xs) 0;"><a href="/docs/sheets/">Google Sheets</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/yoast-seo-integration/">Yoast SEO Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/rank-math-integration/">Rank Math Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/aioseo-integration/">AIOSEO Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/cachewarmer-integration/">CacheWarmer Integration</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/github-gitlab-export/">GitHub &amp; GitLab Export</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/notion-seo-export/">Notion SEO Data Export</a></li>
+					<li style="padding: var(--space-xs) 0;"><a href="/docs/google-sheets-seo-export/">Google Sheets SEO Export</a></li>
 				</ul>
 			</div>
 
