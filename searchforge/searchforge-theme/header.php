@@ -16,7 +16,8 @@
 <header class="sf-header" role="banner">
 	<div class="sf-container sf-header__inner">
 		<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="sf-header__logo" aria-label="<?php esc_attr_e( 'SearchForge Home', 'searchforge-theme' ); ?>">
-			<img src="<?php echo esc_url( SF_THEME_URI ); ?>/assets/images/logo.svg" alt="SearchForge" width="160" height="32">
+			<img src="<?php echo esc_url( SF_THEME_URI ); ?>/assets/images/logo-mark.svg" alt="" width="32" height="32">
+			<span class="sf-header__logo-text"><span class="sf-header__logo-search">Search</span>Forge</span>
 		</a>
 
 		<nav class="sf-header__nav" role="navigation" aria-label="<?php esc_attr_e( 'Primary Navigation', 'searchforge-theme' ); ?>">

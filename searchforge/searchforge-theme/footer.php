@@ -3,7 +3,10 @@
 <footer class="sf-footer" role="contentinfo">
 	<div class="sf-container sf-footer__inner">
 		<div class="sf-footer__brand">
-			<img src="<?php echo esc_url( SF_THEME_URI ); ?>/assets/images/logo-white.svg" alt="SearchForge" width="140" height="28">
+			<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="sf-footer__logo">
+				<img src="<?php echo esc_url( SF_THEME_URI ); ?>/assets/images/logo-mark.svg" alt="" width="28" height="28">
+				<span class="sf-footer__logo-text"><span class="sf-footer__logo-search">Search</span>Forge</span>
+			</a>
 			<p class="sf-footer__tagline">SEO Data, LLM-Ready.</p>
 		</div>
 
