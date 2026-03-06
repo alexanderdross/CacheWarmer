@@ -555,8 +555,7 @@ cachewarmer/
 │       ├── fingerprint.js       # Installations-Fingerprint (SHA-256)
 │       └── feature-gate.js      # Feature-Gating Middleware
 ├── LASTENHEFT-LICENSE-DASHBOARD.md  # Lastenheft License Dashboard
-├── license-dashboard/
-│   └── README.md                # Technische Doku License Manager Plugin
+├── cachewarmer-license-manager/  # WordPress License Manager Plugin
 └── tests/
     ├── sitemap-parser.test.ts
     ├── cdn-warmer.test.ts
@@ -845,4 +844,4 @@ Die Lizenzvalidierung wird beim Start durchgeführt und per Heartbeat alle 24h e
 | Dokument | Beschreibung |
 |----------|-------------|
 | `LASTENHEFT-LICENSE-DASHBOARD.md` | Formales Lastenheft mit Anforderungen, Datenmodell, API-Spec, Implementierungsplan |
-| `license-dashboard/README.md` | Technische Doku des WordPress-Plugins (Schema, Endpoints, Stripe, Admin UI) |
+| `cachewarmer-license-manager/` | WordPress License Manager Plugin (Schema, Endpoints, Stripe, Admin UI) |
