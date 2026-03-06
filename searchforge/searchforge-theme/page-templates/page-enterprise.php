@@ -61,7 +61,7 @@ get_header();
 
 		<div style="display: flex; gap: var(--space-md); justify-content: center; flex-wrap: wrap;">
 			<a href="/checkout/?tier=enterprise" class="sf-btn sf-btn--primary sf-btn--lg">Get Enterprise</a>
-			<a href="/contact/" class="sf-btn sf-btn--outline sf-btn--lg">Contact Sales</a>
+			<a href="https://dross.net/contact/?topic=searchforge" class="sf-btn sf-btn--outline sf-btn--lg">Contact Sales</a>
 		</div>
 	</div>
 </section>

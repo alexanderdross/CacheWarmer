@@ -53,9 +53,9 @@
 		<div class="sf-container sf-footer__bottom-inner">
 			<p>&copy; <?php echo esc_html( date( 'Y' ) ); ?> Dross:Media GmbH &middot; Made with &hearts; in Stuttgart</p>
 			<ul class="sf-footer__legal">
-				<li><a href="/imprint/">Imprint</a></li>
-				<li><a href="/privacy/">Privacy Policy</a></li>
-				<li><a href="/contact/">Contact</a></li>
+				<li><a href="https://dross.net/imprint/">Imprint</a></li>
+				<li><a href="https://dross.net/privacy-policy/">Privacy Policy</a></li>
+				<li><a href="https://dross.net/contact/?topic=searchforge">Contact</a></li>
 			</ul>
 		</div>
 	</div>

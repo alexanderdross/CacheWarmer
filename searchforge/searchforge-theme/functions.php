@@ -84,6 +84,25 @@ function sf_theme_cleanup_head(): void {
 }
 add_action( 'after_setup_theme', 'sf_theme_cleanup_head' );
 
+/**
+ * Redirect legal/contact pages to dross.net.
+ */
+function sf_theme_legal_redirects(): void {
+	$redirects = [
+		'/imprint/'  => 'https://dross.net/imprint/',
+		'/privacy/'  => 'https://dross.net/privacy-policy/',
+		'/contact/'  => 'https://dross.net/contact/?topic=searchforge',
+	];
+
+	$path = trailingslashit( wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) );
+
+	if ( isset( $redirects[ $path ] ) ) {
+		wp_redirect( $redirects[ $path ], 301 );
+		exit;
+	}
+}
+add_action( 'template_redirect', 'sf_theme_legal_redirects' );
+
 // Load includes.
 require_once SF_THEME_DIR . '/inc/schema.php';
 require_once SF_THEME_DIR . '/inc/security.php';
