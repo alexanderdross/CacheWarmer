@@ -10,6 +10,7 @@ get_header();
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
 	<div class="sf-container" style="text-align: center;">
+		<?php get_template_part( 'template-parts/breadcrumb' ); ?>
 		<h1><span class="sf-gradient-text">Developer</span></h1>
 		<p class="sf-text--inverse-muted" style="font-size: 1.25rem; max-width: 640px; margin: var(--space-md) auto 0;">
 			REST API, WP-CLI, hooks, webhooks, and API key authentication for programmatic access.

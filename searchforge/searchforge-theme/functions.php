@@ -103,6 +103,49 @@ function sf_theme_legal_redirects(): void {
 }
 add_action( 'template_redirect', 'sf_theme_legal_redirects' );
 
+/**
+ * Build breadcrumb trail for the current page.
+ *
+ * @return array<int, array{label: string, url?: string, external?: bool}>
+ */
+function sf_get_breadcrumbs(): array {
+	if ( is_front_page() ) {
+		return [];
+	}
+
+	$crumbs = [
+		[
+			'label'    => 'Dross:Media',
+			'url'      => 'https://dross.net/media/',
+			'external' => true,
+		],
+		[
+			'label' => 'SearchForge',
+			'url'   => home_url( '/' ),
+		],
+	];
+
+	if ( is_page() ) {
+		$post      = get_queried_object();
+		$ancestors = array_reverse( get_post_ancestors( $post ) );
+
+		foreach ( $ancestors as $ancestor_id ) {
+			$crumbs[] = [
+				'label' => get_the_title( $ancestor_id ),
+				'url'   => get_permalink( $ancestor_id ),
+			];
+		}
+
+		$crumbs[] = [ 'label' => get_the_title( $post ) ];
+	} elseif ( is_404() ) {
+		$crumbs[] = [ 'label' => '404' ];
+	} else {
+		$crumbs[] = [ 'label' => get_the_title() ];
+	}
+
+	return $crumbs;
+}
+
 // Load includes.
 require_once SF_THEME_DIR . '/inc/schema.php';
 require_once SF_THEME_DIR . '/inc/security.php';

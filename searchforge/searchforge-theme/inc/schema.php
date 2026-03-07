@@ -61,3 +61,36 @@ function sf_theme_output_schema(): void {
 	echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }
 add_action( 'wp_head', 'sf_theme_output_schema' );
+
+/**
+ * Output BreadcrumbList JSON-LD on inner pages.
+ */
+function sf_theme_output_breadcrumb_schema(): void {
+	$crumbs = sf_get_breadcrumbs();
+
+	if ( empty( $crumbs ) ) {
+		return;
+	}
+
+	$items = [];
+	foreach ( $crumbs as $i => $crumb ) {
+		$item = [
+			'@type'    => 'ListItem',
+			'position' => $i + 1,
+			'name'     => $crumb['label'],
+		];
+		if ( ! empty( $crumb['url'] ) ) {
+			$item['item'] = $crumb['url'];
+		}
+		$items[] = $item;
+	}
+
+	$schema = [
+		'@context'        => 'https://schema.org',
+		'@type'           => 'BreadcrumbList',
+		'itemListElement' => $items,
+	];
+
+	echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+add_action( 'wp_head', 'sf_theme_output_breadcrumb_schema' );
