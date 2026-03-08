@@ -22,7 +22,22 @@ get_header();
 
 		<article class="sf-changelog-entry">
 			<div class="sf-changelog-entry__header">
-				<h2>v1.9.0 <span class="sf-badge sf-badge--accent">Latest</span></h2>
+				<h2>v2.0.0 <span class="sf-badge sf-badge--accent">Latest</span></h2>
+				<time class="sf-text--muted">March 8, 2026</time>
+			</div>
+			<h3>Version 2.0 &mdash; Feature Complete</h3>
+			<ul>
+				<li><strong>New:</strong> Comprehensive SEO metadata across all pages (meta description, Open Graph, Twitter Cards)</li>
+				<li><strong>New:</strong> Product schema markup with AggregateRating for rich search results</li>
+				<li><strong>New:</strong> SiteNavigationElement structured data for all site pages</li>
+				<li><strong>New:</strong> WebPage schema on every inner page</li>
+				<li><strong>New:</strong> Canonical URLs and robots meta on all pages</li>
+			</ul>
+		</article>
+
+		<article class="sf-changelog-entry">
+			<div class="sf-changelog-entry__header">
+				<h2>v1.9.0</h2>
 				<time class="sf-text--muted">March 6, 2026</time>
 			</div>
 			<h3>Competitor Tracking &amp; SERP Intelligence</h3>

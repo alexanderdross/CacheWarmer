@@ -77,7 +77,7 @@ class CacheWarmer_Database {
             "{$wpdb->prefix}cachewarmer_sitemaps",
             array(
                 'id'              => $data['id'],
-                'url'             => $data['url'],
+                'url'             => self::normalize_url( $data['url'] ),
                 'domain'          => $data['domain'],
                 'cron_expression' => $data['cron_expression'] ?? null,
                 'created_at'      => current_time( 'mysql', true ),
@@ -113,14 +113,50 @@ class CacheWarmer_Database {
     }
 
     /**
-     * Find an existing sitemap by URL.
+     * Normalize a sitemap URL for consistent duplicate detection.
+     *
+     * Lowercases scheme and host, removes default ports, trailing slashes,
+     * and fragments so that equivalent URLs match reliably.
+     */
+    public static function normalize_url( string $url ): string {
+        $parsed = wp_parse_url( $url );
+        if ( ! $parsed || empty( $parsed['host'] ) ) {
+            return $url;
+        }
+
+        $scheme = strtolower( $parsed['scheme'] ?? 'https' );
+        $host   = strtolower( $parsed['host'] );
+
+        // Strip default ports.
+        $port = '';
+        if ( ! empty( $parsed['port'] ) ) {
+            if ( ! ( 'https' === $scheme && 443 === (int) $parsed['port'] )
+                && ! ( 'http' === $scheme && 80 === (int) $parsed['port'] ) ) {
+                $port = ':' . $parsed['port'];
+            }
+        }
+
+        $path = $parsed['path'] ?? '/';
+        // Remove trailing slash unless the path is just "/".
+        if ( strlen( $path ) > 1 ) {
+            $path = rtrim( $path, '/' );
+        }
+
+        $query = ! empty( $parsed['query'] ) ? '?' . $parsed['query'] : '';
+
+        return $scheme . '://' . $host . $port . $path . $query;
+    }
+
+    /**
+     * Find an existing sitemap by URL (uses normalized comparison).
      */
     public function get_sitemap_by_url( string $url ): ?object {
         global $wpdb;
+        $normalized = self::normalize_url( $url );
         return $wpdb->get_row(
             $wpdb->prepare(
                 "SELECT * FROM {$wpdb->prefix}cachewarmer_sitemaps WHERE url = %s LIMIT 1",
-                $url
+                $normalized
             )
         );
     }

@@ -41,6 +41,41 @@ class CacheWarmerDatabase {
   // --- Sitemaps ---
 
   /**
+   * Normalize a sitemap URL for consistent duplicate detection.
+   *
+   * Lowercases scheme and host, removes default ports, trailing slashes,
+   * and fragments so that equivalent URLs match reliably.
+   */
+  public static function normalizeUrl(string $url): string {
+    $parsed = parse_url($url);
+    if (!$parsed || empty($parsed['host'])) {
+      return $url;
+    }
+
+    $scheme = strtolower($parsed['scheme'] ?? 'https');
+    $host   = strtolower($parsed['host']);
+
+    // Strip default ports.
+    $port = '';
+    if (!empty($parsed['port'])) {
+      if (!($scheme === 'https' && (int) $parsed['port'] === 443)
+          && !($scheme === 'http' && (int) $parsed['port'] === 80)) {
+        $port = ':' . $parsed['port'];
+      }
+    }
+
+    $path = $parsed['path'] ?? '/';
+    // Remove trailing slash unless the path is just "/".
+    if (strlen($path) > 1) {
+      $path = rtrim($path, '/');
+    }
+
+    $query = !empty($parsed['query']) ? '?' . $parsed['query'] : '';
+
+    return $scheme . '://' . $host . $port . $path . $query;
+  }
+
+  /**
    * Inserts a new sitemap.
    */
   public function insertSitemap(string $url, string $domain, ?string $cronExpression = NULL): object {
@@ -50,7 +85,7 @@ class CacheWarmerDatabase {
     $this->database->insert('cachewarmer_sitemaps')
       ->fields([
         'id' => $id,
-        'url' => $url,
+        'url' => self::normalizeUrl($url),
         'domain' => $domain,
         'cron_expression' => $cronExpression,
         'created_at' => $now,
@@ -103,12 +138,12 @@ class CacheWarmerDatabase {
   }
 
   /**
-   * Gets a sitemap by URL.
+   * Gets a sitemap by URL (uses normalized comparison).
    */
   public function getSitemapByUrl(string $url): ?object {
     return $this->database->select('cachewarmer_sitemaps', 's')
       ->fields('s')
-      ->condition('url', $url)
+      ->condition('url', self::normalizeUrl($url))
       ->range(0, 1)
       ->execute()
       ->fetchObject() ?: NULL;

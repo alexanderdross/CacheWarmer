@@ -390,6 +390,9 @@ class CacheWarmer_Admin {
             wp_send_json_error( array( 'message' => 'Invalid URL' ) );
         }
 
+        // Normalize early so the duplicate check and storage use the same form.
+        $url = CacheWarmer_Database::normalize_url( $url );
+
         $safe = $this->validate_safe_url( $url );
         if ( is_wp_error( $safe ) ) {
             wp_send_json_error( array( 'message' => $safe->get_error_message() ) );
@@ -472,6 +475,9 @@ class CacheWarmer_Admin {
                 $errors[] = $url;
                 continue;
             }
+
+            // Normalize early so the duplicate check and storage use the same form.
+            $url = CacheWarmer_Database::normalize_url( $url );
 
             $safe = $this->validate_safe_url( $url );
             if ( is_wp_error( $safe ) ) {

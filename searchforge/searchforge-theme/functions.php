@@ -7,7 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SF_THEME_VERSION', '1.0.0' );
+define( 'SF_THEME_VERSION', '1.1.0' );
 define( 'SF_THEME_DIR', get_template_directory() );
 define( 'SF_THEME_URI', get_template_directory_uri() );
 
@@ -169,6 +169,7 @@ function sf_doc_sidebar( array $sections ): void {
 }
 
 // Load includes.
+require_once SF_THEME_DIR . '/inc/seo-meta.php';
 require_once SF_THEME_DIR . '/inc/schema.php';
 require_once SF_THEME_DIR . '/inc/security.php';
 require_once SF_THEME_DIR . '/inc/performance.php';

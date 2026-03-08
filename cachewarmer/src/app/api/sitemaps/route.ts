@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { authenticateRequest } from "@/lib/auth";
-import { getDb } from "@/lib/db/database";
+import { getDb, normalizeUrl } from "@/lib/db/database";
 
 export async function GET(request: NextRequest) {
   const authError = authenticateRequest(request);
@@ -18,19 +18,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { url, cronExpression } = body;
+    const { url: rawUrl, cronExpression } = body;
 
-    if (!url || typeof url !== "string") {
+    if (!rawUrl || typeof rawUrl !== "string") {
       return NextResponse.json({ error: "url is required" }, { status: 400 });
     }
 
     let domain: string;
     try {
-      domain = new URL(url).hostname;
+      domain = new URL(rawUrl).hostname;
     } catch {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
+    // Normalize so duplicate check and storage use the same form.
+    const url = normalizeUrl(rawUrl);
     const db = getDb();
 
     // Check for duplicate URL

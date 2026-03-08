@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { authenticateRequest } from "@/lib/auth";
-import { getDb } from "@/lib/db/database";
+import { getDb, normalizeUrl } from "@/lib/db/database";
 
 export async function POST(request: NextRequest) {
   const authError = authenticateRequest(request);
@@ -33,13 +33,14 @@ export async function POST(request: NextRequest) {
     for (const line of lines) {
       try {
         const parsed = new URL(line);
-        if (checkDuplicate.get(line)) {
+        const normalized = normalizeUrl(line);
+        if (checkDuplicate.get(normalized)) {
           duplicates.push(line);
           continue;
         }
         const id = uuidv4();
-        stmt.run(id, line, parsed.hostname, null);
-        added.push({ id, url: line, domain: parsed.hostname });
+        stmt.run(id, normalized, parsed.hostname, null);
+        added.push({ id, url: normalized, domain: parsed.hostname });
       } catch {
         errors.push(line);
       }
