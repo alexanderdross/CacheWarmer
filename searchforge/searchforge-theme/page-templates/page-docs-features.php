@@ -8,13 +8,13 @@
 get_header();
 
 $sections = [
-	[ 'id' => 'searchforge-score',        'label' => 'SearchForge Score' ],
-	[ 'id' => 'ai-visibility-monitor',    'label' => 'AI Visibility Monitor' ],
-	[ 'id' => 'competitor-intelligence',   'label' => 'Competitor Intelligence' ],
-	[ 'id' => 'ai-content-briefs',         'label' => 'AI Content Briefs' ],
-	[ 'id' => 'keyword-clustering',        'label' => 'Keyword Clustering' ],
-	[ 'id' => 'cannibalization-detection', 'label' => 'Cannibalization Detection' ],
-	[ 'id' => 'alerts-monitoring',         'label' => 'Alerts & Monitoring' ],
+	[ 'id' => 'searchforge-score',        'label' => 'SearchForge Score',        'title' => 'How the SearchForge SEO Score works' ],
+	[ 'id' => 'ai-visibility-monitor',    'label' => 'AI Visibility Monitor',    'title' => 'Track AI citation visibility across LLMs' ],
+	[ 'id' => 'competitor-intelligence',   'label' => 'Competitor Intelligence', 'title' => 'Analyze competitor SEO performance with SearchForge' ],
+	[ 'id' => 'ai-content-briefs',         'label' => 'AI Content Briefs',       'title' => 'Generate AI-ready content briefs from SEO data' ],
+	[ 'id' => 'keyword-clustering',        'label' => 'Keyword Clustering',      'title' => 'Automatic keyword clustering and grouping' ],
+	[ 'id' => 'cannibalization-detection', 'label' => 'Cannibalization Detection','title' => 'Detect keyword cannibalization issues' ],
+	[ 'id' => 'alerts-monitoring',         'label' => 'Alerts & Monitoring',     'title' => 'Set up SEO alerts and monitoring in SearchForge' ],
 ];
 ?>
 

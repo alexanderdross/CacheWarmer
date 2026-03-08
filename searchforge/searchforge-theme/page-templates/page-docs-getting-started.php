@@ -8,11 +8,11 @@
 get_header();
 
 $sections = [
-	[ 'id' => 'installation',                    'label' => 'Installation' ],
-	[ 'id' => 'license-activation',              'label' => 'License Activation' ],
-	[ 'id' => 'connecting-google-search-console', 'label' => 'Connecting Google Search Console' ],
-	[ 'id' => 'your-first-data-sync',            'label' => 'Your First Data Sync' ],
-	[ 'id' => 'exporting-your-first-brief',      'label' => 'Exporting Your First Brief' ],
+	[ 'id' => 'installation',                    'label' => 'Installation',                    'title' => 'How to install SearchForge on WordPress' ],
+	[ 'id' => 'license-activation',              'label' => 'License Activation',              'title' => 'Activate your SearchForge license key' ],
+	[ 'id' => 'connecting-google-search-console', 'label' => 'Connecting Google Search Console', 'title' => 'Connect Google Search Console to SearchForge' ],
+	[ 'id' => 'your-first-data-sync',            'label' => 'Your First Data Sync',            'title' => 'Run your first SEO data sync with SearchForge' ],
+	[ 'id' => 'exporting-your-first-brief',      'label' => 'Exporting Your First Brief',      'title' => 'Export your first AI-ready SEO brief' ],
 ];
 ?>
 

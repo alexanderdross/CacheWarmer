@@ -8,11 +8,11 @@
 get_header();
 
 $sections = [
-	[ 'id' => 'rest-api-reference',     'label' => 'REST API Reference' ],
-	[ 'id' => 'wp-cli-commands',         'label' => 'WP-CLI Commands' ],
-	[ 'id' => 'actions-filters',         'label' => 'Actions & Filters' ],
-	[ 'id' => 'api-key-authentication', 'label' => 'API Key Authentication' ],
-	[ 'id' => 'webhook-events',          'label' => 'Webhook Events' ],
+	[ 'id' => 'rest-api-reference',     'label' => 'REST API Reference',     'title' => 'SearchForge REST API endpoint reference' ],
+	[ 'id' => 'wp-cli-commands',         'label' => 'WP-CLI Commands',       'title' => 'SearchForge WP-CLI commands for automation' ],
+	[ 'id' => 'actions-filters',         'label' => 'Actions & Filters',     'title' => 'WordPress actions and filters provided by SearchForge' ],
+	[ 'id' => 'api-key-authentication', 'label' => 'API Key Authentication', 'title' => 'Set up API key authentication for SearchForge' ],
+	[ 'id' => 'webhook-events',          'label' => 'Webhook Events',        'title' => 'Configure webhook event subscriptions' ],
 ];
 ?>
 

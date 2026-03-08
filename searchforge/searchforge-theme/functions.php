@@ -154,9 +154,14 @@ function sf_get_breadcrumbs(): array {
 function sf_doc_sidebar( array $sections ): void {
 	echo '<aside class="sf-doc-sidebar"><p class="sf-doc-sidebar__title">On this page</p><ul class="sf-doc-nav">';
 	foreach ( $sections as $section ) {
+		$title_attr = '';
+		if ( ! empty( $section['title'] ) ) {
+			$title_attr = sprintf( ' title="%s"', esc_attr( $section['title'] ) );
+		}
 		printf(
-			'<li><a class="sf-doc-nav__link" href="#%s">%s</a></li>',
+			'<li><a class="sf-doc-nav__link" href="#%s"%s>%s</a></li>',
 			esc_attr( $section['id'] ),
+			$title_attr,
 			esc_html( $section['label'] )
 		);
 	}
