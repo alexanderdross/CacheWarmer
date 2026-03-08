@@ -1,847 +1,551 @@
-# CacheWarmer Microservice — Konzept & Architekturplan
+# CacheWarmer — Repository Knowledge Base
 
-## Ziel
+## Overview
 
-Ein selbst gehosteter Microservice, der XML-Sitemaps entgegennimmt und sämtliche darin enthaltenen URLs systematisch aufwärmt — im CDN-Edge-Cache, in den Social-Media-Scraper-Caches (Facebook, LinkedIn, Twitter/X) sowie bei Suchmaschinen (Google, Bing via IndexNow).
+CacheWarmer is a self-hosted microservice that takes XML sitemaps and systematically warms all contained URLs across CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X, Pinterest), and search engines (Google, Bing via IndexNow). It also supports direct CDN cache purging via Cloudflare, Imperva, and Akamai APIs.
 
----
+The product is commercially distributed in three tiers: **Free**, **Premium**, and **Enterprise**.
 
-## 1. Überblick & Architektur
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     CacheWarmer Service                         │
-│                        (Node.js / TypeScript)                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐    ┌──────────────────────────────────────┐   │
-│  │  REST API     │───▶│  Job Queue (BullMQ / Redis)          │   │
-│  │  POST /warm   │    │                                      │   │
-│  └──────────────┘    │  ┌─────────┐ ┌─────────┐ ┌────────┐ │   │
-│                       │  │CDN Warm │ │Social   │ │Search  │ │   │
-│  ┌──────────────┐    │  │Worker   │ │Cache    │ │Index   │ │   │
-│  │  Cron / CLI   │───▶│  │(Puppeteer│ │Worker   │ │Worker  │ │   │
-│  │  Scheduler    │    │  │)        │ │(FB,LI,X)│ │(IndexN)│ │   │
-│  └──────────────┘    │  └─────────┘ └─────────┘ └────────┘ │   │
-│                       └──────────────────────────────────────┘   │
-│                                                                 │
-│  ┌──────────────┐    ┌──────────────┐                           │
-│  │  Dashboard    │    │  SQLite DB   │                           │
-│  │  (Web UI)     │    │  (Status/Log)│                           │
-│  └──────────────┘    └──────────────┘                           │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Tech-Stack:**
-- **Runtime:** Node.js 20+ mit TypeScript
-- **Web-Framework:** Fastify (leichtgewichtig, schnell)
-- **Headless Browser:** Puppeteer mit Chromium
-- **Job Queue:** BullMQ + Redis (für asynchrone, rate-limited Job-Verarbeitung)
-- **Datenbank:** SQLite (via better-sqlite3) — kein externer DB-Server nötig
-- **Deployment:** Docker Container auf dem Webspace
+**Product Website:** https://cachewarmer.drossmedia.de
+**Author:** Alexander Dross / Dross:Media
 
 ---
 
-## 2. Kernmodule
+## Repository Components
 
-### 2.1 Sitemap Parser
+This monorepo contains **5 components**:
 
-- Akzeptiert XML-Sitemap-URLs via REST API oder CLI
-- Parst `<urlset>` und `<sitemapindex>` (rekursiv für Sitemap-Indizes)
-- Extrahiert alle `<loc>` URLs mit optionaler `<lastmod>` / `<priority>` Info
-- Validiert URLs und dedupliziert
+| # | Component | Location | Tech Stack | Status |
+|---|-----------|----------|------------|--------|
+| 1 | **WordPress Theme** (marketing website) | `theme/wp-content/themes/cachewarmer/` | PHP, WordPress, Stripe | v2.3.0 |
+| 2 | **CacheWarmer WordPress Plugin** | `wordpress-plugin/cachewarmer/` | PHP 8.0+, WordPress 6.0+ | v1.1.0 |
+| 3 | **CacheWarmer Drupal Module** | `drupal-module/cachewarmer/` | PHP 8.1+, Drupal 10/11 | v1.1.0 |
+| 4 | **CacheWarmer Node.js / Docker Module** | `src/`, `Dockerfile`, `docker-compose.yml` | Next.js 16, TypeScript, React 19, Tailwind CSS 4 | v1.1.0 |
+| 5 | **License Management** (embedded in theme) | `theme/wp-content/themes/cachewarmer/functions.php` | PHP, Stripe Webhooks, WordPress DB | Implemented |
 
-**Bibliothek:** `fast-xml-parser` oder `sitemapper`
-
-### 2.2 CDN Edge Cache Warming (Puppeteer)
-
-- Öffnet jede URL in einem headless Chromium-Browser
-- Wartet auf `networkidle0` oder `load` Event
-- Simuliert einen realen User-Agent (Desktop + Mobile)
-- Unterstützt konfigurierbare Concurrency (z.B. 3-5 parallele Tabs)
-- Optional: Screenshot als Nachweis speichern
-
-**Konfiguration:**
-```yaml
-cdnWarming:
-  enabled: true
-  concurrency: 3
-  waitUntil: "networkidle0"
-  timeout: 30000          # ms
-  userAgent: "Mozilla/5.0 (compatible; CacheWarmer/1.0)"
-  viewports:
-    - { width: 1920, height: 1080 }  # Desktop
-    - { width: 375, height: 812 }    # Mobile
-```
-
-### 2.3 Facebook Sharing Debugger
-
-- Nutzt die Facebook Graph API zum Scrapen/Cachen von OG-Tags
-- Endpoint: `POST https://graph.facebook.com/v19.0/?scrape=true&id={URL}`
-- Benötigt einen gültigen **Facebook App Access Token** (`app_id|app_secret`)
-- Rate-Limit: max. 10 Requests/Sekunde (automatisches Throttling)
-
-**Konfiguration:**
-```yaml
-facebook:
-  enabled: true
-  appId: "YOUR_FB_APP_ID"
-  appSecret: "YOUR_FB_APP_SECRET"
-  rateLimitPerSecond: 10
-```
-
-### 2.4 LinkedIn Post Inspector
-
-- LinkedIn bietet keine offizielle API zum Invalidieren/Aufwärmen des Caches
-- **Ansatz A (bevorzugt):** LinkedIn Post Inspector URL programmatisch via Puppeteer aufrufen:
-  `https://www.linkedin.com/post-inspector/inspect/{encoded_url}`
-  - Erfordert LinkedIn-Login (Session Cookie oder OAuth)
-  - Puppeteer navigiert zur Inspector-Seite, gibt URL ein, klickt "Inspect"
-- **Ansatz B (Fallback):** LinkedIn Share API aufrufen, was ebenfalls ein Scraping triggert
-
-**Konfiguration:**
-```yaml
-linkedin:
-  enabled: true
-  sessionCookie: "YOUR_LI_AT_COOKIE"    # li_at Cookie
-  concurrency: 1                         # konservativ wegen Rate-Limits
-  delayBetweenRequests: 5000             # ms
-```
-
-### 2.5 Twitter/X Cache Warming (Tweet Composer)
-
-- Nutzt den **Tweet Composer** um das Card-Scraping zu triggern
-- Puppeteer öffnet `https://twitter.com/intent/tweet?url={encoded_url}` für jede URL
-- Beim Laden der Composer-Seite ruft Twitter automatisch die OG-/Twitter-Card-Meta-Tags ab und cached sie
-- Kein Twitter API-Key nötig — funktioniert rein über den öffentlichen Composer-Endpoint
-
-**Konfiguration:**
-```yaml
-twitter:
-  enabled: true
-  concurrency: 2
-  delayBetweenRequests: 3000  # ms — konservativ wegen Rate-Limits
-  timeout: 15000              # ms
-```
-
-### 2.6 Suchmaschinen-Indexierung
-
-#### 2.6.1 IndexNow (Bing, Yandex, Seznam, Naver u.a.)
-
-- Einfacher HTTP POST an `https://api.indexnow.org/indexnow`
-- Batch-Submission von bis zu 10.000 URLs pro Request
-- Benötigt einen IndexNow-Key (wird als Textdatei auf der Website gehostet)
-
-```json
-POST https://api.indexnow.org/indexnow
-{
-  "host": "www.example.com",
-  "key": "YOUR_INDEXNOW_KEY",
-  "keyLocation": "https://www.example.com/YOUR_INDEXNOW_KEY.txt",
-  "urlList": [
-    "https://www.example.com/page1",
-    "https://www.example.com/page2"
-  ]
-}
-```
-
-#### 2.6.2 Google Search Console (Indexing API)
-
-- Nutzt die **Google Indexing API** (`https://indexing.googleapis.com/v3/urlNotifications:publish`)
-- Erfordert ein **Google Service Account** mit Zugriff auf die Search Console Property
-- Rate-Limit: 200 Requests/Tag pro Property
-- Typ: `URL_UPDATED` oder `URL_DELETED`
-
-**Konfiguration:**
-```yaml
-google:
-  enabled: true
-  serviceAccountKeyFile: "./credentials/google-sa-key.json"
-  dailyQuota: 200
-```
-
-#### 2.6.3 Bing Webmaster Tools (URL Submission API)
-
-- Zusätzlich zu IndexNow: direkte Submission via Bing API
-- `POST https://ssl.bing.com/webmaster/api.svc/json/SubmitUrlBatch?apikey={API_KEY}`
-- Tägliches Limit: 10.000 URLs (Standard), erweiterbar auf 100.000+
-
-**Konfiguration:**
-```yaml
-bing:
-  enabled: true
-  apiKey: "YOUR_BING_WEBMASTER_API_KEY"
-  dailyQuota: 10000
-```
-
-### 2.7 CDN Cache Purge + Warm (Enterprise)
-
-Direkte Cache-Invalidierung über die APIs der CDN/WAF-Anbieter, ergänzend zum Puppeteer-basierten Edge-Warming. Unterstützt **Cloudflare**, **Imperva (Incapsula)** und **Akamai**.
-
-#### 2.7.1 Cloudflare
-
-- Nutzt die Cloudflare API v4 zum gezielten Purgen einzelner URLs
-- Endpoint: `POST https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache`
-- Batch-Verarbeitung: bis zu 30 URLs pro Request
-- Authentifizierung: Bearer Token (API Token mit `Zone:Cache Purge` Berechtigung)
-
-**Konfiguration:**
-```yaml
-cloudflare:
-  enabled: true
-  apiToken: "YOUR_CLOUDFLARE_API_TOKEN"
-  zoneId: "YOUR_ZONE_ID"
-```
-
-#### 2.7.2 Imperva (Incapsula)
-
-- Nutzt die Imperva Cloud WAF API v1 zum Purgen des Site-Caches
-- Endpoint: `POST https://my.incapsula.com/api/prov/v1/sites/performance/purge`
-- Unterstützt Purge per URL-Pattern (`purge_pattern`) oder vollständigen Site-Purge
-- Authentifizierung: `api_id` + `api_key` im Request-Body
-- Purge-Zeiten typischerweise < 500ms über das gesamte Imperva-Netzwerk
-
-**Konfiguration:**
-```yaml
-imperva:
-  enabled: true
-  apiId: "YOUR_IMPERVA_API_ID"
-  apiKey: "YOUR_IMPERVA_API_KEY"
-  siteId: "YOUR_SITE_ID"
-```
-
-#### 2.7.3 Akamai (Fast Purge API v3)
-
-- Nutzt die Akamai Fast Purge API v3 für URL-basierte Cache-Invalidierung
-- Endpoint: `POST https://{host}/ccu/v3/invalidate/url/{network}`
-- Batch-Verarbeitung: bis zu 50 URLs pro Request
-- Invalidierung in < 5 Sekunden über das gesamte Akamai-Netzwerk
-- Authentifizierung: EdgeGrid (EG1-HMAC-SHA256) mit `client_token`, `client_secret`, `access_token`
-- Unterstützt `production` und `staging` Networks
-
-**Konfiguration:**
-```yaml
-akamai:
-  enabled: true
-  host: "akaa-xxxxx.luna.akamaiapis.net"
-  clientToken: "YOUR_CLIENT_TOKEN"
-  clientSecret: "YOUR_CLIENT_SECRET"
-  accessToken: "YOUR_ACCESS_TOKEN"
-  network: "production"    # production | staging
-```
-
-**Wichtig:** CDN-Purge erhöht kurzfristig die Origin-Last, da ungecachte Requests zum Origin durchschlagen. Bei großen Purge-Batches daher empfohlen, das Puppeteer-Warming direkt im Anschluss auszuführen (`targets: ["cdn-purge", "cdn"]`).
+> **Note on License Manager Plugin:** The `LASTENHEFT-LICENSE-DASHBOARD.md` specifies a standalone WordPress plugin called `cachewarmer-license-manager` (with `cwlm/v1` API namespace, 7 MySQL tables, Stripe integration, Admin UI). However, **this plugin does NOT exist as a separate directory in the repo.** The `.gitignore` explicitly excludes `/cachewarmer-license-manager/` as "legacy." License management is currently embedded in the WordPress theme's `functions.php` (Stripe checkout + webhook handling + license key generation + `wp_cwlm_licenses` table). The license *validation* logic lives inside each platform module (WordPress plugin's `class-cachewarmer-license.php`, Drupal module's `CacheWarmerLicense.php`).
 
 ---
 
-## 3. REST API Endpunkte
+## 1. WordPress Theme (Marketing Website)
 
-| Methode | Pfad | Beschreibung |
-|---------|------|--------------|
-| `POST` | `/api/warm` | Neue Sitemap zum Aufwärmen einreichen |
-| `GET` | `/api/jobs` | Alle laufenden/abgeschlossenen Jobs auflisten |
-| `GET` | `/api/jobs/:id` | Status eines einzelnen Jobs abrufen |
-| `DELETE` | `/api/jobs/:id` | Einen Job abbrechen |
-| `GET` | `/api/sitemaps` | Registrierte Sitemaps anzeigen |
-| `POST` | `/api/sitemaps` | Sitemap registrieren (für wiederkehrendes Warming) |
-| `DELETE` | `/api/sitemaps/:id` | Sitemap-Registrierung entfernen |
-| `GET` | `/api/status` | Health-Check & Systemstatus |
-| `GET` | `/api/logs` | Warming-Protokolle abrufen |
+**Path:** `theme/wp-content/themes/cachewarmer/`
+**Also bundled as:** `theme/cachewarmer-theme.zip` and `theme/cachewarmer/` (flat copy with marketing assets)
 
-### Beispiel: Warming starten
+### Purpose
+Marketing/sales website for cachewarmer.drossmedia.de with integrated Stripe payment processing and license key generation.
 
+### Theme Details
+- **Theme Name:** CacheWarmer
+- **Version:** 2.3.0
+- **License:** MIT
+- **Text Domain:** cachewarmer
+- **Fonts:** Inter (400, 500), Outfit (600, 700) — self-hosted WOFF2
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `functions.php` | Theme setup, Stripe checkout/webhooks, license generation, Schema.org markup, WP bloat removal |
+| `front-page.php` | Homepage template |
+| `header.php` / `footer.php` | Global header/footer |
+| `page-pricing.php` | Pricing page with tier comparison |
+| `page-features.php` | Feature showcase |
+| `page-wordpress.php` | WordPress plugin page |
+| `page-drupal.php` | Drupal module page |
+| `page-self-hosted.php` | Self-hosted (Node.js/Docker) page |
+| `page-docs.php` | Documentation page |
+| `page-api-keys.php` | API keys setup guide |
+| `page-changelog.php` | Changelog page |
+| `page-checkout-success.php` | Post-purchase page |
+| `page-enterprise.php` | Enterprise plan page |
+| `inc/template-tags.php` | Template helper functions |
+
+### Stripe Integration (in functions.php)
+- AJAX-based Stripe Checkout session creation
+- Webhook handlers for: `checkout.session.completed`, `invoice.payment_succeeded`, `customer.subscription.deleted`, `charge.refunded`, `charge.dispute.created`
+- Automatic license key generation and email delivery
+- Custom DB table: `wp_cwlm_licenses`
+
+### Assets
+- `assets/css/main.css` — Main stylesheet
+- `assets/js/main.js` — Client-side JavaScript
+- `assets/fonts/` — Self-hosted WOFF2 fonts
+- `assets/images/` — Favicons, logos, OG images
+
+### Marketing Assets (flat copy)
+`theme/cachewarmer/` contains additional marketing images used across the website: feature illustrations, platform screenshots, hero images, pricing tier graphics, step-by-step flow diagrams, and a custom `sitemap.xml`.
+
+---
+
+## 2. CacheWarmer WordPress Plugin
+
+**Path:** `wordpress-plugin/cachewarmer/`
+**Version:** 1.1.0
+**Requires:** WordPress 6.0+, PHP 8.0+
+**License:** GPL v2+
+
+### Architecture
+Singleton-pattern main class (`CacheWarmer`) that initializes all subsystems.
+
+### File Structure
+```
+wordpress-plugin/cachewarmer/
+├── cachewarmer.php                          # Plugin entry point, activation/deactivation hooks
+├── uninstall.php                            # Cleanup on uninstall
+├── includes/
+│   ├── class-cachewarmer.php                # Main class (singleton), default options
+│   ├── class-cachewarmer-database.php       # SQLite DB abstraction (3 tables)
+│   ├── class-cachewarmer-job-manager.php    # Job orchestration, license limit enforcement
+│   ├── class-cachewarmer-license.php        # HMAC-based license validation, feature gating
+│   ├── class-cachewarmer-rest-api.php       # REST API (cachewarmer/v1 namespace)
+│   ├── class-cachewarmer-sitemap-parser.php # XML sitemap parser (recursive)
+│   ├── class-cachewarmer-scheduler.php      # WP-Cron scheduled warming
+│   ├── class-cachewarmer-publish-hook.php   # Auto-warm on post publish (Premium+)
+│   ├── class-cachewarmer-sitemap-detector.php # Auto-detect local sitemaps
+│   ├── class-cachewarmer-webhooks.php       # Webhook notifications
+│   ├── class-cachewarmer-email.php          # Email notifications (Enterprise)
+│   ├── admin/
+│   │   └── class-cachewarmer-admin.php      # Admin menu, AJAX handlers, asset enqueueing
+│   └── services/
+│       ├── class-cachewarmer-cdn-warmer.php         # CDN edge warming (wp_remote_get)
+│       ├── class-cachewarmer-cdn-purge-warmer.php   # CDN purge: Cloudflare/Imperva/Akamai (Enterprise)
+│       ├── class-cachewarmer-facebook-warmer.php    # Facebook Graph API scrape
+│       ├── class-cachewarmer-linkedin-warmer.php    # LinkedIn Post Inspector
+│       ├── class-cachewarmer-twitter-warmer.php     # Twitter/X Card Validator
+│       ├── class-cachewarmer-google-indexer.php     # Google Indexing API v3
+│       ├── class-cachewarmer-bing-indexer.php       # Bing Webmaster URL Submission
+│       ├── class-cachewarmer-indexnow.php           # IndexNow batch protocol
+│       └── class-cachewarmer-pinterest-warmer.php   # Pinterest Rich Pin Validator
+├── templates/
+│   ├── dashboard.php    # Main dashboard UI
+│   ├── sitemaps.php     # Sitemap management UI
+│   └── settings.php     # Settings form UI
+├── assets/
+│   ├── css/admin.css    # Admin dashboard styles
+│   └── js/admin.js      # AJAX handlers, real-time job status
+└── CHANGELOG.md
+```
+
+### Database Tables (using wpdb prefix)
+1. **wp_cachewarmer_sitemaps** — id, url, domain, cron_expression, created_at, last_warmed_at
+2. **wp_cachewarmer_jobs** — id, sitemap_id, sitemap_url, status, total_urls, processed_urls, targets (JSON), started_at, completed_at, error
+3. **wp_cachewarmer_url_results** — id, job_id, url, target, status, http_status, duration_ms, error, created_at
+
+### REST API (namespace: `cachewarmer/v1`)
+| Method | Route | Purpose |
+|--------|-------|---------|
+| POST | `/warm` | Start warming job |
+| GET | `/jobs` | List jobs |
+| GET | `/jobs/{id}` | Job details + results |
+| DELETE | `/jobs/{id}` | Cancel/delete job |
+| GET | `/sitemaps` | List registered sitemaps |
+| POST | `/sitemaps` | Register sitemap |
+| DELETE | `/sitemaps/{id}` | Remove sitemap |
+| GET | `/status` | Health check |
+| GET | `/logs` | URL results log |
+
+**Auth:** Bearer token OR WordPress admin capability
+
+### License System
+- **Format:** `CW-{PRO|ENT}-{DURATION_HEX(4)}{HMAC_SHA256(12)}`
+- **Validation:** HMAC-based with secret `cw-drossmedia-lic-2026-s3cr3t`
+- **Tiers:** Free (no key), Premium (CW-PRO-*), Enterprise (CW-ENT-*)
+
+### Admin AJAX Endpoints
+`cachewarmer_start_warm`, `cachewarmer_get_jobs`, `cachewarmer_add_sitemap`, `cachewarmer_detect_sitemaps`, `cachewarmer_export_results`, `cachewarmer_export_failed`
+
+---
+
+## 3. CacheWarmer Drupal Module
+
+**Path:** `drupal-module/cachewarmer/`
+**Version:** 1.1.0
+**Requires:** Drupal 10/11, PHP 8.1+
+**Package:** Performance
+**Dependencies:** drupal:rest, drupal:serialization
+
+### File Structure
+```
+drupal-module/cachewarmer/
+├── cachewarmer.info.yml          # Module metadata
+├── cachewarmer.module            # Hooks: help, cron, mail, theme
+├── cachewarmer.install           # DB schema (3 tables)
+├── cachewarmer.services.yml      # 14+ service definitions (DI)
+├── cachewarmer.routing.yml       # 15+ routes
+├── cachewarmer.permissions.yml   # "Administer CacheWarmer" permission
+├── cachewarmer.links.menu.yml    # Admin menu
+├── cachewarmer.links.task.yml    # Task links
+├── cachewarmer.libraries.yml     # CSS/JS assets
+├── config/
+│   └── install/
+│       └── cachewarmer.settings.yml  # Default configuration
+├── src/
+│   ├── Controller/
+│   │   ├── CacheWarmerDashboardController.php  # Dashboard + sitemaps pages
+│   │   └── CacheWarmerAjaxController.php       # 11 AJAX endpoints
+│   ├── Form/
+│   │   └── CacheWarmerSettingsForm.php          # Configuration form
+│   ├── Plugin/
+│   │   ├── QueueWorker/
+│   │   │   └── CacheWarmerProcessJob.php        # Background job queue worker
+│   │   └── rest/
+│   │       └── resource/
+│   │           └── CacheWarmerResource.php      # REST API plugin
+│   └── Service/
+│       ├── CacheWarmerDatabase.php       # DB abstraction
+│       ├── CacheWarmerJobManager.php     # Job orchestration
+│       ├── CacheWarmerSitemapParser.php   # XML sitemap parsing
+│       ├── CacheWarmerLicense.php        # License validation
+│       ├── CacheWarmerSitemapDetector.php # Auto-detect sitemaps
+│       ├── CacheWarmerWebhooks.php       # Webhook notifications
+│       ├── CacheWarmerEmail.php          # Email notifications
+│       ├── CdnWarmer.php                 # CDN edge warming
+│       ├── FacebookWarmer.php            # Facebook OG scraping
+│       ├── LinkedinWarmer.php            # LinkedIn card caching
+│       ├── TwitterWarmer.php             # Twitter/X card caching
+│       ├── GoogleIndexer.php             # Google Indexing API
+│       ├── BingIndexer.php               # Bing Webmaster API
+│       ├── IndexNow.php                  # IndexNow protocol
+│       └── PinterestWarmer.php           # Pinterest Rich Pins
+├── templates/
+│   ├── cachewarmer-dashboard.html.twig   # Dashboard template
+│   └── cachewarmer-sitemaps.html.twig    # Sitemap management template
+├── js/cachewarmer-admin.js               # Admin JavaScript
+├── css/cachewarmer-admin.css             # Admin styles
+└── tests/                                # Unit tests
+```
+
+### Database Tables
+1. **cachewarmer_sitemaps** — Same schema as WordPress version
+2. **cachewarmer_jobs** — Same schema as WordPress version
+3. **cachewarmer_url_results** — Same schema as WordPress version
+
+### Admin Routes
+- `/admin/config/performance/cachewarmer` — Dashboard
+- `/admin/config/performance/cachewarmer/sitemaps` — Sitemap management
+- `/admin/config/performance/cachewarmer/settings` — Settings form
+- `/admin/cachewarmer/ajax/*` — AJAX endpoints
+
+### Drupal Hooks
+- `hook_help()` — Module help text
+- `hook_cron()` — Scheduled warming triggers
+- `hook_mail()` — Email notification formatting
+- `hook_theme()` — Template registration
+
+---
+
+## 4. CacheWarmer Node.js / Docker Module
+
+**Path:** `src/` (root-level), `Dockerfile`, `docker-compose.yml`, `config.yaml`
+**Version:** 1.1.0
+**Framework:** Next.js 16 (App Router) with React 19
+**Runtime:** Node.js 20+
+**Package Manager:** pnpm 10.29.3
+
+> **Important:** Despite the original concept document describing Fastify, the actual implementation uses **Next.js** with API route handlers.
+
+### Tech Stack
+| Category | Technology |
+|----------|-----------|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19, Tailwind CSS 4 |
+| Database | SQLite via better-sqlite3 |
+| Job Queue | BullMQ + ioredis |
+| Browser | puppeteer-core |
+| Sitemap Parsing | fast-xml-parser |
+| Google API | googleapis |
+| Logging | pino + pino-pretty |
+| Config | YAML (yaml package) |
+| IDs | uuid |
+| Testing | Vitest 4, @testing-library/react, jsdom |
+
+### Source Structure
+```
+src/
+├── app/
+│   ├── layout.tsx              # Root layout
+│   ├── page.tsx                # Dashboard page (home)
+│   ├── globals.css             # Global styles (Tailwind)
+│   ├── settings/
+│   │   └── page.tsx            # Settings page
+│   ├── sitemaps/
+│   │   └── page.tsx            # Sitemap management page
+│   └── api/
+│       ├── warm/route.ts       # POST — Start warming job
+│       ├── jobs/
+│       │   ├── route.ts        # GET — List jobs
+│       │   └── [id]/route.ts   # GET/DELETE — Job details/cancel
+│       ├── sitemaps/
+│       │   ├── route.ts        # GET/POST — List/register sitemaps
+│       │   ├── [id]/route.ts   # DELETE — Remove sitemap
+│       │   ├── bulk/route.ts   # POST — Bulk sitemap operations
+│       │   └── detect/route.ts # POST — Auto-detect sitemaps
+│       ├── status/route.ts     # GET — Health check
+│       ├── logs/route.ts       # GET — URL results log
+│       ├── settings/route.ts   # GET/PUT — Configuration
+│       ├── export/route.ts     # GET — CSV/JSON export
+│       └── export-failed/route.ts # GET — Failed URLs export
+├── components/
+│   ├── InputField.tsx          # Reusable input component
+│   ├── JobDetail.tsx           # Job detail view
+│   ├── JobTable.tsx            # Jobs listing table
+│   ├── NavBar.tsx              # Navigation bar
+│   ├── SettingsSection.tsx     # Settings group component
+│   ├── SitemapManager.tsx      # Sitemap CRUD UI
+│   ├── StatusCard.tsx          # Status metric card
+│   └── WarmForm.tsx            # Warming initiation form
+└── lib/
+    ├── auth.ts                 # API key authentication
+    ├── config.ts               # YAML config loader
+    ├── logger.ts               # Pino logger setup
+    ├── db/
+    │   └── database.ts         # SQLite schema + CRUD operations
+    ├── queue/
+    │   └── job-manager.ts      # BullMQ job orchestration
+    └── services/
+        ├── sitemap-parser.ts       # XML sitemap parser
+        ├── cdn-warmer.ts           # CDN edge cache warming
+        ├── cdn-purge-warm.ts       # CDN purge (Cloudflare/Imperva/Akamai)
+        ├── facebook-warmer.ts      # Facebook Graph API
+        ├── linkedin-warmer.ts      # LinkedIn Post Inspector
+        ├── twitter-warmer.ts       # Twitter/X Card Validator
+        ├── google-indexer.ts       # Google Indexing API
+        ├── bing-indexer.ts         # Bing Webmaster API
+        ├── indexnow.ts             # IndexNow protocol
+        ├── pinterest-warmer.ts     # Pinterest Rich Pins
+        ├── webhooks.ts             # Webhook notifications
+        └── email-notifications.ts  # Email notifications
+```
+
+### Configuration
+Central config via `config.yaml` in project root. Supports all warming services, Redis connection, SQLite path, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
+
+### Docker Deployment
+- **Dockerfile:** Multi-stage build (Node.js 20-slim + Chromium), runs as non-root `nextjs` user
+- **docker-compose.yml:** CacheWarmer service + Redis 7 Alpine, with volumes for data, credentials, and config
+
+### Testing
+```
+tests/
+├── setup.ts                            # Global test setup
+├── helpers.ts                          # Test utilities
+├── unit/
+│   ├── core/
+│   │   ├── auth.test.ts                # API key auth tests
+│   │   ├── config.test.ts              # Config loader tests
+│   │   ├── database.test.ts            # DB operations tests
+│   │   ├── export-failed.test.ts       # Failed URL export tests
+│   │   ├── job-manager.test.ts         # Job orchestration tests
+│   │   └── priority-warming.test.ts    # Priority-based warming tests
+│   └── services/
+│       ├── cdn-warmer.test.ts          # CDN warming tests
+│       ├── cdn-warmer-enterprise.test.ts # Enterprise CDN features
+│       ├── facebook-warmer.test.ts
+│       ├── google-indexer.test.ts
+│       ├── indexnow.test.ts
+│       ├── linkedin-warmer.test.ts
+│       ├── pinterest-warmer.test.ts
+│       ├── sitemap-parser.test.ts
+│       └── twitter-warmer.test.ts
+├── integration/
+│   ├── api-jobs.test.ts
+│   ├── api-logs.test.ts
+│   ├── api-sitemaps.test.ts
+│   ├── api-status.test.ts
+│   └── api-warm.test.ts
+├── uat/
+│   └── user-workflows.test.ts
+├── performance/
+│   └── performance.test.ts
+├── regression/
+│   └── regression.test.ts
+└── security/
+    └── security.test.ts
+```
+
+**Test commands:**
+- `pnpm test` — Run all tests
+- `pnpm test:unit` — Unit tests only
+- `pnpm test:integration` — Integration tests
+- `pnpm test:uat` — User acceptance tests
+- `pnpm test:security` — Security tests
+- `pnpm test:coverage` — With coverage report
+
+---
+
+## 5. License Management (Embedded in Theme)
+
+License management is handled within the WordPress theme (`functions.php`) rather than as a standalone plugin. The `LASTENHEFT-LICENSE-DASHBOARD.md` specification describes a full WordPress plugin (`cachewarmer-license-manager` with `cwlm/v1` API namespace, 7 MySQL tables, Stripe webhooks, Admin UI), but **that plugin does not exist as separate code in this repo.** The `.gitignore` explicitly lists `/cachewarmer-license-manager/` as a legacy exclusion.
+
+### Current Implementation
+- **Stripe Checkout** sessions created via AJAX
+- **Webhook handling** for payment events (completed, subscription deleted, refunded, disputed)
+- **License key generation** with automatic email delivery
+- **Database table:** `wp_cwlm_licenses`
+
+### License Validation (in WordPress Plugin + Drupal Module)
+- **Key format:** `CW-{TIER}-{HEX16}` (e.g., `CW-PRO-A1B2C3D4E5F6G7H8`)
+- **Validation method:** HMAC-SHA256 signature verification
+- **Tiers:**
+  - **Free** — No key required. CDN + IndexNow only. 50 URLs/job, 2 sitemaps, 3 jobs/day.
+  - **Premium** — All social + search engine targets. 10,000 URLs/job, 25 sitemaps, 50 jobs/day.
+  - **Enterprise** — Everything + CDN purge, webhooks, multi-site, custom config. Unlimited.
+
+---
+
+## Warming Targets (All Platforms)
+
+| Target | Free | Premium | Enterprise | Method |
+|--------|:----:|:-------:|:----------:|--------|
+| CDN Edge Cache | Yes | Yes | Yes | HTTP GET (desktop + mobile user-agents) |
+| IndexNow | Yes | Yes | Yes | Batch POST to api.indexnow.org |
+| Facebook | -- | Yes | Yes | Graph API v19.0 scrape endpoint |
+| LinkedIn | -- | Yes | Yes | Post Inspector API |
+| Twitter/X | -- | Yes | Yes | Tweet Composer intent URL |
+| Google | -- | Yes | Yes | Indexing API v3 (URL_UPDATED) |
+| Bing | -- | Yes | Yes | Webmaster URL Submission API |
+| Pinterest | -- | Yes | Yes | Rich Pin Validator |
+| Cloudflare Purge | -- | -- | Yes | API v4 zone cache purge (30 URLs/batch) |
+| Imperva Purge | -- | -- | Yes | Cloud WAF API v1 |
+| Akamai Purge | -- | -- | Yes | Fast Purge API v3 (50 URLs/batch, EdgeGrid auth) |
+
+---
+
+## Database Schema (Shared Across All Platforms)
+
+All three platforms (WordPress, Drupal, Node.js) use the same logical schema:
+
+### sitemaps
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT (UUID) | Primary key |
+| url | TEXT | Sitemap URL |
+| domain | TEXT | Extracted domain |
+| cron_expression | TEXT | Cron for scheduled warming (optional) |
+| created_at | DATETIME | Creation timestamp |
+| last_warmed_at | DATETIME | Last warming run |
+
+### jobs
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT (UUID) | Primary key |
+| sitemap_id | TEXT (FK) | Reference to sitemap |
+| sitemap_url | TEXT | Sitemap URL snapshot |
+| status | TEXT | queued / running / completed / failed |
+| total_urls | INTEGER | Total URL count |
+| processed_urls | INTEGER | Processed URL count |
+| targets | TEXT (JSON) | Active warming targets |
+| started_at | DATETIME | Start time |
+| completed_at | DATETIME | End time |
+| error | TEXT | Error message (optional) |
+
+### url_results
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT (UUID) | Primary key |
+| job_id | TEXT (FK) | Reference to job |
+| url | TEXT | The warmed URL |
+| target | TEXT | cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest |
+| status | TEXT | success / failed / skipped / pending |
+| http_status | INTEGER | HTTP status code |
+| duration_ms | INTEGER | Duration in milliseconds |
+| error | TEXT | Error message (optional) |
+| created_at | DATETIME | Timestamp |
+
+---
+
+## API Endpoints (Node.js Module)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/warm` | Start warming from sitemap URL |
+| GET | `/api/jobs` | List all jobs |
+| GET | `/api/jobs/:id` | Get job details + results |
+| DELETE | `/api/jobs/:id` | Cancel/delete job |
+| GET | `/api/sitemaps` | List registered sitemaps |
+| POST | `/api/sitemaps` | Register sitemap |
+| DELETE | `/api/sitemaps/:id` | Remove sitemap |
+| POST | `/api/sitemaps/bulk` | Bulk sitemap operations |
+| POST | `/api/sitemaps/detect` | Auto-detect sitemaps |
+| GET | `/api/status` | Health check & system status |
+| GET | `/api/logs` | URL results log |
+| GET | `/api/settings` | Read configuration |
+| PUT | `/api/settings` | Update configuration |
+| GET | `/api/export` | CSV/JSON export |
+| GET | `/api/export-failed` | Export failed URLs |
+
+---
+
+## Required API Credentials
+
+| Service | Credentials | Source |
+|---------|------------|--------|
+| Facebook | App ID + App Secret | developers.facebook.com |
+| LinkedIn | `li_at` session cookie | Browser DevTools |
+| Google | Service Account JSON | Google Cloud Console (Indexing API) |
+| Bing | Webmaster API Key | Bing Webmaster Tools |
+| IndexNow | Self-generated key | Host as .txt on website |
+| Cloudflare | API Token + Zone ID | Cloudflare Dashboard |
+| Imperva | API ID + API Key + Site ID | Imperva Console |
+| Akamai | EdgeGrid credentials (host, client_token, client_secret, access_token) | Akamai Control Center |
+
+Setup guide: `docs/API_KEYS_SETUP.md`
+
+---
+
+## Documentation Files
+
+| File | Content |
+|------|---------|
+| `CLAUDE.md` | This file — repository knowledge base |
+| `WP.md` | WordPress plugin architecture & documentation |
+| `Drupal.md` | Drupal module architecture & documentation |
+| `WEBSITE.md` | Website IA, content strategy, design system for cachewarmer.drossmedia.de |
+| `PRICING-TIERS.md` | Detailed tier definitions, feature matrices, pricing recommendations |
+| `LASTENHEFT-LICENSE-DASHBOARD.md` | Formal specification for License Management Dashboard (describes standalone WP plugin — not yet implemented as separate code) |
+| `docs/API_KEYS_SETUP.md` | Step-by-step credential setup for all services |
+| `wordpress-plugin/CHANGELOG.md` | WordPress plugin version history |
+
+---
+
+## Development
+
+### Prerequisites
+- Node.js 20+
+- pnpm 10.29+
+- Redis (for BullMQ job queue)
+- Chromium (for Puppeteer CDN warming)
+
+### Commands
 ```bash
-curl -X POST http://localhost:3000/api/warm \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -d '{
-    "sitemapUrl": "https://www.example.com/sitemap.xml",
-    "targets": ["cdn", "facebook", "linkedin", "twitter", "google", "bing"],
-    "priority": "normal"
-  }'
+pnpm install          # Install dependencies
+pnpm dev              # Start Next.js dev server
+pnpm build            # Production build
+pnpm test             # Run all tests (Vitest)
+pnpm test:unit        # Unit tests only
+pnpm test:integration # Integration tests
+pnpm test:uat         # User acceptance tests
+pnpm test:security    # Security tests
+pnpm test:coverage    # Tests with coverage
+pnpm lint             # ESLint
 ```
 
-### Beispiel: Antwort
-
-```json
-{
-  "jobId": "warm-abc123",
-  "status": "queued",
-  "urlCount": 42,
-  "targets": ["cdn", "facebook", "linkedin", "twitter", "google", "bing"],
-  "createdAt": "2026-02-25T12:00:00Z"
-}
+### Docker
+```bash
+docker compose up -d  # Start CacheWarmer + Redis
 ```
+
+### Configuration
+Copy and edit `config.yaml` for service credentials. For local overrides, use `config.local.yaml` (gitignored).
+
+### Key Design Principles
+- **Rate-limiting is critical:** All external APIs have limits. Every worker must respect them.
+- **Fault tolerance:** Single URL failures must not abort the entire job. Log errors and continue.
+- **Idempotency:** Re-warming the same URLs should cause no issues.
+- **Security:** API key auth for all endpoints. Credentials never in git. Input validation on all boundaries.
+- **Structured logging:** Pino with configurable log levels.
 
 ---
 
-## 4. Datenmodell (SQLite)
-
-### Tabelle: `sitemaps`
-| Spalte | Typ | Beschreibung |
-|--------|-----|--------------|
-| id | TEXT (UUID) | Primärschlüssel |
-| url | TEXT | Sitemap-URL |
-| domain | TEXT | Extrahierte Domain |
-| cron_expression | TEXT | Cron-Ausdruck für wiederkehrendes Warming (optional) |
-| created_at | DATETIME | Erstellungszeitpunkt |
-| last_warmed_at | DATETIME | Letzter Warming-Durchlauf |
-
-### Tabelle: `jobs`
-| Spalte | Typ | Beschreibung |
-|--------|-----|--------------|
-| id | TEXT (UUID) | Primärschlüssel |
-| sitemap_id | TEXT (FK) | Verweis auf Sitemap |
-| status | TEXT | `queued` / `running` / `completed` / `failed` |
-| total_urls | INTEGER | Gesamtzahl URLs |
-| processed_urls | INTEGER | Bereits verarbeitete URLs |
-| targets | TEXT (JSON) | Aktivierte Warming-Ziele |
-| started_at | DATETIME | Startzeitpunkt |
-| completed_at | DATETIME | Endzeitpunkt |
-| error | TEXT | Fehlermeldung (optional) |
-
-### Tabelle: `url_results`
-| Spalte | Typ | Beschreibung |
-|--------|-----|--------------|
-| id | TEXT (UUID) | Primärschlüssel |
-| job_id | TEXT (FK) | Verweis auf Job |
-| url | TEXT | Die aufgewärmte URL |
-| target | TEXT | `cdn` / `facebook` / `linkedin` / `twitter` / `google` / `bing` |
-| status | TEXT | `success` / `failed` / `skipped` |
-| http_status | INTEGER | HTTP-Statuscode (wenn relevant) |
-| duration_ms | INTEGER | Dauer in Millisekunden |
-| error | TEXT | Fehlermeldung (optional) |
-| created_at | DATETIME | Zeitstempel |
-
----
-
-## 5. Konfigurationsdatei
-
-Zentrale Konfiguration via `config.yaml` im Projektroot:
-
-```yaml
-server:
-  port: 3000
-  host: "0.0.0.0"
-  apiKey: "YOUR_SECRET_API_KEY"
-
-redis:
-  host: "localhost"
-  port: 6379
-
-database:
-  path: "./data/cachewarmer.db"
-
-puppeteer:
-  executablePath: "/usr/bin/chromium-browser"
-  headless: true
-  args:
-    - "--no-sandbox"
-    - "--disable-setuid-sandbox"
-    - "--disable-dev-shm-usage"
-
-cdnWarming:
-  enabled: true
-  concurrency: 3
-  waitUntil: "networkidle0"
-  timeout: 30000
-  userAgents:
-    desktop: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    mobile: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15"
-
-facebook:
-  enabled: true
-  appId: ""
-  appSecret: ""
-  rateLimitPerSecond: 10
-
-linkedin:
-  enabled: true
-  sessionCookie: ""
-  concurrency: 1
-  delayBetweenRequests: 5000
-
-twitter:
-  enabled: true
-  method: "composer"
-  concurrency: 2
-  delayBetweenRequests: 3000
-
-google:
-  enabled: true
-  serviceAccountKeyFile: "./credentials/google-sa-key.json"
-  dailyQuota: 200
-
-bing:
-  enabled: true
-  apiKey: ""
-  dailyQuota: 10000
-
-indexNow:
-  enabled: true
-  key: ""
-  keyLocation: ""
-
-cloudflare:
-  enabled: false
-  apiToken: ""                # Cloudflare API Token (Zone:Cache Purge permission)
-  zoneId: ""                  # Cloudflare Zone ID
-
-imperva:
-  enabled: false
-  apiId: ""                   # Imperva API ID
-  apiKey: ""                  # Imperva API Key
-  siteId: ""                  # Imperva Site ID (numeric)
-
-akamai:
-  enabled: false
-  host: ""                    # e.g. akaa-xxxxx.luna.akamaiapis.net
-  clientToken: ""             # EdgeGrid client_token
-  clientSecret: ""            # EdgeGrid client_secret
-  accessToken: ""             # EdgeGrid access_token
-  network: "production"       # production | staging
-
-scheduler:
-  enabled: false
-  defaultCron: "0 3 * * *"    # Standard: täglich um 03:00 Uhr
-
-logging:
-  level: "info"               # debug | info | warn | error
-  file: "./data/cachewarmer.log"
-```
-
----
-
-## 6. API-Endpunkte
-
-```
-POST   /api/sitemaps              → Neue Sitemap hinzufügen
-GET    /api/sitemaps              → Alle Sitemaps auflisten
-DELETE /api/sitemaps/:id          → Sitemap entfernen
-
-POST   /api/sitemaps/:id/warm    → Cache-Warming starten (alle Services)
-POST   /api/sitemaps/:id/warm    → Body: { services: ['cdn','facebook','indexnow'] }
-GET    /api/runs                  → Alle Runs auflisten
-GET    /api/runs/:id              → Run-Details mit Ergebnissen
-GET    /api/runs/:id/live         → SSE-Stream für Live-Progress
-
-POST   /api/warm-url              → Einzelne URL warmen
-GET    /api/settings              → Konfiguration lesen
-PUT    /api/settings              → Konfiguration aktualisieren
-
-GET    /api/health                → Health-Check
-```
-
----
-
-## 7. Konfiguration (.env)
-
-```env
-# Server
-PORT=3000
-API_KEY=your-secret-api-key
-NODE_ENV=production
-
-# Puppeteer / Chrome
-CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
-MAX_CONCURRENT_TABS=3
-PAGE_TIMEOUT_MS=30000
-
-# Facebook
-FACEBOOK_APP_ID=123456789
-FACEBOOK_APP_SECRET=abcdef123456
-
-# LinkedIn (Session Cookies oder OAuth)
-LINKEDIN_SESSION_COOKIE=li_at=XXXXXXX
-
-# Twitter/X (kein API-Key nötig – Tweet Composer Intent)
-# Nur Rate-Limiting konfigurierbar
-
-# IndexNow
-INDEXNOW_KEY=my-indexnow-key-12345
-
-# Google Search Console
-GOOGLE_SERVICE_ACCOUNT_JSON=./credentials/google-sa.json
-GOOGLE_SITE_URL=https://example.com/
-
-# Bing Webmaster
-BING_API_KEY=your-bing-api-key
-
-# Cloudflare (Enterprise)
-CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
-CLOUDFLARE_ZONE_ID=your-zone-id
-
-# Imperva / Incapsula (Enterprise)
-IMPERVA_API_ID=your-imperva-api-id
-IMPERVA_API_KEY=your-imperva-api-key
-IMPERVA_SITE_ID=your-imperva-site-id
-
-# Akamai (Enterprise)
-AKAMAI_HOST=akaa-xxxxx.luna.akamaiapis.net
-AKAMAI_CLIENT_TOKEN=your-client-token
-AKAMAI_CLIENT_SECRET=your-client-secret
-AKAMAI_ACCESS_TOKEN=your-access-token
-
-# Rate Limiting
-RATE_LIMIT_CDN_PER_SECOND=2
-RATE_LIMIT_FACEBOOK_PER_HOUR=50
-RATE_LIMIT_INDEXNOW_BATCH_SIZE=100
-
-# Lizenzierung (siehe Abschnitt 15)
-LICENSE_KEY=CW-PRO-A1B2C3D4E5F6G7H8
-LICENSE_DASHBOARD_URL=https://cachewarmer.drossmedia.de
-```
-
----
-
-## 8. Projektstruktur
-
-```
-cachewarmer/
-├── CLAUDE.md                    # Dieses Dokument (Konzept & Entwicklungsnotizen)
-├── package.json
-├── tsconfig.json
-├── Dockerfile
-├── docker-compose.yml
-├── config.yaml                  # Hauptkonfiguration
-├── src/
-│   ├── index.ts                 # Einstiegspunkt
-│   ├── server.ts                # Fastify Server Setup
-│   ├── config.ts                # Konfigurationsloader
-│   ├── db/
-│   │   ├── database.ts          # SQLite-Verbindung & Migrationen
-│   │   └── migrations/          # SQL-Migrationsdateien
-│   ├── api/
-│   │   ├── routes.ts            # API-Routen
-│   │   ├── warm.controller.ts   # Warming-Endpoints
-│   │   ├── jobs.controller.ts   # Job-Verwaltung
-│   │   └── sitemaps.controller.ts
-│   ├── services/
-│   │   ├── sitemap-parser.ts    # XML-Sitemap parsen
-│   │   ├── cdn-warmer.ts        # Puppeteer CDN-Warming
-│   │   ├── cdn-purge-warm.ts   # CDN Cache Purge (Cloudflare, Imperva, Akamai)
-│   │   ├── facebook-warmer.ts   # Facebook Debugger API
-│   │   ├── linkedin-warmer.ts   # LinkedIn Post Inspector
-│   │   ├── twitter-warmer.ts    # Twitter/X Card Validator
-│   │   ├── google-indexer.ts    # Google Indexing API
-│   │   ├── bing-indexer.ts      # Bing Webmaster API
-│   │   └── indexnow.ts          # IndexNow Protokoll
-│   ├── queue/
-│   │   ├── queue.ts             # BullMQ Queue Setup
-│   │   └── workers/
-│   │       ├── cdn.worker.ts
-│   │       ├── social.worker.ts
-│   │       └── search.worker.ts
-│   ├── scheduler/
-│   │   └── cron.ts              # Cron-basiertes Scheduling
-│   └── utils/
-│       ├── logger.ts            # Logging (pino)
-│       ├── browser-pool.ts      # Puppeteer-Instanz-Management
-│       ├── rate-limiter.ts      # Rate-Limiting Utility
-│       └── retry.ts             # Retry-Logik mit Backoff
-├── public/
-│   ├── index.html               # Dashboard SPA
-│   ├── app.js
-│   └── style.css
-├── credentials/                 # Git-ignoriert
-│   └── google-sa-key.json
-├── data/                        # Git-ignoriert
-│   ├── cachewarmer.db           # SQLite-Datenbank
-│   ├── cachewarmer.log
-│   └── .instance-id             # Persistente UUID für Lizenz-Fingerprint
-├── src/
-│   └── license/
-│       ├── client.js            # Lizenz-Aktivierung & Heartbeat
-│       ├── fingerprint.js       # Installations-Fingerprint (SHA-256)
-│       └── feature-gate.js      # Feature-Gating Middleware
-├── LASTENHEFT-LICENSE-DASHBOARD.md  # Lastenheft License Dashboard
-├── cachewarmer-license-manager/  # WordPress License Manager Plugin
-└── tests/
-    ├── sitemap-parser.test.ts
-    ├── cdn-warmer.test.ts
-    └── ...
-```
-
----
-
-## 7. Docker Deployment
-
-### Dockerfile
-
-```dockerfile
-FROM node:20-slim
-
-RUN apt-get update && apt-get install -y \
-    chromium \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --production
-COPY dist/ ./dist/
-COPY config.yaml ./
-
-EXPOSE 3000
-CMD ["node", "dist/index.js"]
-```
-
-### docker-compose.yml
-
-```yaml
-version: "3.8"
-services:
-  cachewarmer:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-      - ./credentials:/app/credentials:ro
-      - ./config.yaml:/app/config.yaml:ro
-    depends_on:
-      - redis
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-
-volumes:
-  redis-data:
-```
-
----
-
-## 8. Benötigte API-Zugänge & Credentials
-
-| Dienst | Benötigt | Wie erhalten |
-|--------|----------|--------------|
-| **Facebook** | App ID + App Secret | [developers.facebook.com](https://developers.facebook.com) — App erstellen |
-| **LinkedIn** | `li_at` Session Cookie | Aus Browser DevTools nach Login extrahieren |
-| **Twitter/X** | API Key + Secret (optional) | [developer.twitter.com](https://developer.twitter.com) |
-| **Google** | Service Account JSON | [Google Cloud Console](https://console.cloud.google.com) — Indexing API aktivieren |
-| **Bing** | Webmaster API Key | [Bing Webmaster Tools](https://www.bing.com/webmasters) |
-| **IndexNow** | API Key | Selbst generieren + als `.txt` auf der Website hosten |
-| **Cloudflare** | API Token + Zone ID | [Cloudflare Dashboard](https://dash.cloudflare.com) — API Token mit Zone:Cache Purge Berechtigung |
-| **Imperva** | API ID + API Key + Site ID | [Imperva Cloud Security Console](https://my.imperva.com) — Account Settings → API |
-| **Akamai** | EdgeGrid Credentials (Host, Client Token, Client Secret, Access Token) | [Akamai Control Center](https://control.akamai.com) — Identity & Access → API Clients |
-
----
-
-## 9. Implementierungsreihenfolge (Phasen)
-
-### Phase 1 — Grundgerüst (MVP)
-1. Projekt-Setup (TypeScript, Fastify, Docker)
-2. Sitemap Parser (XML parsen, URLs extrahieren)
-3. CDN Cache Warming via Puppeteer
-4. REST API (`POST /api/warm`, `GET /api/jobs`)
-5. SQLite Datenbank & Logging
-
-### Phase 2 — Social Media Caches
-6. Facebook Sharing Debugger Integration
-7. LinkedIn Post Inspector Integration
-8. Twitter/X Card Validator Integration
-
-### Phase 3 — Suchmaschinen-Indexierung
-9. IndexNow Integration (Bing, Yandex etc.)
-10. Google Indexing API Integration
-11. Bing Webmaster Tools API Integration
-
-### Phase 4 — Automatisierung & Dashboard
-12. Cron-basiertes Scheduling
-13. Web-Dashboard (Statusübersicht, Logs, manuelle Trigger)
-14. Webhook-Notifications (optional, z.B. bei Fehlern)
-
----
-
-## 10. Entwicklungshinweise
-
-- **Rate-Limiting ist kritisch:** Alle externen APIs haben Limits. Jeder Worker muss diese respektieren.
-- **Fehlertoleranz:** Einzelne URL-Fehler dürfen nicht den gesamten Job abbrechen. Fehler loggen und weitermachen.
-- **Idempotenz:** Ein erneutes Warming derselben URLs sollte keine Probleme verursachen.
-- **Sicherheit:** API-Key-Auth für alle Endpoints. Credentials niemals im Git. HTTPS erzwingen. Optional: IP-Whitelist.
-- **Monitoring:** Structured Logging mit Pino. Metriken über die `/api/status` Route.
-- **Input-Validierung:** Nur gültige URLs/Sitemaps akzeptieren.
-
----
-
-## 13. Erweiterungsideen (Phase 2)
-
-- **Scheduling**: Automatische Runs per Cron (täglich/wöchentlich)
-- **Webhooks**: Benachrichtigung bei Completion (Slack, E-Mail)
-- **Diff-Detection**: Nur geänderte URLs warmen (basierend auf `lastmod`)
-- **Multi-Tenant**: Mehrere Nutzer/Projekte
-- **Lighthouse Audit**: Performance-Score pro URL mitspeichern
-- **Screenshot-Archiv**: Vor/Nach-Vergleich
-- **Pinterest Rich Pin Validator**: Zusätzlicher Social-Cache
-- **CDN Cache Purge + Warm**: Direkte Cache-Purge via Cloudflare, Imperva (Incapsula) und Akamai APIs
-
----
-
-## 14. Nächste Schritte (Implementierungsreihenfolge)
-
-1. ☐ Projekt-Scaffolding (package.json, Ordnerstruktur, .env)
-2. ☐ SQLite-Datenbank + Migrationen
-3. ☐ Sitemap-Parser (XML → URL-Liste)
-4. ☐ Express Server + API-Routes + Auth-Middleware
-5. ☐ CDN Cache Warmer (Puppeteer)
-6. ☐ Facebook Sharing Debugger Integration
-7. ☐ IndexNow + Bing Webmaster Integration
-8. ☐ Google Search Console Integration
-9. ☐ LinkedIn Post Inspector (Puppeteer-basiert)
-10. ☐ Twitter/X Card Refresh
-11. ☐ Job-Queue mit Retry-Logik
-12. ☐ Frontend Dashboard (Progress, Logs, History)
-13. ☐ Scheduling / Cron-Integration
-14. ☐ Testing & Deployment
-
----
-
-## 15. Lizenzierung & Commercial Distribution
-
-### 15.1 Überblick
-
-CacheWarmer wird kommerziell vertrieben über ein zentrales **License Management Dashboard** basierend auf WordPress.
-
-| Eigenschaft | Wert |
-|------------|------|
-| Dashboard URL | `https://cachewarmer.drossmedia.de` |
-| WordPress Plugin | `cachewarmer-license-manager` (CWLM) |
-| API Namespace | `cwlm/v1` |
-| Datenbank | MySQL (7 Tabellen, Prefix `wp_cwlm_`) |
-| Payment | Stripe (native Webhook-Integration) |
-
-### 15.2 Produkt-Tiers
-
-#### Warming-Targets
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| CDN Edge Cache (Desktop + Mobile) | ✓ | ✓ | ✓ |
-| IndexNow (Bing, Yandex, Seznam, Naver) | ✓ | ✓ | ✓ |
-| Facebook Sharing Debugger | – | ✓ | ✓ |
-| LinkedIn Post Inspector | – | ✓ | ✓ |
-| Twitter/X Card Validator | – | ✓ | ✓ |
-| Google Indexing API | – | ✓ | ✓ |
-| Bing Webmaster URL Submission | – | ✓ | ✓ |
-| Pinterest Rich Pin Validator | – | ✓ | ✓ |
-| Cloudflare Cache Purge + Warm | – | – | ✓ |
-| Imperva (Incapsula) Cache Purge + Warm | – | – | ✓ |
-| Akamai Fast Purge + Warm | – | – | ✓ |
-
-#### Mengen-Limits
-
-| Limit | Free | Premium | Enterprise |
-|-------|:----:|:-------:|:----------:|
-| URLs pro Warming-Job | 50 | 10.000 | Unbegrenzt |
-| Registrierte Sitemaps | 2 | 25 | Unbegrenzt |
-| Externe Sitemaps | 1 | 10 | Unbegrenzt |
-| Jobs pro Tag | 3 | 50 | Unbegrenzt |
-| CDN Concurrency | 2 | 10 | 20 |
-| Log-Aufbewahrung | 7 Tage | 90 Tage | 365 Tage |
-| Verwaltete Sites | 1 | 1 | Unbegrenzt |
-
-#### Scheduling & Automatisierung
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| Manuelles Warming | ✓ | ✓ | ✓ |
-| Geplantes Warming (Scheduler) | – | ✓ | ✓ |
-| Auto-Warm bei Veröffentlichung | – | ✓ | ✓ |
-| Smart Warming (Diff-Detection) | – | ✓ | ✓ |
-| Prioritätsbasiertes URL-Warming | – | ✓ | ✓ |
-| Sitemap-Änderungsüberwachung | – | – | ✓ |
-| Bedingtes Warming | – | – | ✓ |
-| Benutzerdefinierte Warm-Reihenfolge | – | – | ✓ |
-
-#### Dashboard & Reporting
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| Status-Dashboard | ✓ | ✓ | ✓ |
-| CSV/JSON-Export | – | ✓ | ✓ |
-| Export fehlgeschlagener URLs (CSV) | – | ✓ | ✓ |
-| Cache Hit/Miss Analyse | – | ✓ | ✓ |
-| Performance-Trending | – | ✓ | ✓ |
-| Quota-Nutzungs-Tracker | – | ✓ | ✓ |
-| Automatische PDF/HTML-Reports | – | – | ✓ |
-| Audit-Log | – | – | ✓ |
-
-#### Monitoring & Alerting
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| Broken-Link-Erkennung | – | ✓ | ✓ |
-| SSL-Zertifikat-Ablauf-Warnung | – | ✓ | ✓ |
-| Performance-Regressions-Alerts | – | – | ✓ |
-| Quota-Erschöpfungs-Alerts | – | – | ✓ |
-
-#### Konfiguration & Customization
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| Custom Timeout pro Service | – | ✓ | ✓ |
-| Custom User-Agent | – | – | ✓ |
-| Custom HTTP-Headers | – | – | ✓ |
-| Custom Viewports | – | – | ✓ |
-| Authentifiziertes Warming | – | – | ✓ |
-
-#### API & Integration
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| REST API Zugang | – | ✓ | ✓ |
-| Webhook-Benachrichtigungen | – | – | ✓ |
-| Zapier/n8n/Make Kompatibilität | – | – | ✓ |
-| IP-Whitelist für API | – | – | ✓ |
-
-#### Multi-Site & Agentur
-
-| Feature | Free | Premium | Enterprise |
-|---------|:----:|:-------:|:----------:|
-| Single-Site | ✓ | ✓ | – |
-| Multi-Site-Verwaltung | – | – | ✓ |
-| White-Label | – | – | ✓ |
-| Priority Support | – | – | ✓ |
-
-Zusätzlich: **Development**-Lizenz (Enterprise-Features, nur localhost/\*.local/\*.dev/\*.test).
-
-### 15.3 Plattform-Support
-
-CacheWarmer wird auf 4 Plattformen angeboten:
-
-| Plattform | Paket | Fingerprint |
-|-----------|-------|-------------|
-| Node.js Standalone | `@drossmedia/cachewarmer` (NPM) | Hostname + UUID + OS |
-| Docker | `drossmedia/cachewarmer` (Docker Hub) | Host-UUID (Volume) |
-| WordPress Plugin | `cachewarmer` (wordpress.org / Dashboard) | Domain + WP-Version |
-| Drupal Modul | `cachewarmer` (drupal.org / Dashboard) | Domain + Drupal-Version |
-
-### 15.4 License Key Format
-
-```
-CW-{TIER}-{HEX16}
-Beispiel: CW-PRO-A1B2C3D4E5F6G7H8
-```
-
-### 15.5 Integration in CacheWarmer
-
-Die Lizenzvalidierung wird beim Start durchgeführt und per Heartbeat alle 24h erneuert:
-
-1. `LICENSE_KEY` und `LICENSE_DASHBOARD_URL` in `.env` konfigurieren
-2. Beim Start: `src/license/client.js` ruft `/cwlm/v1/activate` auf
-3. Features werden gecacht und über `src/license/feature-gate.js` geprüft
-4. Alle 24h: Heartbeat an `/cwlm/v1/check`
-5. Bei Feature-Zugriff: Middleware prüft ob Tier berechtigt
-
-### 15.6 Dokumentation
-
-| Dokument | Beschreibung |
-|----------|-------------|
-| `LASTENHEFT-LICENSE-DASHBOARD.md` | Formales Lastenheft mit Anforderungen, Datenmodell, API-Spec, Implementierungsplan |
-| `cachewarmer-license-manager/` | WordPress License Manager Plugin (Schema, Endpoints, Stripe, Admin UI) |
+## .gitignore Summary
+Ignored: `node_modules/`, `.next/`, `data/`, `credentials/`, `.env*`, `config.local.yaml`, `dist/`, `cachewarmer-license-manager/` (legacy)
