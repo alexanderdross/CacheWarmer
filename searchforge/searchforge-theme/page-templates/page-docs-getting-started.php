@@ -6,6 +6,14 @@
  */
 
 get_header();
+
+$sections = [
+	[ 'id' => 'installation',                    'label' => 'Installation' ],
+	[ 'id' => 'license-activation',              'label' => 'License Activation' ],
+	[ 'id' => 'connecting-google-search-console', 'label' => 'Connecting Google Search Console' ],
+	[ 'id' => 'your-first-data-sync',            'label' => 'Your First Data Sync' ],
+	[ 'id' => 'exporting-your-first-brief',      'label' => 'Exporting Your First Brief' ],
+];
 ?>
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
@@ -18,7 +26,10 @@ get_header();
 </section>
 
 <section class="sf-section">
-	<div class="sf-container sf-container--narrow">
+	<div class="sf-container">
+		<div class="sf-doc-layout">
+			<?php sf_doc_sidebar( $sections ); ?>
+			<div class="sf-doc-content">
 
 		<article class="sf-doc-section" id="installation">
 			<h2>Installation</h2>
@@ -89,6 +100,8 @@ get_header();
 			<p>The brief includes all the context an LLM needs to give you actionable SEO recommendations for that specific page.</p>
 		</article>
 
+			</div>
+		</div>
 	</div>
 </section>
 

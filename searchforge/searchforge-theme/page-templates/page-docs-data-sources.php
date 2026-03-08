@@ -6,6 +6,16 @@
  */
 
 get_header();
+
+$sections = [
+	[ 'id' => 'google-search-console',   'label' => 'Google Search Console' ],
+	[ 'id' => 'bing-webmaster-tools',     'label' => 'Bing Webmaster Tools' ],
+	[ 'id' => 'google-analytics-4',       'label' => 'Google Analytics 4' ],
+	[ 'id' => 'google-keyword-planner',   'label' => 'Google Keyword Planner' ],
+	[ 'id' => 'google-trends',            'label' => 'Google Trends' ],
+	[ 'id' => 'google-business-profile',  'label' => 'Google Business Profile' ],
+	[ 'id' => 'bing-places-for-business', 'label' => 'Bing Places for Business' ],
+];
 ?>
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
@@ -18,7 +28,10 @@ get_header();
 </section>
 
 <section class="sf-section">
-	<div class="sf-container sf-container--narrow">
+	<div class="sf-container">
+		<div class="sf-doc-layout">
+			<?php sf_doc_sidebar( $sections ); ?>
+			<div class="sf-doc-content">
 
 		<article class="sf-doc-section" id="google-search-console">
 			<h2>Google Search Console</h2>
@@ -128,6 +141,8 @@ get_header();
 			</ul>
 		</article>
 
+			</div>
+		</div>
 	</div>
 </section>
 

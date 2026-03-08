@@ -6,6 +6,16 @@
  */
 
 get_header();
+
+$sections = [
+	[ 'id' => 'yoast-seo',      'label' => 'Yoast SEO' ],
+	[ 'id' => 'rank-math',      'label' => 'Rank Math' ],
+	[ 'id' => 'aioseo',         'label' => 'AIOSEO' ],
+	[ 'id' => 'cachewarmer',    'label' => 'CacheWarmer' ],
+	[ 'id' => 'github-gitlab',  'label' => 'GitHub & GitLab' ],
+	[ 'id' => 'notion-export',  'label' => 'Notion Export' ],
+	[ 'id' => 'google-sheets',  'label' => 'Google Sheets' ],
+];
 ?>
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
@@ -18,7 +28,10 @@ get_header();
 </section>
 
 <section class="sf-section">
-	<div class="sf-container sf-container--narrow">
+	<div class="sf-container">
+		<div class="sf-doc-layout">
+			<?php sf_doc_sidebar( $sections ); ?>
+			<div class="sf-doc-content">
 
 		<article class="sf-doc-section" id="yoast-seo">
 			<h2>Yoast SEO</h2>
@@ -124,6 +137,8 @@ get_header();
 			<p>Appends a new sheet tab per sync date, preserving historical snapshots. Or overwrite mode for a live dashboard.</p>
 		</article>
 
+			</div>
+		</div>
 	</div>
 </section>
 

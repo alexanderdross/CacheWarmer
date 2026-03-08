@@ -13,7 +13,7 @@
 				<span class="sf-gradient-text">SEO Data, LLM-Ready.</span>
 			</h1>
 			<p class="sf-hero__subtitle">
-				Turn Search Console, Bing, GA4 &amp; Trends into actionable AI briefs&nbsp;&mdash; directly in WordPress.
+				Unify Search Console, Bing Webmaster, Google Business Profile, Bing Places, GA4 &amp; Google Trends into actionable AI briefs&nbsp;&mdash; directly in WordPress.
 			</p>
 			<div class="sf-hero__actions">
 				<a href="/pricing/" class="sf-btn sf-btn--primary sf-btn--lg">Get Started Free</a>

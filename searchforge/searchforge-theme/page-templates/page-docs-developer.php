@@ -6,6 +6,14 @@
  */
 
 get_header();
+
+$sections = [
+	[ 'id' => 'rest-api-reference',     'label' => 'REST API Reference' ],
+	[ 'id' => 'wp-cli-commands',         'label' => 'WP-CLI Commands' ],
+	[ 'id' => 'actions-filters',         'label' => 'Actions & Filters' ],
+	[ 'id' => 'api-key-authentication', 'label' => 'API Key Authentication' ],
+	[ 'id' => 'webhook-events',          'label' => 'Webhook Events' ],
+];
 ?>
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
@@ -18,7 +26,10 @@ get_header();
 </section>
 
 <section class="sf-section">
-	<div class="sf-container sf-container--narrow">
+	<div class="sf-container">
+		<div class="sf-doc-layout">
+			<?php sf_doc_sidebar( $sections ); ?>
+			<div class="sf-doc-content">
 
 		<article class="sf-doc-section" id="rest-api-reference">
 			<h2>REST API Reference</h2>
@@ -114,6 +125,8 @@ get_header();
 			<p>JSON payload with event type, timestamp, affected page/keyword, and relevant metrics. HMAC-SHA256 signature in <code>X-SearchForge-Signature</code> header for verification.</p>
 		</article>
 
+			</div>
+		</div>
 	</div>
 </section>
 
