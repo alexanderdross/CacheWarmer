@@ -63,6 +63,7 @@ function runMigrations(db: Database.Database) {
 
     CREATE INDEX IF NOT EXISTS idx_url_results_job_id ON url_results(job_id);
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_sitemaps_url ON sitemaps(url);
   `);
 
   // Add columns if upgrading from older schema

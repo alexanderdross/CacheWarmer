@@ -41,3 +41,6 @@ next-env.d.ts
 /credentials/
 config.local.yaml
 /dist/
+
+# root-level legacy folders (real sources live under cachewarmer/)
+/cachewarmer-license-manager/

@@ -22,7 +22,10 @@ export default function SitemapManager() {
   const [showBulk, setShowBulk] = useState(false);
   const [bulkUrls, setBulkUrls] = useState("");
   const [bulkImporting, setBulkImporting] = useState(false);
-  const [bulkResult, setBulkResult] = useState<{ added: number; errors: string[] } | null>(null);
+  const [bulkResult, setBulkResult] = useState<{ added: number; errors: string[]; duplicates: string[] } | null>(null);
+
+  // Error state
+  const [addError, setAddError] = useState("");
 
   // Auto-detect state
   const [detectDomain, setDetectDomain] = useState("");
@@ -79,6 +82,7 @@ export default function SitemapManager() {
     e.preventDefault();
     if (!newUrl) return;
     setAdding(true);
+    setAddError("");
 
     try {
       const res = await fetch("/api/sitemaps", {
@@ -95,6 +99,8 @@ export default function SitemapManager() {
         setCronFrequency("none");
         setCronHour(3);
         await fetchSitemaps();
+      } else if (res.status === 409) {
+        setAddError("Diese Sitemap ist bereits registriert.");
       }
     } finally {
       setAdding(false);
@@ -131,7 +137,7 @@ export default function SitemapManager() {
 
       if (res.ok) {
         const data = await res.json();
-        setBulkResult({ added: data.added.length, errors: data.errors });
+        setBulkResult({ added: data.added.length, errors: data.errors, duplicates: data.duplicates || [] });
         setBulkUrls("");
         await fetchSitemaps();
       }
@@ -167,11 +173,14 @@ export default function SitemapManager() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
     });
-    if (res.ok) {
+    if (res.ok || res.status === 409) {
       setDetectedSitemaps((prev) => prev.filter((s) => s !== url));
-      await fetchSitemaps();
+      if (res.ok) await fetchSitemaps();
     }
   };
+
+  // Helper to check if a URL is already registered
+  const isAlreadyRegistered = (url: string) => sitemaps.some((sm) => sm.url === url);
 
   return (
     <div className="space-y-4">
@@ -183,7 +192,7 @@ export default function SitemapManager() {
             <input
               type="url"
               value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
+              onChange={(e) => { setNewUrl(e.target.value); setAddError(""); }}
               placeholder="https://www.example.com/sitemap.xml"
               required
               className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -231,6 +240,9 @@ export default function SitemapManager() {
             {adding ? "..." : "Hinzufuegen"}
           </button>
         </div>
+        {addError && (
+          <p className="mt-2 text-sm text-yellow-400">{addError}</p>
+        )}
       </form>
 
       {/* Action Buttons */}
@@ -267,12 +279,16 @@ export default function SitemapManager() {
             {detectedSitemaps.map((url) => (
               <div key={url} className="flex items-center justify-between gap-2">
                 <span className="text-sm font-mono text-gray-300 truncate">{url}</span>
-                <button
-                  onClick={() => handleAddDetected(url)}
-                  className="text-green-500 hover:text-green-400 text-sm whitespace-nowrap"
-                >
-                  Hinzufuegen
-                </button>
+                {isAlreadyRegistered(url) ? (
+                  <span className="text-yellow-400 text-sm whitespace-nowrap">Bereits vorhanden</span>
+                ) : (
+                  <button
+                    onClick={() => handleAddDetected(url)}
+                    className="text-green-500 hover:text-green-400 text-sm whitespace-nowrap"
+                  >
+                    Hinzufuegen
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -306,6 +322,9 @@ export default function SitemapManager() {
             {bulkResult && (
               <span className="text-sm text-gray-400">
                 {bulkResult.added} hinzugefuegt
+                {bulkResult.duplicates.length > 0 && (
+                  <span className="text-yellow-400"> | {bulkResult.duplicates.length} bereits vorhanden</span>
+                )}
                 {bulkResult.errors.length > 0 && (
                   <span className="text-red-400"> | {bulkResult.errors.length} Fehler</span>
                 )}

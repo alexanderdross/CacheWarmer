@@ -32,6 +32,13 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb();
+
+    // Check for duplicate URL
+    const existing = db.prepare("SELECT id FROM sitemaps WHERE url = ?").get(url);
+    if (existing) {
+      return NextResponse.json({ error: "Diese Sitemap ist bereits registriert." }, { status: 409 });
+    }
+
     const id = uuidv4();
 
     db.prepare(`

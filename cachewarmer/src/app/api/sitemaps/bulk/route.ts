@@ -27,10 +27,16 @@ export async function POST(request: NextRequest) {
 
     const added: Array<{ id: string; url: string; domain: string }> = [];
     const errors: string[] = [];
+    const duplicates: string[] = [];
+    const checkDuplicate = db.prepare("SELECT id FROM sitemaps WHERE url = ?");
 
     for (const line of lines) {
       try {
         const parsed = new URL(line);
+        if (checkDuplicate.get(line)) {
+          duplicates.push(line);
+          continue;
+        }
         const id = uuidv4();
         stmt.run(id, line, parsed.hostname, null);
         added.push({ id, url: line, domain: parsed.hostname });
@@ -39,7 +45,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ added, errors }, { status: 201 });
+    return NextResponse.json({ added, errors, duplicates }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
