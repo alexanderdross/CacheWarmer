@@ -119,6 +119,9 @@ class CacheWarmerAjaxController extends ControllerBase {
       return new JsonResponse(['success' => FALSE, 'error' => 'Valid sitemap URL is required.'], 400);
     }
 
+    // Normalize early so the duplicate check and storage use the same form.
+    $url = CacheWarmerDatabase::normalizeUrl($url);
+
     // Check for duplicate sitemap URL.
     $existing = $this->database->getSitemapByUrl($url);
     if ($existing) {
@@ -208,6 +211,8 @@ class CacheWarmerAjaxController extends ControllerBase {
         $errors[] = $url;
         continue;
       }
+      // Normalize early so the duplicate check and storage use the same form.
+      $url = CacheWarmerDatabase::normalizeUrl($url);
       // Skip duplicate sitemap URLs.
       if ($this->database->getSitemapByUrl($url)) {
         $errors[] = $url;

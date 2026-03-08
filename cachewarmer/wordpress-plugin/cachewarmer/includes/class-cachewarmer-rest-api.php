@@ -223,7 +223,7 @@ class CacheWarmer_REST_API {
     }
 
     public function register_sitemap( WP_REST_Request $request ): WP_REST_Response {
-        $url    = $request->get_param( 'url' );
+        $url = CacheWarmer_Database::normalize_url( $request->get_param( 'url' ) );
 
         // Prevent duplicate sitemap registration.
         $existing = $this->db->get_sitemap_by_url( $url );

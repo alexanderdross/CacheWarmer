@@ -78,11 +78,41 @@ function runMigrations(db: Database.Database) {
 }
 
 /**
+ * Normalize a sitemap URL for consistent duplicate detection.
+ *
+ * Lowercases scheme and host, removes default ports, trailing slashes,
+ * and fragments so that equivalent URLs match reliably.
+ */
+export function normalizeUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    // URL constructor already lowercases scheme and host.
+    // Remove default ports.
+    if (
+      (u.protocol === "https:" && u.port === "443") ||
+      (u.protocol === "http:" && u.port === "80")
+    ) {
+      u.port = "";
+    }
+    // Remove trailing slash unless the path is just "/".
+    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
+      u.pathname = u.pathname.replace(/\/+$/, "");
+    }
+    // Remove fragment.
+    u.hash = "";
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
+/**
  * Check if a sitemap URL is already registered in the sitemaps table.
  */
 export function sitemapUrlExists(url: string): boolean {
   const db = getDb();
-  const row = db.prepare("SELECT 1 FROM sitemaps WHERE url = ?").get(url);
+  const normalized = normalizeUrl(url);
+  const row = db.prepare("SELECT 1 FROM sitemaps WHERE url = ?").get(normalized);
   return !!row;
 }
 
