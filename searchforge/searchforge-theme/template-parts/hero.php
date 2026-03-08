@@ -12,9 +12,9 @@
 			<h1 class="sf-hero__title">
 				<span class="sf-gradient-text">SEO Data, LLM-Ready.</span>
 			</h1>
-			<p class="sf-hero__subtitle">
-				Unify Search Console, Bing Webmaster, Google Business Profile, Bing Places, GA4 &amp; Google Trends into actionable AI briefs&nbsp;&mdash; directly in WordPress.
-			</p>
+			<div class="sf-hero__highlight">
+				<p>Connects <strong>Google Search Console</strong>, <strong>Bing Webmaster Tools</strong>, <strong>Google Business Profile</strong>, <strong>Bing Places</strong>, <strong>GA4</strong> &amp; <strong>Google Trends</strong> &mdash; and turns them into actionable, LLM-ready AI briefs. Directly in WordPress.</p>
+			</div>
 			<div class="sf-hero__actions">
 				<a href="/pricing/" class="sf-btn sf-btn--primary sf-btn--lg">Get Started Free</a>
 				<a href="#pricing" class="sf-btn sf-btn--outline sf-btn--lg">View Pricing</a>

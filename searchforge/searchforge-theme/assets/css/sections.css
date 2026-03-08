@@ -130,6 +130,22 @@
 	margin-bottom: var(--space-xl);
 	line-height: 1.7;
 }
+.sf-hero__highlight {
+	background: rgba(255, 255, 255, 0.07);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: var(--radius-lg);
+	padding: var(--space-lg);
+	margin-bottom: var(--space-xl);
+}
+.sf-hero__highlight p {
+	font-size: 1.125rem;
+	color: var(--sf-text-inverse-muted);
+	line-height: 1.7;
+	margin: 0;
+}
+.sf-hero__highlight strong {
+	color: var(--sf-text-inverse);
+}
 .sf-hero__actions {
 	display: flex;
 	gap: var(--space-md);
