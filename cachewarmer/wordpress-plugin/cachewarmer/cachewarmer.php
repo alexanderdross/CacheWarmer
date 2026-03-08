@@ -3,7 +3,7 @@
  * Plugin Name: CacheWarmer
  * Plugin URI: https://github.com/alexanderdross/cachewarmer
  * Description: Systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X), and submits URLs to search engines (Google, Bing, IndexNow).
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Alexander Dross
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'CACHEWARMER_VERSION', '1.0.0' );
+define( 'CACHEWARMER_VERSION', '1.1.0' );
 define( 'CACHEWARMER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CACHEWARMER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CACHEWARMER_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );

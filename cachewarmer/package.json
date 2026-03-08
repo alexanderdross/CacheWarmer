@@ -1,6 +1,6 @@
 {
   "name": "cachewarmer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Self-hosted cache warming microservice for CDN, social media, and search engines",
   "private": true,
   "scripts": {
