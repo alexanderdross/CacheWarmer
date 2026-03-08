@@ -12,6 +12,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -139,6 +140,10 @@ class CacheWarmerResource extends ResourceBase {
     $targets = $data['targets'] ?? ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow'];
     $result = $this->jobManager->createJob($sitemapUrl, $targets);
 
+    if ($result['status'] === 'rejected') {
+      throw new ConflictHttpException($result['error']);
+    }
+
     // Trigger processing via queue.
     \Drupal::queue('cachewarmer_process_job')->createItem(['job_id' => $result['jobId']]);
 
@@ -203,6 +208,12 @@ class CacheWarmerResource extends ResourceBase {
     $url = $data['url'] ?? '';
     if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
       throw new BadRequestHttpException('Valid url is required.');
+    }
+
+    // Check for duplicate sitemap URL.
+    $existing = $this->database->getSitemapByUrl($url);
+    if ($existing) {
+      throw new ConflictHttpException('A sitemap with this URL already exists.');
     }
 
     $parsed = parse_url($url);

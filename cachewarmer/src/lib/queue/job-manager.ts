@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getDb } from "@/lib/db/database";
+import { getDb, getActiveJobForSitemapUrl } from "@/lib/db/database";
 import { loadConfig } from "@/lib/config";
 import { parseSitemap } from "@/lib/services/sitemap-parser";
 import { warmUrls, closeBrowser, type CacheHeaders } from "@/lib/services/cdn-warmer";
@@ -39,7 +39,22 @@ export interface Job {
 // Track running jobs so we don't process duplicates
 const runningJobs = new Set<string>();
 
+export class DuplicateJobError extends Error {
+  public existingJobId: string;
+  constructor(existingJobId: string, sitemapUrl: string) {
+    super(`An active job already exists for sitemap URL: ${sitemapUrl}`);
+    this.name = "DuplicateJobError";
+    this.existingJobId = existingJobId;
+  }
+}
+
 export function createJob(params: CreateJobParams): Job {
+  // Reject if an active (queued/running) job already exists for this sitemap URL
+  const activeJob = getActiveJobForSitemapUrl(params.sitemapUrl);
+  if (activeJob) {
+    throw new DuplicateJobError(activeJob.id as string, params.sitemapUrl);
+  }
+
   const db = getDb();
   const jobId = uuidv4();
 

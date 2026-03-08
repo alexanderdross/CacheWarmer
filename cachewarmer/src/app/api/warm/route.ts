@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
-import { createJob, processJob, type WarmTarget } from "@/lib/queue/job-manager";
+import { createJob, processJob, DuplicateJobError, type WarmTarget } from "@/lib/queue/job-manager";
 import logger from "@/lib/logger";
 
 const VALID_TARGETS: WarmTarget[] = ["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow", "pinterest", "cdn-purge"];
@@ -29,7 +29,18 @@ export async function POST(request: NextRequest) {
       ? targets.filter((t: string) => VALID_TARGETS.includes(t as WarmTarget)) as WarmTarget[]
       : [...VALID_TARGETS];
 
-    const job = createJob({ sitemapUrl, targets: requestedTargets });
+    let job;
+    try {
+      job = createJob({ sitemapUrl, targets: requestedTargets });
+    } catch (err) {
+      if (err instanceof DuplicateJobError) {
+        return NextResponse.json({
+          error: "An active job already exists for this sitemap URL.",
+          existingJobId: err.existingJobId,
+        }, { status: 409 });
+      }
+      throw err;
+    }
 
     // Start processing in background (non-blocking)
     processJob(job.id).catch((err) => {
