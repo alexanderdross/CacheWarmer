@@ -126,6 +126,7 @@ code, pre {
 
 /* Text helpers */
 .sf-text--muted { color: var(--sf-text-muted); }
+.sf-text--muted a { text-decoration: underline; text-underline-offset: 2px; }
 .sf-text--large { font-size: 1.25rem; }
 .sf-text--inverse-muted { color: var(--sf-text-inverse-muted); }
 

@@ -8,13 +8,13 @@
 get_header();
 
 $sections = [
-	[ 'id' => 'google-search-console',   'label' => 'Google Search Console' ],
-	[ 'id' => 'bing-webmaster-tools',     'label' => 'Bing Webmaster Tools' ],
-	[ 'id' => 'google-analytics-4',       'label' => 'Google Analytics 4' ],
-	[ 'id' => 'google-keyword-planner',   'label' => 'Google Keyword Planner' ],
-	[ 'id' => 'google-trends',            'label' => 'Google Trends' ],
-	[ 'id' => 'google-business-profile',  'label' => 'Google Business Profile' ],
-	[ 'id' => 'bing-places-for-business', 'label' => 'Bing Places for Business' ],
+	[ 'id' => 'google-search-console',   'label' => 'Google Search Console',   'title' => 'Configure Google Search Console integration in SearchForge' ],
+	[ 'id' => 'bing-webmaster-tools',     'label' => 'Bing Webmaster Tools',   'title' => 'Configure Bing Webmaster Tools integration in SearchForge' ],
+	[ 'id' => 'google-analytics-4',       'label' => 'Google Analytics 4',     'title' => 'Configure Google Analytics 4 integration in SearchForge' ],
+	[ 'id' => 'google-keyword-planner',   'label' => 'Google Keyword Planner', 'title' => 'Configure Google Keyword Planner integration in SearchForge' ],
+	[ 'id' => 'google-trends',            'label' => 'Google Trends',          'title' => 'Configure Google Trends integration in SearchForge' ],
+	[ 'id' => 'google-business-profile',  'label' => 'Google Business Profile','title' => 'Configure Google Business Profile integration in SearchForge' ],
+	[ 'id' => 'bing-places-for-business', 'label' => 'Bing Places for Business','title' => 'Configure Bing Places for Business integration in SearchForge' ],
 ];
 ?>
 

@@ -39,6 +39,11 @@
 	font-weight: 700;
 	flex-shrink: 0;
 }
+.sf-header__logo-brand {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.1;
+}
 .sf-header__logo-text {
 	font-family: var(--font-heading, 'Outfit', sans-serif);
 	font-size: 1.25rem;
@@ -47,6 +52,13 @@
 }
 .sf-header__logo-search {
 	color: var(--sf-primary, #0f766e);
+}
+.sf-header__logo-claim {
+	font-family: var(--font-heading, 'Outfit', sans-serif);
+	font-size: 0.625rem;
+	font-weight: 400;
+	color: var(--sf-text-muted, #64748b);
+	letter-spacing: 0.02em;
 }
 .sf-header__nav {
 	flex: 1;
@@ -537,6 +549,10 @@
 	margin-top: var(--space-lg);
 	margin-bottom: var(--space-sm);
 	color: var(--sf-text);
+}
+.sf-doc-content a {
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 .sf-doc-section p {
 	color: var(--sf-text-muted);

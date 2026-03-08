@@ -77,6 +77,26 @@ function runMigrations(db: Database.Database) {
   }
 }
 
+/**
+ * Check if a sitemap URL is already registered in the sitemaps table.
+ */
+export function sitemapUrlExists(url: string): boolean {
+  const db = getDb();
+  const row = db.prepare("SELECT 1 FROM sitemaps WHERE url = ?").get(url);
+  return !!row;
+}
+
+/**
+ * Check if there is an active (queued or running) job for a given sitemap URL.
+ * Returns the existing job row if found, or undefined otherwise.
+ */
+export function getActiveJobForSitemapUrl(sitemapUrl: string): Record<string, unknown> | undefined {
+  const db = getDb();
+  return db.prepare(
+    "SELECT * FROM jobs WHERE sitemap_url = ? AND status IN ('queued', 'running') LIMIT 1"
+  ).get(sitemapUrl) as Record<string, unknown> | undefined;
+}
+
 export function closeDb() {
   if (db) {
     db.close();

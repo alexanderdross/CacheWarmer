@@ -102,7 +102,32 @@ class CacheWarmerDatabase {
       ->execute();
   }
 
+  /**
+   * Gets a sitemap by URL.
+   */
+  public function getSitemapByUrl(string $url): ?object {
+    return $this->database->select('cachewarmer_sitemaps', 's')
+      ->fields('s')
+      ->condition('url', $url)
+      ->range(0, 1)
+      ->execute()
+      ->fetchObject() ?: NULL;
+  }
+
   // --- Jobs ---
+
+  /**
+   * Checks if an active job exists for a given sitemap URL.
+   */
+  public function hasActiveJobForUrl(string $url): bool {
+    $count = $this->database->select('cachewarmer_jobs', 'j')
+      ->condition('sitemap_url', $url)
+      ->condition('status', ['queued', 'running'], 'IN')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+    return ((int) $count) > 0;
+  }
 
   /**
    * Inserts a new job.

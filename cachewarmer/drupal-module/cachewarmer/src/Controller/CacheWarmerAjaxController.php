@@ -48,6 +48,10 @@ class CacheWarmerAjaxController extends ControllerBase {
 
     $result = $this->jobManager->createJob($sitemapUrl, $targets);
 
+    if ($result['status'] === 'rejected') {
+      return new JsonResponse(['success' => FALSE, 'error' => $result['error']], 409);
+    }
+
     // Queue the job for background processing.
     \Drupal::queue('cachewarmer_process_job')->createItem(['job_id' => $result['jobId']]);
 
@@ -115,6 +119,12 @@ class CacheWarmerAjaxController extends ControllerBase {
       return new JsonResponse(['success' => FALSE, 'error' => 'Valid sitemap URL is required.'], 400);
     }
 
+    // Check for duplicate sitemap URL.
+    $existing = $this->database->getSitemapByUrl($url);
+    if ($existing) {
+      return new JsonResponse(['success' => FALSE, 'error' => 'A sitemap with this URL already exists.'], 409);
+    }
+
     $parsed = parse_url($url);
     $domain = $parsed['host'] ?? '';
     $cronExpression = $data['cron_expression'] ?? NULL;
@@ -159,6 +169,10 @@ class CacheWarmerAjaxController extends ControllerBase {
     $targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow'];
     $result = $this->jobManager->createJob($sitemap->url, $targets, $sitemap->id);
 
+    if ($result['status'] === 'rejected') {
+      return new JsonResponse(['success' => FALSE, 'error' => $result['error']], 409);
+    }
+
     \Drupal::queue('cachewarmer_process_job')->createItem(['job_id' => $result['jobId']]);
 
     return new JsonResponse(['success' => TRUE, 'data' => $result]);
@@ -191,6 +205,11 @@ class CacheWarmerAjaxController extends ControllerBase {
 
     foreach ($lines as $url) {
       if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+        $errors[] = $url;
+        continue;
+      }
+      // Skip duplicate sitemap URLs.
+      if ($this->database->getSitemapByUrl($url)) {
         $errors[] = $url;
         continue;
       }

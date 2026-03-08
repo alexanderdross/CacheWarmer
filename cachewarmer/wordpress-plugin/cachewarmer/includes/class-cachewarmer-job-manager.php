@@ -27,6 +27,14 @@ class CacheWarmer_Job_Manager {
      * @return array Job data.
      */
     public function create_job( string $sitemap_url, array $targets, ?string $sitemap_id = null ): array {
+        // Prevent duplicate jobs: reject if a queued/running job already exists for this URL.
+        if ( $this->db->has_active_job_for_url( $sitemap_url ) ) {
+            return array(
+                'error'  => 'A warming job for this sitemap is already queued or running.',
+                'status' => 'rejected',
+            );
+        }
+
         $job_id = wp_generate_uuid4();
 
         $all_targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge' );

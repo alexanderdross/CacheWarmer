@@ -8,13 +8,13 @@
 get_header();
 
 $sections = [
-	[ 'id' => 'yoast-seo',      'label' => 'Yoast SEO' ],
-	[ 'id' => 'rank-math',      'label' => 'Rank Math' ],
-	[ 'id' => 'aioseo',         'label' => 'AIOSEO' ],
-	[ 'id' => 'cachewarmer',    'label' => 'CacheWarmer' ],
-	[ 'id' => 'github-gitlab',  'label' => 'GitHub & GitLab' ],
-	[ 'id' => 'notion-export',  'label' => 'Notion Export' ],
-	[ 'id' => 'google-sheets',  'label' => 'Google Sheets' ],
+	[ 'id' => 'yoast-seo',      'label' => 'Yoast SEO',       'title' => 'Integrate SearchForge with Yoast SEO' ],
+	[ 'id' => 'rank-math',      'label' => 'Rank Math',       'title' => 'Integrate SearchForge with Rank Math' ],
+	[ 'id' => 'aioseo',         'label' => 'AIOSEO',          'title' => 'Integrate SearchForge with AIOSEO' ],
+	[ 'id' => 'cachewarmer',    'label' => 'CacheWarmer',     'title' => 'Use SearchForge with CacheWarmer for cache warming' ],
+	[ 'id' => 'github-gitlab',  'label' => 'GitHub & GitLab', 'title' => 'Push SEO briefs to GitHub or GitLab repositories' ],
+	[ 'id' => 'notion-export',  'label' => 'Notion Export',   'title' => 'Export SearchForge SEO data to Notion' ],
+	[ 'id' => 'google-sheets',  'label' => 'Google Sheets',   'title' => 'Sync SearchForge SEO data to Google Sheets' ],
 ];
 ?>
 

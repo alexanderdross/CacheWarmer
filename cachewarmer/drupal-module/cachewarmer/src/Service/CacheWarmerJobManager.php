@@ -69,6 +69,18 @@ class CacheWarmerJobManager {
    * Creates a new warming job.
    */
   public function createJob(string $sitemapUrl, array $targets, ?string $sitemapId = NULL): array {
+    // Check for an already active job for this URL.
+    if ($this->database->hasActiveJobForUrl($sitemapUrl)) {
+      return [
+        'jobId' => NULL,
+        'status' => 'rejected',
+        'sitemapUrl' => $sitemapUrl,
+        'targets' => $targets,
+        'createdAt' => NULL,
+        'error' => 'A warming job for this sitemap URL is already queued or running.',
+      ];
+    }
+
     // Validate targets.
     $targets = array_values(array_intersect($targets, self::ALLOWED_TARGETS));
     if (empty($targets)) {

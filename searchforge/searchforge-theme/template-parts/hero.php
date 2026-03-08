@@ -27,21 +27,21 @@
 					<span class="sf-code-block__dot sf-code-block__dot--red"></span>
 					<span class="sf-code-block__dot sf-code-block__dot--yellow"></span>
 					<span class="sf-code-block__dot sf-code-block__dot--green"></span>
-					<span class="sf-code-block__filename">brief-germany.md</span>
+					<span class="sf-code-block__filename">brief-organic-coffee.md</span>
 				</div>
-				<pre class="sf-code-block__content"><code># AI Content Brief: /germany/
+				<pre class="sf-code-block__content"><code># AI Content Brief: /organic-coffee/
 **SearchForge Score:** 72/100
 **Clicks (28d):** 1,247 ↑ +18%
-**Top Query:** "aip germany" (Pos 3.2)
+**Top Query:** "best organic coffee" (Pos 3.2)
 **AI Citation:** Google AI ✓  ChatGPT ✓
 **Action:** Expand FAQ section for AEO
 
-## Keyword Cluster: "germany aviation"
-| Query           | Google | Bing | Volume |
-|-----------------|--------|------|--------|
-| aip germany     | 3.2    | 2.8  | 720    |
-| german aip pdf  | 5.1    | 4.3  | 390    |
-| icao germany    | 8.4    | 6.1  | 260    |</code></pre>
+## Keyword Cluster: "organic coffee"
+| Query               | Google | Bing | Volume |
+|---------------------|--------|------|--------|
+| best organic coffee | 3.2    | 2.8  | 1,900  |
+| organic coffee beans| 5.1    | 4.3  | 1,200  |
+| fair trade coffee   | 8.4    | 6.1  | 880    |</code></pre>
 			</div>
 		</div>
 	</div>

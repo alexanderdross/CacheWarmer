@@ -112,6 +112,33 @@ class CacheWarmer_Database {
         );
     }
 
+    /**
+     * Find an existing sitemap by URL.
+     */
+    public function get_sitemap_by_url( string $url ): ?object {
+        global $wpdb;
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}cachewarmer_sitemaps WHERE url = %s LIMIT 1",
+                $url
+            )
+        );
+    }
+
+    /**
+     * Check if there is already a queued or running job for a given sitemap URL.
+     */
+    public function has_active_job_for_url( string $sitemap_url ): bool {
+        global $wpdb;
+        $count = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}cachewarmer_jobs WHERE sitemap_url = %s AND status IN ('queued', 'running')",
+                $sitemap_url
+            )
+        );
+        return $count > 0;
+    }
+
     public function update_sitemap_last_warmed( string $id ): void {
         global $wpdb;
         $wpdb->update(

@@ -8,11 +8,11 @@
 get_header();
 
 $sections = [
-	[ 'id' => 'markdown-briefs',       'label' => 'Markdown Briefs' ],
-	[ 'id' => 'combined-master-brief', 'label' => 'Combined Master Brief' ],
-	[ 'id' => 'llms-txt-generation',   'label' => 'llms.txt Generation' ],
-	[ 'id' => 'zip-bulk-export',       'label' => 'ZIP Bulk Export' ],
-	[ 'id' => 'scheduled-exports',     'label' => 'Scheduled Exports' ],
+	[ 'id' => 'markdown-briefs',       'label' => 'Markdown Briefs',       'title' => 'Export individual markdown SEO briefs' ],
+	[ 'id' => 'combined-master-brief', 'label' => 'Combined Master Brief', 'title' => 'Generate a combined master brief for all pages' ],
+	[ 'id' => 'llms-txt-generation',   'label' => 'llms.txt Generation',   'title' => 'Generate llms.txt files for LLM discovery' ],
+	[ 'id' => 'zip-bulk-export',       'label' => 'ZIP Bulk Export',       'title' => 'Bulk export all briefs as a ZIP archive' ],
+	[ 'id' => 'scheduled-exports',     'label' => 'Scheduled Exports',     'title' => 'Set up automated scheduled exports' ],
 ];
 ?>
 

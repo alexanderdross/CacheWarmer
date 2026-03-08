@@ -395,6 +395,12 @@ class CacheWarmer_Admin {
             wp_send_json_error( array( 'message' => $safe->get_error_message() ) );
         }
 
+        // Prevent duplicate sitemap registration.
+        $existing = $this->db->get_sitemap_by_url( $url );
+        if ( $existing ) {
+            wp_send_json_error( array( 'message' => 'This sitemap URL is already registered.' ) );
+        }
+
         $parsed = wp_parse_url( $url );
         $data   = array(
             'id'              => wp_generate_uuid4(),
@@ -428,6 +434,10 @@ class CacheWarmer_Admin {
 
         $targets = array( 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge' );
         $result  = $this->job_manager->create_job( $sitemap->url, $targets, $id );
+
+        if ( isset( $result['status'] ) && 'rejected' === $result['status'] ) {
+            wp_send_json_error( array( 'message' => $result['error'] ) );
+        }
 
         wp_send_json_success( $result );
     }
@@ -465,6 +475,12 @@ class CacheWarmer_Admin {
 
             $safe = $this->validate_safe_url( $url );
             if ( is_wp_error( $safe ) ) {
+                $errors[] = $url;
+                continue;
+            }
+
+            // Skip duplicates.
+            if ( $this->db->get_sitemap_by_url( $url ) ) {
                 $errors[] = $url;
                 continue;
             }

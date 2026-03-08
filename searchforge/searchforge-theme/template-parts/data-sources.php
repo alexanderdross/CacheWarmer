@@ -39,17 +39,17 @@ $sources = [
 				<span class="sf-code-block__dot sf-code-block__dot--red"></span>
 				<span class="sf-code-block__dot sf-code-block__dot--yellow"></span>
 				<span class="sf-code-block__dot sf-code-block__dot--green"></span>
-				<span class="sf-code-block__filename">master-brief-germany.md</span>
+				<span class="sf-code-block__filename">master-brief-organic-coffee.md</span>
 			</div>
-			<pre class="sf-code-block__content"><code># Combined Master Brief: /germany/
+			<pre class="sf-code-block__content"><code># Combined Master Brief: /organic-coffee/
 **Generated:** 2026-03-06 · **Sources:** GSC, Bing, GA4, Trends, KWP
 
 ## Search Performance (GSC + Bing)
-| Query           | Google Pos | Bing Pos | Volume | Trend   |
-|-----------------|-----------|----------|--------|---------|
-| aip germany     | 3.2       | 2.8      | 720    | Stable  |
-| german aip pdf  | 5.1       | 4.3      | 390    | ↑ +12%  |
-| icao germany    | 8.4       | 6.1      | 260    | ↑ +8%   |
+| Query               | Google Pos | Bing Pos | Volume | Trend   |
+|---------------------|-----------|----------|--------|---------|
+| best organic coffee | 3.2       | 2.8      | 1,900  | Stable  |
+| organic coffee beans| 5.1       | 4.3      | 1,200  | ↑ +12%  |
+| fair trade coffee   | 8.4       | 6.1      | 880    | ↑ +8%   |
 
 ## On-Page Behavior (GA4)
 | Metric          | Value  | Benchmark | Signal           |

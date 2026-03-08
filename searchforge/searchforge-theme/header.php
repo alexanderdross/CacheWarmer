@@ -17,7 +17,10 @@
 	<div class="sf-container sf-header__inner">
 		<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="sf-header__logo" aria-label="<?php esc_attr_e( 'SearchForge Home', 'searchforge-theme' ); ?>">
 			<span class="sf-header__logo-icon" aria-hidden="true">SF</span>
-			<span class="sf-header__logo-text"><span class="sf-header__logo-search">Search</span>Forge</span>
+			<span class="sf-header__logo-brand">
+				<span class="sf-header__logo-text"><span class="sf-header__logo-search">Search</span>Forge</span>
+				<span class="sf-header__logo-claim">for WordPress</span>
+			</span>
 		</a>
 
 		<nav class="sf-header__nav" role="navigation" aria-label="<?php esc_attr_e( 'Primary Navigation', 'searchforge-theme' ); ?>">
@@ -64,7 +67,7 @@
  */
 function sf_default_nav(): void {
 	echo '<ul class="sf-nav-list">';
-	echo '<li><a href="#features">Features</a></li>';
+	echo '<li><a href="' . esc_url( home_url( '/#features' ) ) . '">Features</a></li>';
 	echo '<li><a href="/pricing/">Pricing</a></li>';
 	echo '<li><a href="/docs/">Docs</a></li>';
 	echo '<li><a href="/changelog/">Changelog</a></li>';
