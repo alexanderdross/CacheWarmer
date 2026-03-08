@@ -14,6 +14,7 @@ if ( empty( $crumbs ) ) {
 }
 ?>
 <nav class="sf-breadcrumb" aria-label="<?php esc_attr_e( 'Breadcrumb', 'searchforge-theme' ); ?>">
+	<div class="sf-container">
 	<ol class="sf-breadcrumb__list">
 		<?php foreach ( $crumbs as $i => $crumb ) : ?>
 			<li class="sf-breadcrumb__item">
@@ -25,4 +26,5 @@ if ( empty( $crumbs ) ) {
 			</li>
 		<?php endforeach; ?>
 	</ol>
+	</div>
 </nav>

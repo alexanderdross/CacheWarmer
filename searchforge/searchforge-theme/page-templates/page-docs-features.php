@@ -6,11 +6,20 @@
  */
 
 get_header();
+
+$sections = [
+	[ 'id' => 'searchforge-score',        'label' => 'SearchForge Score' ],
+	[ 'id' => 'ai-visibility-monitor',    'label' => 'AI Visibility Monitor' ],
+	[ 'id' => 'competitor-intelligence',   'label' => 'Competitor Intelligence' ],
+	[ 'id' => 'ai-content-briefs',         'label' => 'AI Content Briefs' ],
+	[ 'id' => 'keyword-clustering',        'label' => 'Keyword Clustering' ],
+	[ 'id' => 'cannibalization-detection', 'label' => 'Cannibalization Detection' ],
+	[ 'id' => 'alerts-monitoring',         'label' => 'Alerts & Monitoring' ],
+];
 ?>
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
 	<div class="sf-container" style="text-align: center;">
-		<?php get_template_part( 'template-parts/breadcrumb' ); ?>
 		<h1><span class="sf-gradient-text">Features</span></h1>
 		<p class="sf-text--inverse-muted" style="font-size: 1.25rem; max-width: 640px; margin: var(--space-md) auto 0;">
 			Analysis, intelligence, and monitoring tools that turn raw SEO data into actionable insights.
@@ -19,7 +28,10 @@ get_header();
 </section>
 
 <section class="sf-section">
-	<div class="sf-container sf-container--narrow">
+	<div class="sf-container">
+		<div class="sf-doc-layout">
+			<?php sf_doc_sidebar( $sections ); ?>
+			<div class="sf-doc-content">
 
 		<article class="sf-doc-section" id="searchforge-score">
 			<h2>SearchForge Score</h2>
@@ -130,6 +142,8 @@ get_header();
 			<p>Pro: email alerts. Agency: email + Slack. Enterprise: email + Slack + Discord + webhooks.</p>
 		</article>
 
+			</div>
+		</div>
 	</div>
 </section>
 

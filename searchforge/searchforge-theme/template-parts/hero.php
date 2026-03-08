@@ -12,9 +12,9 @@
 			<h1 class="sf-hero__title">
 				<span class="sf-gradient-text">SEO Data, LLM-Ready.</span>
 			</h1>
-			<p class="sf-hero__subtitle">
-				Turn Search Console, Bing, GA4 &amp; Trends into actionable AI briefs&nbsp;&mdash; directly in WordPress.
-			</p>
+			<div class="sf-hero__highlight">
+				<p>Connects <strong>Google Search Console</strong>, <strong>Bing Webmaster Tools</strong>, <strong>Google Business Profile</strong>, <strong>Bing Places</strong>, <strong>Google Keyword Planner</strong>, <strong>GA4</strong> &amp; <strong>Google Trends</strong> &mdash; continuously collects your SEO data over time and turns it into structured markdown briefs that LLMs can use to (re)design, optimize, and evolve your website in any modern framework. Directly in WordPress.</p>
+			</div>
 			<div class="sf-hero__actions">
 				<a href="/pricing/" class="sf-btn sf-btn--primary sf-btn--lg">Get Started Free</a>
 				<a href="#pricing" class="sf-btn sf-btn--outline sf-btn--lg">View Pricing</a>

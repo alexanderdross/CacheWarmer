@@ -55,7 +55,7 @@ function sf_theme_enqueue_assets(): void {
 	}
 
 	// Scripts.
-	$js_files = [ 'navigation', 'faq', 'pricing', 'animations' ];
+	$js_files = [ 'navigation', 'faq', 'pricing', 'animations', 'doc-nav' ];
 	foreach ( $js_files as $file ) {
 		wp_enqueue_script(
 			"sf-{$file}",
@@ -144,6 +144,23 @@ function sf_get_breadcrumbs(): array {
 	}
 
 	return $crumbs;
+}
+
+/**
+ * Render doc sidebar navigation from section definitions.
+ *
+ * @param array<int, array{id: string, label: string}> $sections Section ID and label pairs.
+ */
+function sf_doc_sidebar( array $sections ): void {
+	echo '<aside class="sf-doc-sidebar"><p class="sf-doc-sidebar__title">On this page</p><ul class="sf-doc-nav">';
+	foreach ( $sections as $section ) {
+		printf(
+			'<li><a class="sf-doc-nav__link" href="#%s">%s</a></li>',
+			esc_attr( $section['id'] ),
+			esc_html( $section['label'] )
+		);
+	}
+	echo '</ul></aside>';
 }
 
 // Load includes.

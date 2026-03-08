@@ -6,11 +6,18 @@
  */
 
 get_header();
+
+$sections = [
+	[ 'id' => 'markdown-briefs',       'label' => 'Markdown Briefs' ],
+	[ 'id' => 'combined-master-brief', 'label' => 'Combined Master Brief' ],
+	[ 'id' => 'llms-txt-generation',   'label' => 'llms.txt Generation' ],
+	[ 'id' => 'zip-bulk-export',       'label' => 'ZIP Bulk Export' ],
+	[ 'id' => 'scheduled-exports',     'label' => 'Scheduled Exports' ],
+];
 ?>
 
 <section class="sf-section sf-section--dark sf-hero" style="padding: var(--space-3xl) 0;">
 	<div class="sf-container" style="text-align: center;">
-		<?php get_template_part( 'template-parts/breadcrumb' ); ?>
 		<h1><span class="sf-gradient-text">Export &amp; Output</span></h1>
 		<p class="sf-text--inverse-muted" style="font-size: 1.25rem; max-width: 640px; margin: var(--space-md) auto 0;">
 			Export SEO data as LLM-ready markdown briefs, llms.txt files, bulk ZIPs, and scheduled reports.
@@ -19,7 +26,10 @@ get_header();
 </section>
 
 <section class="sf-section">
-	<div class="sf-container sf-container--narrow">
+	<div class="sf-container">
+		<div class="sf-doc-layout">
+			<?php sf_doc_sidebar( $sections ); ?>
+			<div class="sf-doc-content">
 
 		<article class="sf-doc-section" id="markdown-briefs">
 			<h2>Markdown Briefs</h2>
@@ -96,6 +106,8 @@ get_header();
 			<p>Available on Agency and Enterprise tiers.</p>
 		</article>
 
+			</div>
+		</div>
 	</div>
 </section>
 

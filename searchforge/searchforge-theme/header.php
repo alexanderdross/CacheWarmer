@@ -54,6 +54,8 @@
 	</div>
 </header>
 
+<?php get_template_part( 'template-parts/breadcrumb' ); ?>
+
 <main id="main-content" role="main">
 <?php
 
