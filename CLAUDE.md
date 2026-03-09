@@ -21,16 +21,16 @@ This monorepo contains **5 components**:
 | 2 | **CacheWarmer WordPress Plugin** | `wordpress-plugin/cachewarmer/` | PHP 8.0+, WordPress 6.0+ | v1.1.0 |
 | 3 | **CacheWarmer Drupal Module** | `drupal-module/cachewarmer/` | PHP 8.1+, Drupal 10/11 | v1.1.0 |
 | 4 | **CacheWarmer Node.js / Docker Module** | `src/`, `Dockerfile`, `docker-compose.yml` | Next.js 16, TypeScript, React 19, Tailwind CSS 4 | v1.1.0 |
-| 5 | **License Management** (embedded in theme) | `theme/wp-content/themes/cachewarmer/functions.php` | PHP, Stripe Webhooks, WordPress DB | Implemented |
+| 5 | **License Manager Plugin** | `cachewarmer-license-manager/` | PHP 8.0+, WordPress 6.0+, Stripe | v1.0.0 |
 
-> **Note on License Manager Plugin:** The `LASTENHEFT-LICENSE-DASHBOARD.md` specifies a standalone WordPress plugin called `cachewarmer-license-manager` (with `cwlm/v1` API namespace, 7 MySQL tables, Stripe integration, Admin UI). However, **this plugin does NOT exist as a separate directory in the repo.** The `.gitignore` explicitly excludes `/cachewarmer-license-manager/` as "legacy." License management is currently embedded in the WordPress theme's `functions.php` (Stripe checkout + webhook handling + license key generation + `wp_cwlm_licenses` table). The license *validation* logic lives inside each platform module (WordPress plugin's `class-cachewarmer-license.php`, Drupal module's `CacheWarmerLicense.php`).
+> **License Management Architecture:** The standalone `cachewarmer-license-manager` WordPress plugin (`cwlm/v1` API namespace, 6 MySQL tables, Stripe integration, Admin UI) handles all license CRUD, activation/deactivation, heartbeat checks, and Stripe webhooks. The theme's `functions.php` provides a lightweight Stripe Checkout integration for the pricing page. License *validation* logic lives inside each platform module (WordPress plugin's `class-cachewarmer-license.php`, Drupal module's `CacheWarmerLicense.php`).
 
 ---
 
 ## 1. WordPress Theme (Marketing Website)
 
 **Path:** `theme/wp-content/themes/cachewarmer/`
-**Also bundled as:** `theme/cachewarmer-theme.zip` and `theme/cachewarmer/` (flat copy with marketing assets)
+**Also bundled as:** `theme/cachewarmer-theme.zip`
 
 ### Purpose
 Marketing/sales website for cachewarmer.drossmedia.de with integrated Stripe payment processing and license key generation.
@@ -71,9 +71,6 @@ Marketing/sales website for cachewarmer.drossmedia.de with integrated Stripe pay
 - `assets/js/main.js` — Client-side JavaScript
 - `assets/fonts/` — Self-hosted WOFF2 fonts
 - `assets/images/` — Favicons, logos, OG images
-
-### Marketing Assets (flat copy)
-`theme/cachewarmer/` contains additional marketing images used across the website: feature illustrations, platform screenshots, hero images, pricing tier graphics, step-by-step flow diagrams, and a custom `sitemap.xml`.
 
 ---
 
@@ -373,19 +370,55 @@ tests/
 
 ---
 
-## 5. License Management (Embedded in Theme)
+## 5. License Manager Plugin
 
-License management is handled within the WordPress theme (`functions.php`) rather than as a standalone plugin. The `LASTENHEFT-LICENSE-DASHBOARD.md` specification describes a full WordPress plugin (`cachewarmer-license-manager` with `cwlm/v1` API namespace, 7 MySQL tables, Stripe webhooks, Admin UI), but **that plugin does not exist as separate code in this repo.** The `.gitignore` explicitly lists `/cachewarmer-license-manager/` as a legacy exclusion.
+**Path:** `cachewarmer-license-manager/`
+**Version:** 1.0.0
+**Requires:** WordPress 6.0+, PHP 8.0+
 
-### Current Implementation
-- **Stripe Checkout** sessions created via AJAX
-- **Webhook handling** for payment events (completed, subscription deleted, refunded, disputed)
-- **License key generation** with automatic email delivery
-- **Database table:** `wp_cwlm_licenses`
+### Architecture
+Standalone WordPress plugin with `cwlm/v1` REST API namespace. Handles license CRUD, installation tracking, Stripe webhooks, and admin dashboard.
 
-### License Validation (in WordPress Plugin + Drupal Module)
-- **Key format:** `CW-{TIER}-{HEX16}` (e.g., `CW-PRO-A1B2C3D4E5F6G7H8`)
-- **Validation method:** HMAC-SHA256 signature verification
+### Key Files
+| File | Purpose |
+|------|---------|
+| `cachewarmer-license-manager.php` | Plugin entry point, main class |
+| `includes/class-cwlm-license-manager.php` | License CRUD, validation, listing |
+| `includes/class-cwlm-activator.php` | DB table creation (6 tables) |
+| `includes/class-cwlm-installation-tracker.php` | Site activation/deactivation tracking |
+| `includes/class-cwlm-feature-flags.php` | Tier-based feature gating |
+| `includes/class-cwlm-jwt-handler.php` | JWT token generation/validation |
+| `includes/class-cwlm-audit-logger.php` | Audit logging |
+| `includes/class-cwlm-geoip.php` | GeoIP data for installations |
+| `includes/class-cwlm-email.php` | License email notifications |
+| `api/class-cwlm-rest-controller.php` | Base REST controller |
+| `api/class-cwlm-validate-endpoint.php` | POST /validate |
+| `api/class-cwlm-activate-endpoint.php` | POST /activate |
+| `api/class-cwlm-deactivate-endpoint.php` | POST /deactivate |
+| `api/class-cwlm-check-endpoint.php` | POST /check (24h heartbeat) |
+| `api/class-cwlm-stripe-webhook.php` | POST /stripe/webhook |
+| `admin/class-cwlm-admin.php` | Admin menu, pages, assets |
+
+### Database Tables (6, prefix: `cwlm_`)
+1. **cwlm_licenses** — License keys, customer data, tier, status, Stripe IDs
+2. **cwlm_installations** — Active installations per license (fingerprint, domain, platform)
+3. **cwlm_geo_data** — GeoIP data per installation
+4. **cwlm_audit_logs** — All actions logged with actor, IP, details
+5. **cwlm_stripe_events** — Idempotent Stripe webhook event log
+6. **cwlm_stripe_product_map** — Maps Stripe products to tiers/plans
+
+### REST API (namespace: `cwlm/v1`)
+| Method | Route | Purpose |
+|--------|-------|---------|
+| POST | `/validate` | Validate license key without activation |
+| POST | `/activate` | Register installation, get JWT token |
+| POST | `/deactivate` | Release installation slot |
+| POST | `/check` | 24h heartbeat, refresh JWT + features |
+| POST | `/stripe/webhook` | Stripe payment event handler |
+| GET | `/health` | Health check |
+
+### License Key Format
+- **Format:** `CW-{TIER}-{16 Hex chars}` (e.g., `CW-PRO-A1B2C3D4E5F6G7H8`)
 - **Tiers:**
   - **Free** — No key required. CDN + IndexNow only. 50 URLs/job, 2 sitemaps, 3 jobs/day.
   - **Premium** — All social + search engine targets. 10,000 URLs/job, 25 sitemaps, 50 jobs/day.
@@ -502,7 +535,6 @@ Setup guide: `docs/API_KEYS_SETUP.md`
 | `Drupal.md` | Drupal module architecture & documentation |
 | `WEBSITE.md` | Website IA, content strategy, design system for cachewarmer.drossmedia.de |
 | `PRICING-TIERS.md` | Detailed tier definitions, feature matrices, pricing recommendations |
-| `LASTENHEFT-LICENSE-DASHBOARD.md` | Formal specification for License Management Dashboard (describes standalone WP plugin — not yet implemented as separate code) |
 | `docs/API_KEYS_SETUP.md` | Step-by-step credential setup for all services |
 | `wordpress-plugin/CHANGELOG.md` | WordPress plugin version history |
 

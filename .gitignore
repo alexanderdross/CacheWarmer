@@ -42,5 +42,5 @@ next-env.d.ts
 config.local.yaml
 /dist/
 
-# vendor dependencies (installed via composer)
+# composer vendor (license manager plugin)
 /cachewarmer-license-manager/vendor/
