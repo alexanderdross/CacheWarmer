@@ -1,5 +1,5 @@
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,7 +9,7 @@
 !.yarn/versions
 
 # next.js
-/.next/
+.next/
 /out/
 
 # production
@@ -41,6 +41,9 @@ next-env.d.ts
 /credentials/
 config.local.yaml
 /dist/
+
+# distribution zips (build artifacts, not tracked)
+*.zip
 
 # composer vendor (license manager plugin)
 /cachewarmer-license-manager/vendor/

@@ -20,7 +20,7 @@ This monorepo contains **5 components**:
 | 1 | **WordPress Theme** (marketing website) | `theme/wp-content/themes/cachewarmer/` | PHP, WordPress, Stripe | v2.4.0 |
 | 2 | **CacheWarmer WordPress Plugin** | `wordpress-plugin/cachewarmer/` | PHP 8.0+, WordPress 6.0+ | v1.1.0 |
 | 3 | **CacheWarmer Drupal Module** | `drupal-module/cachewarmer/` | PHP 8.1+, Drupal 10/11 | v1.1.0 |
-| 4 | **CacheWarmer Node.js / Docker Module** | `src/`, `Dockerfile`, `docker-compose.yml` | Next.js 16, TypeScript, React 19, Tailwind CSS 4 | v1.1.0 |
+| 4 | **CacheWarmer Node.js / Docker Module** | `nodejs-docker/` | Next.js 16, TypeScript, React 19, Tailwind CSS 4 | v1.1.0 |
 | 5 | **License Manager Plugin** | `cachewarmer-license-manager/` | PHP 8.0+, WordPress 6.0+, Stripe | v1.0.0 |
 
 > **License Management Architecture:** The standalone `cachewarmer-license-manager` WordPress plugin (`cwlm/v1` API namespace, 6 MySQL tables, Stripe integration, Admin UI) handles all license CRUD, activation/deactivation, heartbeat checks, and Stripe webhooks. The theme's `functions.php` provides a lightweight Stripe Checkout integration for the pricing page. License *validation* logic lives inside each platform module (WordPress plugin's `class-cachewarmer-license.php`, Drupal module's `CacheWarmerLicense.php`).
@@ -30,7 +30,7 @@ This monorepo contains **5 components**:
 ## 1. WordPress Theme (Marketing Website)
 
 **Path:** `theme/wp-content/themes/cachewarmer/`
-**Also bundled as:** `theme/cachewarmer-theme.zip`
+**Website concept & IA:** `theme/WEBSITE.md`
 
 ### Purpose
 Marketing/sales website for cachewarmer.drossmedia.de with integrated Stripe payment processing and license key generation.
@@ -233,7 +233,7 @@ drupal-module/cachewarmer/
 
 ## 4. CacheWarmer Node.js / Docker Module
 
-**Path:** `src/` (root-level), `Dockerfile`, `docker-compose.yml`, `config.yaml`
+**Path:** `nodejs-docker/`
 **Version:** 1.1.0
 **Framework:** Next.js 16 (App Router) with React 19
 **Runtime:** Node.js 20+
@@ -258,7 +258,7 @@ drupal-module/cachewarmer/
 
 ### Source Structure
 ```
-src/
+nodejs-docker/src/
 ├── app/
 │   ├── layout.tsx              # Root layout
 │   ├── page.tsx                # Dashboard page (home)
@@ -315,7 +315,7 @@ src/
 ```
 
 ### Configuration
-Central config via `config.yaml` in project root. Supports all warming services, Redis connection, SQLite path, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
+Central config via `nodejs-docker/config.yaml`. Supports all warming services, Redis connection, SQLite path, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
 
 ### Docker Deployment
 - **Dockerfile:** Multi-stage build (Node.js 20-slim + Chromium), runs as non-root `nextjs` user
@@ -323,7 +323,7 @@ Central config via `config.yaml` in project root. Supports all warming services,
 
 ### Testing
 ```
-tests/
+nodejs-docker/tests/
 ├── setup.ts                            # Global test setup
 ├── helpers.ts                          # Test utilities
 ├── unit/
@@ -531,9 +531,9 @@ Setup guide: `docs/API_KEYS_SETUP.md`
 | File | Content |
 |------|---------|
 | `CLAUDE.md` | This file — repository knowledge base |
-| `WP.md` | WordPress plugin architecture & documentation |
-| `Drupal.md` | Drupal module architecture & documentation |
-| `WEBSITE.md` | Website IA, content strategy, design system for cachewarmer.drossmedia.de |
+| `wordpress-plugin/WP.md` | WordPress plugin architecture & documentation |
+| `drupal-module/Drupal.md` | Drupal module architecture & documentation |
+| `theme/WEBSITE.md` | Website IA, content strategy, design system for cachewarmer.drossmedia.de |
 | `PRICING-TIERS.md` | Detailed tier definitions, feature matrices, pricing recommendations |
 | `docs/API_KEYS_SETUP.md` | Step-by-step credential setup for all services |
 | `wordpress-plugin/CHANGELOG.md` | WordPress plugin version history |
@@ -548,7 +548,7 @@ Setup guide: `docs/API_KEYS_SETUP.md`
 - Redis (for BullMQ job queue)
 - Chromium (for Puppeteer CDN warming)
 
-### Commands
+### Commands (run from `nodejs-docker/`)
 ```bash
 pnpm install          # Install dependencies
 pnpm dev              # Start Next.js dev server
@@ -562,13 +562,13 @@ pnpm test:coverage    # Tests with coverage
 pnpm lint             # ESLint
 ```
 
-### Docker
+### Docker (from `nodejs-docker/`)
 ```bash
 docker compose up -d  # Start CacheWarmer + Redis
 ```
 
 ### Configuration
-Copy and edit `config.yaml` for service credentials. For local overrides, use `config.local.yaml` (gitignored).
+Copy and edit `nodejs-docker/config.yaml` for service credentials. For local overrides, use `config.local.yaml` (gitignored).
 
 ### Key Design Principles
 - **Rate-limiting is critical:** All external APIs have limits. Every worker must respect them.
@@ -580,4 +580,4 @@ Copy and edit `config.yaml` for service credentials. For local overrides, use `c
 ---
 
 ## .gitignore Summary
-Ignored: `node_modules/`, `.next/`, `data/`, `credentials/`, `.env*`, `config.local.yaml`, `dist/`, `cachewarmer-license-manager/` (legacy)
+Ignored: `node_modules/`, `.next/`, `data/`, `credentials/`, `.env*`, `config.local.yaml`, `dist/`, `*.zip` (build artifacts), `cachewarmer-license-manager/vendor/`
