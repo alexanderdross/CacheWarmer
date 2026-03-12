@@ -80,7 +80,7 @@ function cachewarmer_icon($name, $class = '', $size = 24) {
 
     $class_attr = $class ? ' class="icon ' . esc_attr($class) . '"' : ' class="icon"';
 
-    // SVG paths are hardcoded above — safe to output with targeted wp_kses
+    // SVG paths are hardcoded above - safe to output with targeted wp_kses
     $svg_kses = [
         'path'     => ['d' => [], 'fill' => [], 'stroke' => [], 'stroke-linejoin' => [], 'stroke-none' => []],
         'polygon'  => ['points' => []],

@@ -158,7 +158,7 @@ add_filter('use_block_editor_for_post', '__return_false');
 // Remove admin bar on frontend
 add_filter('show_admin_bar', '__return_false');
 
-// Add Schema.org JSON-LD to head — single @graph block, no redundant schemas
+// Add Schema.org JSON-LD to head - single @graph block, no redundant schemas
 add_action('wp_head', function () {
     $site_url  = home_url('/');
     $site_name = 'CacheWarmer';
@@ -227,7 +227,7 @@ add_action('wp_head', function () {
         'publisher' => ['@id' => $org_id],
     ];
 
-    // --- 3. SoftwareApplication (merges former Product — carries brand, offers, aggregateRating, category) ---
+    // --- 3. SoftwareApplication (merges former Product - carries brand, offers, aggregateRating, category) ---
     $graph[] = [
         '@type'               => 'SoftwareApplication',
         '@id'                 => $product_id,
@@ -321,7 +321,7 @@ add_action('wp_head', function () {
     ];
     $graph[] = $webpage;
 
-    // --- 5. Article (homepage — "What Is Cache Warming?" highlight section) ---
+    // --- 5. Article (homepage - "What Is Cache Warming?" highlight section) ---
     if ($slug === 'home') {
         $graph[] = [
             '@type'         => 'Article',
@@ -700,7 +700,7 @@ function cwlm_handle_stripe_webhook(WP_REST_Request $request) {
         return new WP_REST_Response(['error' => 'Invalid event payload.'], 400);
     }
 
-    // Ensure idempotency — skip already-processed events
+    // Ensure idempotency - skip already-processed events
     $event_id = isset($event['id']) ? sanitize_text_field($event['id']) : '';
     if ($event_id && get_transient('cwlm_event_' . $event_id)) {
         return new WP_REST_Response(['received' => true], 200);
@@ -787,7 +787,7 @@ function cwlm_generate_license_key($tier) {
 }
 
 /**
- * Handle checkout.session.completed — generate license and email it.
+ * Handle checkout.session.completed - generate license and email it.
  */
 function cwlm_handle_checkout_completed($session) {
     global $wpdb;
@@ -838,7 +838,7 @@ function cwlm_handle_checkout_completed($session) {
 
     // Send license email
     $plan_label = ucfirst($plan);
-    $subject    = "Your CacheWarmer License Key — {$plan_label}";
+    $subject    = "Your CacheWarmer License Key - {$plan_label}";
     $message    = "Hello {$customer_name},\n\n";
     $message   .= "Thank you for purchasing CacheWarmer {$plan_label}!\n\n";
     $message   .= "Your License Key:\n";
@@ -862,7 +862,7 @@ function cwlm_handle_checkout_completed($session) {
 }
 
 /**
- * Handle invoice.payment_succeeded — extend license expiry.
+ * Handle invoice.payment_succeeded - extend license expiry.
  */
 function cwlm_handle_payment_succeeded($invoice) {
     global $wpdb;
@@ -879,7 +879,7 @@ function cwlm_handle_payment_succeeded($invoice) {
 }
 
 /**
- * Handle customer.subscription.deleted — expire license.
+ * Handle customer.subscription.deleted - expire license.
  */
 function cwlm_handle_subscription_deleted($subscription) {
     global $wpdb;
@@ -896,7 +896,7 @@ function cwlm_handle_subscription_deleted($subscription) {
 }
 
 /**
- * Handle charge.refunded / charge.dispute.created — revoke license.
+ * Handle charge.refunded / charge.dispute.created - revoke license.
  */
 function cwlm_handle_charge_revoked($charge) {
     global $wpdb;

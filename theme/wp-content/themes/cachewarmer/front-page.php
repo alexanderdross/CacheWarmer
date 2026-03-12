@@ -23,7 +23,7 @@ get_header();
     </div>
 </section>
 
-<!-- What Is Cache Warming — Beginner's Guide -->
+<!-- What Is Cache Warming - Beginner's Guide -->
 <section class="section section-white" id="what-is-cache-warming">
     <div class="container">
         <div class="section-header">
@@ -37,8 +37,8 @@ get_header();
                 <div class="article-analogy-icon"><?php cachewarmer_icon('zap', '', 28); ?></div>
                 <div class="article-analogy-content">
                     <h3>Think of your website like a restaurant kitchen</h3>
-                    <p>Imagine a restaurant that only starts cooking after a customer sits down. The first guest waits 20 minutes for their meal, even though every guest after that gets served in 5. That first experience is terrible — and many customers leave before the food arrives.</p>
-                    <p>Your website works the same way. When someone visits a page for the first time, the server has to build that page from scratch — pulling content from databases, assembling templates, loading images. This takes time. <strong>Cache warming is like prepping meals before the restaurant opens</strong> so every guest is served instantly.</p>
+                    <p>Imagine a restaurant that only starts cooking after a customer sits down. The first guest waits 20 minutes for their meal, even though every guest after that gets served in 5. That first experience is terrible - and many customers leave before the food arrives.</p>
+                    <p>Your website works the same way. When someone visits a page for the first time, the server has to build that page from scratch - pulling content from databases, assembling templates, loading images. This takes time. <strong>Cache warming is like prepping meals before the restaurant opens</strong> so every guest is served instantly.</p>
                 </div>
             </div>
 
@@ -61,7 +61,7 @@ get_header();
                 <div class="card">
                     <div class="card-icon"><?php cachewarmer_icon('link'); ?></div>
                     <h4 class="card-title">Social Links That Look Right</h4>
-                    <p class="card-description">When you share a link on Facebook, LinkedIn, or Twitter, the preview shows the correct title, image, and description — not outdated or blank content.</p>
+                    <p class="card-description">When you share a link on Facebook, LinkedIn, or Twitter, the preview shows the correct title, image, and description - not outdated or blank content.</p>
                 </div>
                 <div class="card">
                     <div class="card-icon"><?php cachewarmer_icon('search'); ?></div>
@@ -71,7 +71,7 @@ get_header();
             </div>
 
             <h3>What exactly happens without cache warming?</h3>
-            <p>Without cache warming, several things go wrong — usually without you noticing:</p>
+            <p>Without cache warming, several things go wrong - usually without you noticing:</p>
 
             <div class="article-list">
                 <div class="article-list-item">
@@ -101,31 +101,31 @@ get_header();
             </div>
 
             <h3>How CacheWarmer solves this automatically</h3>
-            <p>CacheWarmer reads your website's sitemap — the list of all your pages — and takes care of everything in the background:</p>
+            <p>CacheWarmer reads your website's sitemap - the list of all your pages - and takes care of everything in the background:</p>
 
             <div class="article-steps">
                 <div class="article-step">
                     <div class="article-step-icon"><?php cachewarmer_icon('globe', '', 20); ?></div>
                     <div>
-                        <strong>Warms your CDN and server caches</strong> — visits every page so the cached version is ready before a real visitor arrives.
+                        <strong>Warms your CDN and server caches</strong> - visits every page so the cached version is ready before a real visitor arrives.
                     </div>
                 </div>
                 <div class="article-step">
                     <div class="article-step-icon"><?php cachewarmer_icon('facebook', '', 20); ?></div>
                     <div>
-                        <strong>Refreshes social media previews</strong> — tells Facebook, LinkedIn, Twitter/X, and Pinterest to fetch the latest title, description, and image for every page.
+                        <strong>Refreshes social media previews</strong> - tells Facebook, LinkedIn, Twitter/X, and Pinterest to fetch the latest title, description, and image for every page.
                     </div>
                 </div>
                 <div class="article-step">
                     <div class="article-step-icon"><?php cachewarmer_icon('send', '', 20); ?></div>
                     <div>
-                        <strong>Notifies search engines</strong> — pings Google, Bing, and other search engines immediately so your new and updated content appears in search results faster.
+                        <strong>Notifies search engines</strong> - pings Google, Bing, and other search engines immediately so your new and updated content appears in search results faster.
                     </div>
                 </div>
                 <div class="article-step">
                     <div class="article-step-icon"><?php cachewarmer_icon('refresh', '', 20); ?></div>
                     <div>
-                        <strong>Runs on autopilot</strong> — set it up once and it runs on a schedule. No manual work, no pages to visit, no tools to open.
+                        <strong>Runs on autopilot</strong> - set it up once and it runs on a schedule. No manual work, no pages to visit, no tools to open.
                     </div>
                 </div>
             </div>
@@ -135,13 +135,13 @@ get_header();
             <ol>
                 <li>Install the plugin or module on your website</li>
                 <li>CacheWarmer automatically detects your sitemap</li>
-                <li>Click "Warm Now" or set up a schedule — done</li>
+                <li>Click "Warm Now" or set up a schedule - done</li>
             </ol>
             <p>For the free plan, that is literally all you need. Premium features like social media refreshing and search engine notification require a few API keys, but we provide <a href="<?php echo esc_url(home_url('/api-keys/')); ?>" title="CacheWarmer API Keys Setup Guide">step-by-step guides with screenshots</a> for each one.</p>
 
             <div class="article-cta">
                 <h3>Ready to speed up your website?</h3>
-                <p>Start with the free plan — no credit card required. Upgrade to Premium when you want social media and search engine integrations.</p>
+                <p>Start with the free plan - no credit card required. Upgrade to Premium when you want social media and search engine integrations.</p>
                 <div class="hero-buttons">
                     <a href="<?php echo esc_url(home_url('/docs/')); ?>" class="btn btn-primary btn-lg" title="Get Started with CacheWarmer - Quick Setup Guide">
                         <?php cachewarmer_icon('book', '', 20); ?> Get Started Free

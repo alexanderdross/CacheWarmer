@@ -1195,7 +1195,7 @@ pre code {
 }
 
 
-/* Breadcrumb — horizontal, scrollable */
+/* Breadcrumb - horizontal, scrollable */
 nav[aria-label="breadcrumb"] {
     padding-top: calc(var(--header-height) + 0.5rem);
     background: var(--color-background);
