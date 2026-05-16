@@ -13,6 +13,8 @@ import { warmPinterest } from "@/lib/services/pinterest-warmer";
 import { purgeCdnCache } from "@/lib/services/cdn-purge-warm";
 import { sendWebhook } from "@/lib/services/webhooks";
 import { sendJobCompletedEmail } from "@/lib/services/email-notifications";
+import { SchemaValidatorQueue, isSchemaValidationEnabled } from "@/lib/services/schema-validator";
+import { GitHubIssueReporter } from "@/lib/services/github-issue-reporter";
 import logger from "@/lib/logger";
 
 export type WarmTarget = "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow" | "pinterest" | "cdn-purge";
@@ -168,9 +170,15 @@ export async function processJob(jobId: string): Promise<void> {
     let processed = 0;
 
     // CDN Warming
+    const schemaQueue = isSchemaValidationEnabled() ? new SchemaValidatorQueue() : null;
     if (targets.includes("cdn")) {
       logger.info({ jobId, urlCount: urls.length }, "Starting CDN warming");
       await warmUrls(urls, (result) => {
+        if (schemaQueue && result.__html && result.status === "success") {
+          schemaQueue.enqueue({ jobId, url: result.url, html: result.__html });
+        }
+        // Drop transient HTML before persisting; we never store it.
+        result.__html = undefined;
         saveUrlResult(
           jobId, result.url, "cdn", result.status, result.httpStatus,
           result.durationMs, result.error, result.viewport, result.cacheHeaders
@@ -179,6 +187,13 @@ export async function processJob(jobId: string): Promise<void> {
         updateJobProgress(jobId, processed);
       });
       await closeBrowser();
+
+      if (schemaQueue) {
+        const outcomes = await schemaQueue.drain();
+        logger.info({ jobId, count: outcomes.length }, "Schema validation drained");
+        const reporter = new GitHubIssueReporter();
+        await reporter.flush(outcomes);
+      }
     }
 
     // Facebook
