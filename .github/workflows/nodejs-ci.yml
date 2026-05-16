@@ -1,0 +1,49 @@
+name: Node.js CI
+
+on:
+  pull_request:
+    paths:
+      - "nodejs-docker/**"
+      - ".github/workflows/nodejs-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "nodejs-docker/**"
+      - ".github/workflows/nodejs-ci.yml"
+
+defaults:
+  run:
+    working-directory: nodejs-docker
+
+jobs:
+  typecheck:
+    name: Typecheck (tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: npx tsc --noEmit
+
+  test:
+    name: Test (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
