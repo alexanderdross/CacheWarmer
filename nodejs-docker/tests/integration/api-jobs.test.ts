@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 
 let testDb: Database.Database;
 
-vi.mock("@/lib/db/database", () => ({ getDb: () => testDb, closeDb: vi.fn() }));
+vi.mock("@/lib/db/database", () => ({ getDb: () => testDb, closeDb: vi.fn(), getActiveJobForSitemapUrl: vi.fn().mockReturnValue(null), normalizeUrl: (u: string) => u }));
 vi.mock("@/lib/config", async () => {
   const helpers = await import("../helpers");
   return { getConfig: () => helpers.testConfig, loadConfig: () => helpers.testConfig };
