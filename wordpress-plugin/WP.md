@@ -1,6 +1,6 @@
 # CacheWarmer WordPress Plugin
 
-WordPress plugin version of the CacheWarmer microservice. Provides the same cache warming and search engine indexing functionality as the standalone Node.js application, but runs natively within WordPress.
+WordPress plugin version of the CacheWarmer microservice. Provides the same structured data validation, cache warming, and search engine indexing functionality as the standalone Node.js application, but runs natively within WordPress.
 
 ---
 
@@ -132,7 +132,7 @@ The plugin creates three custom tables using `dbDelta()`:
 | id | VARCHAR(36) PK | UUID |
 | job_id | VARCHAR(36) FK | Parent job |
 | url | TEXT | Warmed URL |
-| target | VARCHAR(50) | cdn/facebook/linkedin/twitter/google/bing/indexnow/cdn-purge:cloudflare/cdn-purge:imperva/cdn-purge:akamai |
+| target | VARCHAR(50) | schema/cdn/facebook/linkedin/twitter/google/bing/indexnow/cdn-purge:cloudflare/cdn-purge:imperva/cdn-purge:akamai |
 | status | VARCHAR(20) | success/failed/skipped/pending |
 | http_status | INT | HTTP response code |
 | duration_ms | INT | Request duration |

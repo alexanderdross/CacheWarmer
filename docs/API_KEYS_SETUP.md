@@ -2,6 +2,7 @@
 
 ## Inhaltsverzeichnis
 
+0. [Schema Validation (keine Credentials nötig)](#0-schema-validation)
 1. [Facebook App ID & App Secret](#1-facebook-app-id--app-secret)
 2. [LinkedIn Session Cookie](#2-linkedin-session-cookie)
 3. [Google Service Account (Indexing API)](#3-google-service-account-indexing-api)
@@ -10,6 +11,30 @@
 6. [Cloudflare API Token (Enterprise)](#6-cloudflare-api-token-enterprise)
 7. [Imperva API Credentials (Enterprise)](#7-imperva-api-credentials-enterprise)
 8. [Akamai EdgeGrid Credentials (Enterprise)](#8-akamai-edgegrid-credentials-enterprise)
+
+---
+
+## 0. Schema Validation
+
+Die Schema-Validierung validiert strukturierte Daten (JSON-LD, Microdata, RDFa) auf jeder Seite lokal — **keine externen API-Keys oder Credentials erforderlich**.
+
+### Konfiguration
+
+Die Schema-Validierung wird in der `config.yaml` aktiviert:
+
+```yaml
+schemaValidation:
+  enabled: true
+  concurrency: 2
+  timeout: 15000
+  delayBetweenRequests: 1000
+```
+
+### Hinweise
+- Die Validierung läuft lokal über das `structured-data-testing-tool` NPM-Paket
+- Keine Quota-Limits oder Rate-Limiting durch externe Dienste
+- Erkennt alle Google-unterstützten Schema-Typen (Article, Product, Organization, etc.)
+- Läuft als **erster Schritt** im Warming-Pipeline (vor CDN, Social, Search)
 
 ---
 

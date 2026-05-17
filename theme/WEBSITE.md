@@ -442,7 +442,7 @@ A: CacheWarmer stores job and URL result data locally in your own database. No d
 ### Sektion 1: Hero
 
 **Headline:** CacheWarmer for WordPress
-**Subheadline:** Warm all 7 cache layers directly from your WordPress admin dashboard. Free plugin with one-click installation from wordpress.org.
+**Subheadline:** Validate structured data and warm all cache layers directly from your WordPress admin dashboard. Free plugin with one-click installation from wordpress.org.
 
 **CTAs:**
 - `[Download from wordpress.org]` (primary)
@@ -654,8 +654,9 @@ curl -X POST http://localhost:3000/api/warm \
 │                                                                  │
 │  REST API ──→ BullMQ Job Queue (Redis) ──→ Workers              │
 │  POST /warm    │                            │                    │
-│  GET  /jobs    ├─ CDN Worker (Puppeteer)    ├─ Desktop + Mobile │
-│  GET  /status  ├─ Social Worker (FB/LI/X)   ├─ Graph API        │
+│  GET  /jobs    ├─ Schema Worker (Validator)  ├─ JSON-LD/RDFa     │
+│  GET  /status  ├─ CDN Worker (Puppeteer)    ├─ Desktop + Mobile │
+│                ├─ Social Worker (FB/LI/X)   ├─ Graph API        │
 │                └─ Search Worker (Google/Bing)└─ Indexing API     │
 │                                                                  │
 │  SQLite DB ←── Status Tracking & Logging                        │
@@ -731,9 +732,10 @@ Deploy your own CacheWarmer instance.
 │  forever           │  │  €99/yr (WordPress)    │  │                        │
 │                    │  │  €129/yr (Drupal)      │  │  Unlimited sites       │
 │                    │  │                        │  │                        │
-│  2 warming targets │  │  All 9 targets         │  │  All 9 targets         │
-│  · CDN Edge Cache  │  │  · CDN Edge Cache      │  │  · Everything in       │
-│  · IndexNow        │  │  · IndexNow            │  │    Premium, plus:      │
+│  2 warming targets │  │  All 12 targets        │  │  All 12 targets        │
+│  · CDN Edge Cache  │  │  · Schema Validation   │  │  · Everything in       │
+│  · IndexNow        │  │  · CDN Edge Cache      │  │    Premium, plus:      │
+│                    │  │  · IndexNow            │  │                        │
 │                    │  │  · Facebook Debugger   │  │                        │
 │  50 URLs per job   │  │  · LinkedIn Inspector  │  │  Unlimited URLs        │
 │  2 sitemaps        │  │  · Twitter/X Cards     │  │  Unlimited sitemaps    │
@@ -785,6 +787,7 @@ Also available:
 
 | Feature | Free | Premium | Enterprise |
 |---------|:----:|:-------:|:----------:|
+| **Schema Validation** (JSON-LD, Microdata, RDFa) | — | ✓ | ✓ |
 | CDN Edge Cache (Desktop + Mobile) | ✓ | ✓ | ✓ |
 | IndexNow (Bing, Yandex, Seznam, Naver) | ✓ | ✓ | ✓ |
 | Facebook Sharing Debugger | — | ✓ | ✓ |
@@ -1022,8 +1025,8 @@ Let's find the right plan for your team.
 ## 10. /features/ — Alle Features
 
 **URL:** `https://cachewarmer.drossmedia.de/features/`
-**Title:** `CacheWarmer Features — CDN, Facebook, LinkedIn, Twitter, Google, Bing, IndexNow, Pinterest & CDN Purge`
-**Description:** `Complete feature overview of CacheWarmer. 12 warming targets incl. direct CDN cache purge via Cloudflare, Imperva & Akamai. Scheduled automation, REST API, multi-sitemap support, and a real-time dashboard.`
+**Title:** `CacheWarmer Features — Schema Validation, CDN, Facebook, LinkedIn, Twitter, Google, Bing, IndexNow, Pinterest & CDN Purge`
+**Description:** `Complete feature overview of CacheWarmer. 12 warming targets incl. Google structured data validation, direct CDN cache purge via Cloudflare, Imperva & Akamai. Scheduled automation, REST API, multi-sitemap support, and a real-time dashboard.`
 
 ---
 
@@ -1035,6 +1038,15 @@ Let's find the right plan for your team.
 ---
 
 ### Sektion 2: Feature Blocks (eines pro Target)
+
+#### Schema Validation (NEW)
+- Validates structured data (JSON-LD, Microdata, RDFa) on every page before warming
+- Detects all Google-supported schema types (Article, Product, Organization, etc.)
+- Reports errors and warnings per URL with severity levels
+- Runs as the first phase of job processing (pre-flight quality check)
+- Exportable schema report (CSV/JSON) with filtering by status
+- No external API key required (uses local validation)
+- **Available in:** Premium, Enterprise
 
 #### CDN Edge Cache Warming
 - Visits every URL with both desktop and mobile user-agents
@@ -1298,6 +1310,10 @@ Documentation
 ## v1.1.0 — 2026-03-02
 
 ### New Warming Target
+- **Schema Validation** — validates structured data (JSON-LD, Microdata,
+  RDFa) on every page before warming; reports errors/warnings per URL
+  with exportable schema report (CSV/JSON); runs as first phase of job
+  processing (Premium+)
 - Pinterest Rich Pin Validator — triggers Pinterest's rich pin scraper
   to refresh OG meta cache (Premium+)
 - Cloudflare API Integration — purge + warm via Cloudflare Zone API;
@@ -1555,6 +1571,7 @@ Datenschutzerklärung
   ],
   "screenshot": "https://cachewarmer.drossmedia.de/images/dashboard-preview.png",
   "featureList": [
+    "Schema Validation (JSON-LD, Microdata, RDFa)",
     "CDN Edge Cache Warming (Desktop + Mobile)",
     "Facebook Sharing Debugger Integration",
     "LinkedIn Post Inspector Integration",
@@ -1630,7 +1647,7 @@ Datenschutzerklärung
 | **Self-Hosted** | `/self-hosted/` | Node.js Microservice, Docker, REST API | View on GitHub |
 | **Pro / Pricing** | `/pro/` | Pricing-Tabelle, Feature-Vergleich, FAQ | Get Premium |
 | **Enterprise** | `/enterprise/` | Enterprise-Features, Use Cases, Pricing | Request Demo |
-| **Features** | `/features/` | Alle 7 Targets im Detail, Dashboard | Get Started Free |
+| **Features** | `/features/` | Alle 12 Targets im Detail, Dashboard | Get Started Free |
 | **Documentation** | `/documentation/` | Technische Doku, API-Referenz | — |
 | **Changelog** | `/changelog/` | Versionshistorie | — |
 | **Contact** | `/contact/` | Kontaktformular, Support | Send Message |
