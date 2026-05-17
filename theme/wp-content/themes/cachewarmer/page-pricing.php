@@ -92,8 +92,8 @@ cachewarmer_breadcrumb('Pricing');
                     </span>
                 </p>
                 <ul class="pricing-features">
-                    <li><?php cachewarmer_icon('check', '', 18); ?> All 11 warming targets</li>
-                    <li><?php cachewarmer_icon('check', '', 18); ?> CDN, IndexNow, Facebook, LinkedIn, Twitter/X, Google, Bing, Pinterest</li>
+                    <li><?php cachewarmer_icon('check', '', 18); ?> All 12 warming targets</li>
+                    <li><?php cachewarmer_icon('check', '', 18); ?> Schema Validation, CDN, IndexNow, Facebook, LinkedIn, Twitter/X, Google, Bing, Pinterest</li>
                     <li><?php cachewarmer_icon('check', '', 18); ?> Up to 10,000 URLs per job</li>
                     <li><?php cachewarmer_icon('check', '', 18); ?> 25 sitemaps (10 external)</li>
                     <li><?php cachewarmer_icon('check', '', 18); ?> 50 warming jobs per day</li>
@@ -250,6 +250,12 @@ cachewarmer_breadcrumb('Pricing');
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td>Schema Validation</td>
+                        <td class="table-cross"><?php cachewarmer_icon('x-mark', '', 16); ?></td>
+                        <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>
+                        <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>
+                    </tr>
                     <tr>
                         <td>CDN Cache Warming</td>
                         <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>

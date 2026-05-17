@@ -32,6 +32,7 @@ cachewarmer_breadcrumb('Changelog');
 
                 <h3>New Warming Targets</h3>
                 <ul>
+                    <li><strong>Schema Validation (Structured Data)</strong> &mdash; Validates JSON-LD, Microdata, and RDFa structured data on every URL before warming. Reports errors and warnings with exportable CSV/JSON reports. Available on Premium and Enterprise plans.</li>
                     <li><strong>Pinterest Rich Pin Validator</strong> &mdash; Refresh rich pin Open Graph metadata for all URLs. Available on Premium and Enterprise plans.</li>
                     <li><strong>Cloudflare Cache Purge + Warm</strong> &mdash; Zone API integration to purge and re-warm Cloudflare-cached pages automatically. Enterprise only.</li>
                     <li><strong>Imperva Cache Purge + Warm</strong> &mdash; Imperva (Incapsula) API integration to purge and re-warm Imperva-cached pages. Enterprise only.</li>
@@ -48,6 +49,7 @@ cachewarmer_breadcrumb('Changelog');
                     <li><strong>Quota Usage Tracker</strong> &mdash; Visual progress bars for Google/Bing daily quotas with alerts at 80% and 100%.</li>
                     <li><strong>Broken Link Detection</strong> &mdash; Flag URLs returning 404 or 5xx status codes, with exportable reports.</li>
                     <li><strong>SSL Certificate Expiry Warnings</strong> &mdash; 30-day advance notice when SSL certificates are about to expire.</li>
+                    <li><strong>Schema Validation Report</strong> &mdash; Dedicated schema report UI with summary badges, per-URL error/warning breakdown, filtering, and CSV/JSON export.</li>
                     <li><strong>Failed/Skipped URL Export</strong> &mdash; Export failed and skipped URLs as CSV for review and action.</li>
                     <li><strong>Custom Timeout per Service</strong> &mdash; Set individual timeout values for each warming target.</li>
                 </ul>

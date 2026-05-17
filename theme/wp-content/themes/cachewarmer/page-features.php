@@ -4,7 +4,7 @@
  * Features page template.
  */
 $page_og_title = 'Features - CacheWarmer';
-$page_description = 'Explore all 11 warming targets: CDN, Facebook, LinkedIn, Twitter/X, IndexNow, Google, Bing, Pinterest, Cloudflare, Imperva, and Akamai. Plus smart warming, analytics, and monitoring.';
+$page_description = 'Explore all 12 warming targets: Schema Validation, CDN, Facebook, LinkedIn, Twitter/X, IndexNow, Google, Bing, Pinterest, Cloudflare, Imperva, and Akamai. Plus smart warming, analytics, and monitoring.';
 get_header();
 cachewarmer_breadcrumb('Features');
 ?>
@@ -17,8 +17,49 @@ cachewarmer_breadcrumb('Features');
     </div>
 </section>
 
+<!-- Schema Validation -->
+<section class="section section-white" id="schema-validation">
+    <div class="container">
+        <div class="feature-detail">
+            <div class="feature-detail-content">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="card-icon"><?php cachewarmer_icon('file-check'); ?></div>
+                    <h2>Schema Validation (Structured Data)</h2>
+                </div>
+                <p>Before CacheWarmer warms a single cache, it validates the structured data on every page in your sitemap. This pre-flight check ensures your JSON-LD, Microdata, and RDFa markup is correct before search engines and social platforms see it.</p>
+                <p>The validator detects missing required properties, invalid schema types, and formatting errors according to Google's structured data guidelines. Results are shown in a dedicated report with per-URL error and warning breakdowns.</p>
+                <h3 class="mt-6 mb-4">Key Capabilities</h3>
+                <ul class="feature-list">
+                    <li>Validates JSON-LD, Microdata, and RDFa structured data</li>
+                    <li>Detects missing required properties and invalid types</li>
+                    <li>Per-URL error and warning breakdown</li>
+                    <li>Filterable report (all, errors only, warnings, valid)</li>
+                    <li>Export schema report as CSV or JSON</li>
+                    <li>Runs locally - no external API keys required</li>
+                </ul>
+                <span class="badge badge-pro" style="margin-top: var(--space-4);">Premium</span>
+                <span class="badge badge-primary" style="margin-top: var(--space-4);">New in v1.1.0</span>
+                <p class="mt-4"><a href="https://developers.google.com/search/docs/appearance/structured-data?ref=cachewarmer" class="tool-link" target="_blank" rel="noopener" title="Google Structured Data Documentation"><?php cachewarmer_icon('external-link', '', 14); ?> Google Structured Data Guide</a></p>
+            </div>
+            <div class="feature-detail-code">
+                <?php cachewarmer_code_block('# config.yaml
+schemaValidation:
+  enabled: true
+  concurrency: 2
+  timeout: 15000
+  delayBetweenRequests: 1000
+
+# Schema report API
+GET /api/schema-report?jobId=xxx
+POST /api/schema-report/export
+  { "jobId": "xxx", "format": "csv" }', 'Configuration'); ?>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- CDN Cache Warming -->
-<section class="section section-white" id="cdn-cache-warming">
+<section class="section section-gray" id="cdn-cache-warming">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -53,7 +94,7 @@ CACHE_WARM_WAIT_UNTIL=networkidle0', 'Environment'); ?>
 </section>
 
 <!-- Facebook -->
-<section class="section section-gray" id="facebook">
+<section class="section section-white" id="facebook">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -86,7 +127,7 @@ Response:
 </section>
 
 <!-- LinkedIn -->
-<section class="section section-white" id="linkedin">
+<section class="section section-gray" id="linkedin">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -112,7 +153,7 @@ LINKEDIN_MAX_RETRIES=3', 'Environment'); ?>
 </section>
 
 <!-- Twitter/X -->
-<section class="section section-gray" id="twitter">
+<section class="section section-white" id="twitter">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -136,7 +177,7 @@ TWITTER_MAX_RETRIES=3', 'Environment'); ?>
 </section>
 
 <!-- Pinterest -->
-<section class="section section-white" id="pinterest">
+<section class="section section-gray" id="pinterest">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -161,7 +202,7 @@ PINTEREST_MAX_RETRIES=3', 'Environment'); ?>
 </section>
 
 <!-- IndexNow -->
-<section class="section section-gray" id="indexnow">
+<section class="section section-white" id="indexnow">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -194,7 +235,7 @@ Content-Type: application/json
 </section>
 
 <!-- Google Search Console -->
-<section class="section section-white" id="google">
+<section class="section section-gray" id="google">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -220,7 +261,7 @@ GOOGLE_DELAY_MS=1500', 'Environment'); ?>
 </section>
 
 <!-- Bing Webmaster Tools -->
-<section class="section section-gray" id="bing">
+<section class="section section-white" id="bing">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -245,7 +286,7 @@ BING_MAX_RETRIES=3', 'Environment'); ?>
 </section>
 
 <!-- Cloudflare -->
-<section class="section section-white" id="cloudflare">
+<section class="section section-gray" id="cloudflare">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -271,7 +312,7 @@ CLOUDFLARE_PURGE_BEFORE_WARM=true', 'Environment'); ?>
 </section>
 
 <!-- Imperva -->
-<section class="section section-gray" id="imperva">
+<section class="section section-white" id="imperva">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -298,7 +339,7 @@ IMPERVA_PURGE_BEFORE_WARM=true', 'Environment'); ?>
 </section>
 
 <!-- Akamai -->
-<section class="section section-white" id="akamai">
+<section class="section section-gray" id="akamai">
     <div class="container">
         <div class="feature-detail">
             <div class="feature-detail-content">
@@ -439,6 +480,12 @@ AKAMAI_PURGE_BEFORE_WARM=true', 'Environment'); ?>
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td><strong>Schema Validation</strong></td>
+                        <td>2 concurrent, 1s delay</td>
+                        <td class="table-check">Yes</td>
+                        <td>Continue on failure</td>
+                    </tr>
                     <tr>
                         <td><strong>CDN Warming</strong></td>
                         <td>5 concurrent, 1s delay</td>

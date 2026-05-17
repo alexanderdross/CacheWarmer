@@ -278,7 +278,7 @@ add_action('wp_head', function () {
     // --- 4. WebPage / CollectionPage (homepage gets CollectionPage) ---
     $page_descriptions = [
         'home'        => 'CacheWarmer is a self-hosted microservice that warms CDN caches, updates social media previews, and submits pages to search engines for WordPress, Drupal, and Node.js.',
-        'features'    => 'Explore CacheWarmer features: 11 warming targets including CDN, Facebook, LinkedIn, Twitter/X, Pinterest, IndexNow, Google, Bing, Cloudflare, Imperva, and Akamai. Smart warming, analytics, and monitoring.',
+        'features'    => 'Explore CacheWarmer features: 12 warming targets including Schema Validation, CDN, Facebook, LinkedIn, Twitter/X, Pinterest, IndexNow, Google, Bing, Cloudflare, Imperva, and Akamai. Smart warming, analytics, and monitoring.',
         'docs'        => 'CacheWarmer documentation: installation, configuration, REST API reference, database schema, and deployment guides for Docker and systemd.',
         'pricing'     => 'CacheWarmer pricing: Free, Premium, and Enterprise plans. Transparent pricing for WordPress, Drupal, and self-hosted Node.js cache warming starting at €0.',
         'api-keys'    => 'Step-by-step guides to set up API keys for CacheWarmer: Facebook App Token, LinkedIn OAuth, IndexNow, Google Search Console, and Bing Webmaster.',

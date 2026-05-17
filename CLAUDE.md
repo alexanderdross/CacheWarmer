@@ -2,7 +2,7 @@
 
 ## Overview
 
-CacheWarmer is a self-hosted microservice that takes XML sitemaps and systematically warms all contained URLs across CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X, Pinterest), and search engines (Google, Bing via IndexNow). It also supports direct CDN cache purging via Cloudflare, Imperva, and Akamai APIs.
+CacheWarmer is a self-hosted microservice that takes XML sitemaps and systematically warms all contained URLs across CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X, Pinterest), and search engines (Google, Bing via IndexNow). It also validates structured data (schema.org) on every page before warming and supports direct CDN cache purging via Cloudflare, Imperva, and Akamai APIs.
 
 The product is commercially distributed in three tiers: **Free**, **Premium**, and **Enterprise**.
 
@@ -431,6 +431,7 @@ Standalone WordPress plugin with `cwlm/v1` REST API namespace. Handles license C
 
 | Target | Free | Premium | Enterprise | Method |
 |--------|:----:|:-------:|:----------:|--------|
+| Schema Validation | -- | Yes | Yes | Local structured data testing (JSON-LD, Microdata, RDFa) |
 | CDN Edge Cache | Yes | Yes | Yes | HTTP GET (desktop + mobile user-agents) |
 | IndexNow | Yes | Yes | Yes | Batch POST to api.indexnow.org |
 | Facebook | -- | Yes | Yes | Graph API v19.0 scrape endpoint |

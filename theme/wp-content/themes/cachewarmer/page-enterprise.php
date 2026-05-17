@@ -30,7 +30,7 @@ cachewarmer_breadcrumb('Enterprise');
     <div class="container">
         <div class="section-header">
             <h2>Everything in Premium, <span class="text-gradient">Plus More</span></h2>
-            <p>Enterprise includes all 11 warming targets, smart warming, analytics, and monitoring &mdash; plus exclusive features for large-scale operations.</p>
+            <p>Enterprise includes all 12 warming targets, smart warming, analytics, and monitoring &mdash; plus exclusive features for large-scale operations.</p>
         </div>
         <div class="grid grid-3 gap-6">
             <div class="card">

@@ -50,7 +50,7 @@ cachewarmer_breadcrumb('WordPress');
             <div class="card">
                 <div class="card-icon"><?php cachewarmer_icon('layout'); ?></div>
                 <h3 class="card-title">Native Admin UI</h3>
-                <p class="card-description">Full settings page in your WordPress admin. Configure all 11 warming targets, view logs, and trigger manual warming without leaving your dashboard.</p>
+                <p class="card-description">Full settings page in your WordPress admin. Configure all 12 warming targets, view logs, and trigger manual warming without leaving your dashboard.</p>
             </div>
             <div class="card">
                 <div class="card-icon"><?php cachewarmer_icon('clock'); ?></div>
@@ -81,11 +81,11 @@ cachewarmer_breadcrumb('WordPress');
     </div>
 </section>
 
-<!-- All 11 Targets -->
+<!-- All 12 Targets -->
 <section class="section section-white">
     <div class="container">
         <div class="section-header">
-            <h2>Up to 11 <span class="text-gradient">Warming Targets</span></h2>
+            <h2>Up to 12 <span class="text-gradient">Warming Targets</span></h2>
             <p>Enable the targets you need. Disable the rest. Each one is independently configurable.</p>
         </div>
         <div class="overflow-x-auto">
@@ -100,6 +100,13 @@ cachewarmer_breadcrumb('WordPress');
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td><strong>Schema Validation</strong></td>
+                        <td>Validates structured data markup</td>
+                        <td class="table-cross"><?php cachewarmer_icon('x-mark', '', 16); ?></td>
+                        <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>
+                        <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>
+                    </tr>
                     <tr>
                         <td><strong>CDN Cache Warming</strong></td>
                         <td>Visits URLs to fill CDN edge caches</td>
