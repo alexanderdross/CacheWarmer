@@ -132,6 +132,7 @@ export function createMockConfig() {
       enabled: false,
       defaultCron: "0 3 * * *",
     },
+    excludePatterns: "",
     logging: {
       level: "info",
       file: "./data/cachewarmer.log",
