@@ -109,36 +109,6 @@ export interface AppConfig {
     level: string;
     file: string;
   };
-  schemaValidation?: {
-    enabled: boolean;
-    validationEngine: string;
-    presets: string[];
-    scopedPaths: string[];
-    concurrency: number;
-    severityThreshold: "error" | "warning";
-    supabase: {
-      urlEnv: string;
-      serviceRoleKeyEnv: string;
-      table: string;
-    };
-    github: {
-      enabled: boolean;
-      tokenEnv: string;
-      repoOwner: string;
-      repoName: string;
-      labels: string[];
-      issueAssignees: string[];
-      maxIssuesPerJob: number;
-      reopenClosedWithinDays: number;
-    };
-    autoFix: {
-      enabled: boolean;
-      branch: string;
-      baseBranch: string;
-      draftPr: boolean;
-      allowedFixes: string[];
-    };
-  };
 }
 
 let cachedConfig: AppConfig | null = null;

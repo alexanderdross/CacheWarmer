@@ -1,7 +1,6 @@
 import puppeteer, { type Browser, type Page, type HTTPResponse } from "puppeteer-core";
 import { getConfig } from "@/lib/config";
 import logger from "@/lib/logger";
-import { isInSchemaScope } from "@/lib/services/schema-validator/url-scope";
 
 let browser: Browser | null = null;
 
@@ -40,16 +39,6 @@ export interface WarmResult {
   durationMs: number;
   error?: string;
   cacheHeaders?: CacheHeaders;
-  /** Captured HTML for schema validation. Transient — not persisted. */
-  __html?: string;
-}
-
-function shouldCaptureHtml(url: string, viewport: string, httpStatus: number): boolean {
-  if (viewport !== "desktop") return false;
-  if (httpStatus < 200 || httpStatus >= 300) return false;
-  const cfg = getConfig();
-  if (!cfg.schemaValidation?.enabled) return false;
-  return isInSchemaScope(url);
 }
 
 function extractCacheHeaders(response: HTTPResponse | null): CacheHeaders {
@@ -82,15 +71,6 @@ async function warmSingleUrl(
     const httpStatus = response?.status() ?? 0;
     const cacheHeaders = extractCacheHeaders(response);
 
-    let html: string | undefined;
-    if (shouldCaptureHtml(url, viewport, httpStatus)) {
-      try {
-        html = await page.content();
-      } catch (err) {
-        logger.warn({ url, err: err instanceof Error ? err.message : String(err) }, "html capture failed");
-      }
-    }
-
     logger.info({ url, viewport, httpStatus, durationMs, cacheHeaders }, "CDN warm complete");
 
     return {
@@ -100,7 +80,6 @@ async function warmSingleUrl(
       httpStatus,
       durationMs,
       cacheHeaders,
-      __html: html,
     };
   } catch (err) {
     const durationMs = Date.now() - start;

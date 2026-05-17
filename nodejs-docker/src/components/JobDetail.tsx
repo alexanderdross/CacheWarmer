@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { SchemaValidationPanel } from "./SchemaValidationPanel";
 
 interface Stat {
   target: string;
@@ -479,14 +478,6 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
         {showResults && !loadingResults && results.length === 0 && (
           <p className="text-sm text-gray-500">Noch keine Ergebnisse vorhanden.</p>
         )}
-      </div>
-
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
-        <h3 className="text-md font-semibold">Schema Validation</h3>
-        <p className="text-xs text-gray-500">
-          Google Rich Results checks for aircraft, job, event, and parts detail pages crawled in this job.
-        </p>
-        <SchemaValidationPanel jobId={job.id} />
       </div>
     </div>
   );
