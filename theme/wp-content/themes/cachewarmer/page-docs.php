@@ -285,7 +285,12 @@ define('CACHEWARMER_AKAMAI_ACCESS_TOKEN', 'your_access_token');", 'PHP'); ?>
             <!-- Warming Targets -->
             <section id="warming-targets">
                 <h2>Warming Targets</h2>
-                <p>CacheWarmer supports 11 warming targets. Each can be enabled or disabled independently.</p>
+                <p>CacheWarmer supports 12 warming targets. Each can be enabled or disabled independently.</p>
+
+                <h3>Schema Validation <span class="badge badge-pro">Premium</span></h3>
+                <p>Validates structured data (JSON-LD, Microdata, RDFa) on every URL in your sitemap before warming begins. Detects missing required properties, invalid schema types, and formatting errors. Results are displayed in a dedicated report with per-URL error and warning breakdowns, and can be exported as CSV or JSON.</p>
+                <p>Schema validation runs as the first step in every warming job, giving you a pre-flight quality check before caches are warmed and search engines are notified. No API keys or external services required - validation runs locally.</p>
+                <p><a href="https://developers.google.com/search/docs/appearance/structured-data?ref=cachewarmer" class="tool-link" target="_blank" rel="noopener" title="Google Structured Data Documentation"><?php cachewarmer_icon('external-link', '', 14); ?> Google Structured Data Guide</a></p>
 
                 <h3>CDN Cache Warming</h3>
                 <p>Visits every URL from your sitemap, triggering CDN edge nodes and reverse proxies to cache the response. Uses HTTP requests by default, with optional headless browser rendering for JavaScript-heavy sites.</p>

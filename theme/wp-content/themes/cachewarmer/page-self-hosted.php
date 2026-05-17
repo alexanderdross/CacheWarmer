@@ -82,6 +82,7 @@ volumes:
                 </div>
                 <div class="arch-connector"></div>
                 <div class="arch-workers">
+                    <div class="arch-worker"><?php cachewarmer_icon('file-check', '', 16); ?> Schema</div>
                     <div class="arch-worker"><?php cachewarmer_icon('globe', '', 16); ?> CDN</div>
                     <div class="arch-worker"><?php cachewarmer_icon('facebook', '', 16); ?> Facebook</div>
                     <div class="arch-worker"><?php cachewarmer_icon('linkedin', '', 16); ?> LinkedIn</div>

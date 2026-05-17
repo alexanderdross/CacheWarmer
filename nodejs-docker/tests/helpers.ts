@@ -63,6 +63,21 @@ export function createTestDb(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_url_results_job_id ON url_results(job_id);
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+
+    CREATE TABLE IF NOT EXISTS schema_results (
+      id TEXT PRIMARY KEY,
+      job_id TEXT NOT NULL REFERENCES jobs(id),
+      url TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      schemas TEXT,
+      errors TEXT,
+      warnings TEXT,
+      duration_ms INTEGER,
+      error TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_schema_results_job_id ON schema_results(job_id);
   `);
 
   return db;
@@ -131,6 +146,12 @@ export function createMockConfig() {
     scheduler: {
       enabled: false,
       defaultCron: "0 3 * * *",
+    },
+    schemaValidation: {
+      enabled: true,
+      concurrency: 2,
+      timeout: 15000,
+      delayBetweenRequests: 100,
     },
     excludePatterns: "",
     logging: {

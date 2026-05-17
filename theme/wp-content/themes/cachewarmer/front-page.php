@@ -105,6 +105,12 @@ get_header();
 
             <div class="article-steps">
                 <div class="article-step">
+                    <div class="article-step-icon"><?php cachewarmer_icon('file-check', '', 20); ?></div>
+                    <div>
+                        <strong>Validates your structured data first</strong> - checks JSON-LD and schema markup on every page before warming, so you catch SEO issues before search engines see them.
+                    </div>
+                </div>
+                <div class="article-step">
                     <div class="article-step-icon"><?php cachewarmer_icon('globe', '', 20); ?></div>
                     <div>
                         <strong>Warms your CDN and server caches</strong> - visits every page so the cached version is ready before a real visitor arrives.
@@ -279,7 +285,7 @@ get_header();
         <div class="grid grid-3 gap-8">
             <?php
             cachewarmer_step(1, 'Install on Your Platform', 'Install the WordPress plugin, Drupal module, or deploy the Node.js service via Docker. Takes under 5 minutes.');
-            cachewarmer_step(2, 'Configure Your Targets', 'Choose which warming targets to enable: CDN, Facebook, LinkedIn, Twitter/X, Pinterest, IndexNow, Google, Bing. Add your API keys.');
+            cachewarmer_step(2, 'Configure Your Targets', 'Choose which warming targets to enable: Schema Validation, CDN, Facebook, LinkedIn, Twitter/X, Pinterest, IndexNow, Google, Bing. Add your API keys.');
             cachewarmer_step(3, 'Warm Automatically', 'CacheWarmer reads your sitemap, queues all URLs, and warms every cache on schedule. Monitor progress in the dashboard.');
             ?>
         </div>
@@ -290,11 +296,17 @@ get_header();
 <section class="section section-white">
     <div class="container">
         <div class="section-header">
-            <h2>11 Warming Targets, <span class="text-gradient">One Unified Service</span></h2>
+            <h2>12 Warming Targets, <span class="text-gradient">One Unified Service</span></h2>
             <p>Each module handles a specific warming task. Together, they keep your entire web presence fresh.</p>
         </div>
         <div class="grid grid-3 gap-6">
             <?php
+            cachewarmer_card(
+                'Schema Validation',
+                'Validates structured data (JSON-LD, Microdata, RDFa) on every URL before warming. Detects errors and missing properties.',
+                'file-check',
+                home_url('/features/#schema-validation')
+            );
             cachewarmer_card(
                 'CDN Cache Warming',
                 'Visits every URL in your sitemap, triggering CDN edge nodes and reverse proxies to cache fully rendered pages.',
@@ -383,6 +395,11 @@ get_header();
                 </thead>
                 <tbody>
                     <tr>
+                        <td><strong>Schema Validation</strong></td>
+                        <td class="table-cross">Test each URL in Google's Rich Results tool</td>
+                        <td class="table-check">Automated pre-flight check for all URLs</td>
+                    </tr>
+                    <tr>
                         <td><strong>CDN Cache Warming</strong></td>
                         <td class="table-cross">Visit each URL manually</td>
                         <td class="table-check">Automated via headless browser</td>
@@ -443,7 +460,7 @@ get_header();
             );
             cachewarmer_faq(
                 'Which platforms does CacheWarmer support?',
-                '<p>CacheWarmer is available as a <a href="' . esc_url(home_url('/wordpress/')) . '" title="CacheWarmer WordPress Plugin">WordPress plugin</a>, a <a href="' . esc_url(home_url('/drupal/')) . '" title="CacheWarmer Drupal Module">Drupal module</a>, and a <a href="' . esc_url(home_url('/self-hosted/')) . '" title="CacheWarmer Self-Hosted Node.js Service">standalone Node.js service</a> that you can deploy via Docker. All platforms share the same warming engine and support up to 11 targets.</p>',
+                '<p>CacheWarmer is available as a <a href="' . esc_url(home_url('/wordpress/')) . '" title="CacheWarmer WordPress Plugin">WordPress plugin</a>, a <a href="' . esc_url(home_url('/drupal/')) . '" title="CacheWarmer Drupal Module">Drupal module</a>, and a <a href="' . esc_url(home_url('/self-hosted/')) . '" title="CacheWarmer Self-Hosted Node.js Service">standalone Node.js service</a> that you can deploy via Docker. All platforms share the same warming engine and support up to 12 targets.</p>',
                 'supported-platforms'
             );
             cachewarmer_faq(

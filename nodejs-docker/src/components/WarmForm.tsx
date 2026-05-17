@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 const ALL_TARGETS = [
+  { id: "schema", label: "Schema Validation" },
   { id: "cdn", label: "CDN Edge Cache" },
   { id: "facebook", label: "Facebook" },
   { id: "linkedin", label: "LinkedIn" },

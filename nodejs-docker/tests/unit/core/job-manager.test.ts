@@ -10,6 +10,7 @@ vi.mock("@/lib/db/database", () => ({
   closeDb: vi.fn(),
   getActiveJobForSitemapUrl: vi.fn().mockReturnValue(null),
   normalizeUrl: (u: string) => u,
+  saveSchemaResult: vi.fn(),
 }));
 
 vi.mock("@/lib/config", async () => {
@@ -68,10 +69,12 @@ vi.mock("@/lib/services/facebook-warmer", () => ({
 
 vi.mock("@/lib/services/linkedin-warmer", () => ({
   warmLinkedIn: vi.fn().mockResolvedValue([]),
+  closeBrowser: vi.fn(),
 }));
 
 vi.mock("@/lib/services/twitter-warmer", () => ({
   warmTwitter: vi.fn().mockResolvedValue([]),
+  closeBrowser: vi.fn(),
 }));
 
 vi.mock("@/lib/services/indexnow", () => ({
@@ -84,6 +87,26 @@ vi.mock("@/lib/services/google-indexer", () => ({
 
 vi.mock("@/lib/services/bing-indexer", () => ({
   submitToBing: vi.fn().mockResolvedValue({ status: "success", urlCount: 2 }),
+}));
+
+vi.mock("@/lib/services/pinterest-warmer", () => ({
+  warmPinterest: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("@/lib/services/cdn-purge-warm", () => ({
+  purgeCdnCache: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("@/lib/services/schema-validator", () => ({
+  validateSchemaMarkup: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/services/webhooks", () => ({
+  sendWebhook: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/services/email-notifications", () => ({
+  sendJobCompletedEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("Job Manager", () => {

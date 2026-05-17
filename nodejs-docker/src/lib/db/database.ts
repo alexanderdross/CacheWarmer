@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import { v4 as uuidv4 } from "uuid";
 
 let db: Database.Database | null = null;
 
@@ -64,6 +65,21 @@ function runMigrations(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_url_results_job_id ON url_results(job_id);
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_sitemaps_url ON sitemaps(url);
+
+    CREATE TABLE IF NOT EXISTS schema_results (
+      id TEXT PRIMARY KEY,
+      job_id TEXT NOT NULL REFERENCES jobs(id),
+      url TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      schemas TEXT,
+      errors TEXT,
+      warnings TEXT,
+      duration_ms INTEGER,
+      error TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_schema_results_job_id ON schema_results(job_id);
   `);
 
   // Add columns if upgrading from older schema
@@ -125,6 +141,54 @@ export function getActiveJobForSitemapUrl(sitemapUrl: string): Record<string, un
   return db.prepare(
     "SELECT * FROM jobs WHERE sitemap_url = ? AND status IN ('queued', 'running') LIMIT 1"
   ).get(sitemapUrl) as Record<string, unknown> | undefined;
+}
+
+export function saveSchemaResult(
+  jobId: string,
+  url: string,
+  status: string,
+  schemas: string[],
+  errors: unknown[],
+  warnings: unknown[],
+  durationMs: number,
+  error?: string
+) {
+  const database = getDb();
+  database.prepare(`
+    INSERT INTO schema_results (id, job_id, url, status, schemas, errors, warnings, duration_ms, error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    uuidv4(), jobId, url, status,
+    JSON.stringify(schemas),
+    JSON.stringify(errors),
+    JSON.stringify(warnings),
+    durationMs,
+    error ?? null
+  );
+}
+
+export function getSchemaResults(jobId: string) {
+  const database = getDb();
+  return database.prepare("SELECT * FROM schema_results WHERE job_id = ? ORDER BY created_at").all(jobId);
+}
+
+export function getSchemaSummary(jobId: string) {
+  const database = getDb();
+  const rows = database.prepare(`
+    SELECT status, COUNT(*) as count
+    FROM schema_results WHERE job_id = ?
+    GROUP BY status
+  `).all(jobId) as { status: string; count: number }[];
+
+  const summary = { total: 0, valid: 0, withWarnings: 0, withErrors: 0, failed: 0 };
+  for (const row of rows) {
+    summary.total += row.count;
+    if (row.status === "valid") summary.valid = row.count;
+    else if (row.status === "warnings") summary.withWarnings = row.count;
+    else if (row.status === "errors") summary.withErrors = row.count;
+    else if (row.status === "failed") summary.failed = row.count;
+  }
+  return summary;
 }
 
 export function closeDb() {

@@ -106,11 +106,11 @@ drush cachewarmer:sitemaps', 'Shell'); ?>
     </div>
 </section>
 
-<!-- All 11 Targets -->
+<!-- All 12 Targets -->
 <section class="section section-gray">
     <div class="container">
         <div class="section-header">
-            <h2>Up to 11 <span class="text-gradient">Warming Targets</span></h2>
+            <h2>Up to 12 <span class="text-gradient">Warming Targets</span></h2>
         </div>
         <div class="overflow-x-auto">
             <table class="comparison-table">
@@ -124,6 +124,13 @@ drush cachewarmer:sitemaps', 'Shell'); ?>
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td><strong>Schema Validation</strong></td>
+                        <td>Validates structured data markup</td>
+                        <td class="table-cross"><?php cachewarmer_icon('x-mark', '', 16); ?></td>
+                        <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>
+                        <td class="table-check"><?php cachewarmer_icon('check', '', 16); ?></td>
+                    </tr>
                     <tr>
                         <td><strong>CDN Cache Warming</strong></td>
                         <td>Visits URLs to fill CDN edge caches</td>

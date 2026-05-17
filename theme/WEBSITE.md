@@ -1023,14 +1023,14 @@ Let's find the right plan for your team.
 
 **URL:** `https://cachewarmer.drossmedia.de/features/`
 **Title:** `CacheWarmer Features — CDN, Facebook, LinkedIn, Twitter, Google, Bing, IndexNow, Pinterest & CDN Purge`
-**Description:** `Complete feature overview of CacheWarmer. 11 warming targets incl. direct CDN cache purge via Cloudflare, Imperva & Akamai. Scheduled automation, REST API, multi-sitemap support, and a real-time dashboard.`
+**Description:** `Complete feature overview of CacheWarmer. 12 warming targets incl. direct CDN cache purge via Cloudflare, Imperva & Akamai. Scheduled automation, REST API, multi-sitemap support, and a real-time dashboard.`
 
 ---
 
 ### Sektion 1: Hero
 
 **Headline:** Everything You Need to Keep Caches Fresh
-**Subheadline:** 11 warming targets including direct CDN cache purge, scheduled automation, REST API, and a real-time dashboard.
+**Subheadline:** 12 warming targets including direct CDN cache purge, scheduled automation, REST API, and a real-time dashboard.
 
 ---
 
