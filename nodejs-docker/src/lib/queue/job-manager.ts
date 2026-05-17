@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getDb, getActiveJobForSitemapUrl } from "@/lib/db/database";
+import { getDb, getActiveJobForSitemapUrl, saveSchemaResult } from "@/lib/db/database";
 import { loadConfig } from "@/lib/config";
 import { parseSitemap } from "@/lib/services/sitemap-parser";
 import { warmUrls, closeBrowser, type CacheHeaders } from "@/lib/services/cdn-warmer";
@@ -11,11 +11,12 @@ import { submitToGoogle } from "@/lib/services/google-indexer";
 import { submitToBing } from "@/lib/services/bing-indexer";
 import { warmPinterest } from "@/lib/services/pinterest-warmer";
 import { purgeCdnCache } from "@/lib/services/cdn-purge-warm";
+import { validateSchemaMarkup } from "@/lib/services/schema-validator";
 import { sendWebhook } from "@/lib/services/webhooks";
 import { sendJobCompletedEmail } from "@/lib/services/email-notifications";
 import logger from "@/lib/logger";
 
-export type WarmTarget = "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow" | "pinterest" | "cdn-purge";
+export type WarmTarget = "schema" | "cdn" | "facebook" | "linkedin" | "twitter" | "google" | "bing" | "indexnow" | "pinterest" | "cdn-purge";
 
 export interface CreateJobParams {
   sitemapUrl: string;
@@ -80,7 +81,7 @@ export function listJobs(limit = 50, offset = 0): Job[] {
 
 export function deleteJob(jobId: string): boolean {
   const db = getDb();
-  // Delete associated url_results first to avoid FK constraint violation
+  db.prepare("DELETE FROM schema_results WHERE job_id = ?").run(jobId);
   db.prepare("DELETE FROM url_results WHERE job_id = ?").run(jobId);
   const result = db.prepare("DELETE FROM jobs WHERE id = ?").run(jobId);
   return result.changes > 0;
@@ -166,6 +167,25 @@ export async function processJob(jobId: string): Promise<void> {
     sendWebhook("job.started", { jobId, sitemapUrl: job.sitemap_url, urlCount: urls.length, targets }).catch((err) => logger.warn({ err }, "notification failed"));
 
     let processed = 0;
+
+    // Schema Validation (runs first as pre-check)
+    if (targets.includes("schema")) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting schema validation");
+      await validateSchemaMarkup(urls, (result) => {
+        saveSchemaResult(
+          jobId, result.url, result.status, result.schemas,
+          result.errors, result.warnings, result.durationMs, result.error
+        );
+        saveUrlResult(
+          jobId, result.url, "schema",
+          result.status === "errors" ? "failed" : "success",
+          undefined, result.durationMs,
+          result.errors.length > 0 ? `${result.errors.length} schema error(s)` : result.error
+        );
+        processed++;
+        updateJobProgress(jobId, processed);
+      });
+    }
 
     // CDN Warming
     if (targets.includes("cdn")) {

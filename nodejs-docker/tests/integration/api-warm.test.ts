@@ -10,6 +10,7 @@ vi.mock("@/lib/db/database", () => ({
   closeDb: vi.fn(),
   getActiveJobForSitemapUrl: vi.fn().mockReturnValue(null),
   normalizeUrl: (u: string) => u,
+  saveSchemaResult: vi.fn(),
 }));
 
 vi.mock("@/lib/config", async () => {
@@ -22,11 +23,16 @@ vi.mock("@/lib/services/sitemap-parser", () => ({
 }));
 vi.mock("@/lib/services/cdn-warmer", () => ({ warmUrls: vi.fn().mockResolvedValue([]), closeBrowser: vi.fn() }));
 vi.mock("@/lib/services/facebook-warmer", () => ({ warmFacebook: vi.fn().mockResolvedValue([]) }));
-vi.mock("@/lib/services/linkedin-warmer", () => ({ warmLinkedIn: vi.fn().mockResolvedValue([]) }));
-vi.mock("@/lib/services/twitter-warmer", () => ({ warmTwitter: vi.fn().mockResolvedValue([]) }));
+vi.mock("@/lib/services/linkedin-warmer", () => ({ warmLinkedIn: vi.fn().mockResolvedValue([]), closeBrowser: vi.fn() }));
+vi.mock("@/lib/services/twitter-warmer", () => ({ warmTwitter: vi.fn().mockResolvedValue([]), closeBrowser: vi.fn() }));
 vi.mock("@/lib/services/indexnow", () => ({ submitIndexNow: vi.fn().mockResolvedValue({ status: "success", urlCount: 0 }) }));
 vi.mock("@/lib/services/google-indexer", () => ({ submitToGoogle: vi.fn().mockResolvedValue([]) }));
 vi.mock("@/lib/services/bing-indexer", () => ({ submitToBing: vi.fn().mockResolvedValue({ status: "success", urlCount: 0 }) }));
+vi.mock("@/lib/services/webhooks", () => ({ sendWebhook: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/services/email-notifications", () => ({ sendJobCompletedEmail: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/services/pinterest-warmer", () => ({ warmPinterest: vi.fn().mockResolvedValue([]) }));
+vi.mock("@/lib/services/cdn-purge-warm", () => ({ purgeCdnCache: vi.fn().mockResolvedValue([]) }));
+vi.mock("@/lib/services/schema-validator", () => ({ validateSchemaMarkup: vi.fn().mockResolvedValue(undefined) }));
 
 describe("POST /api/warm", () => {
   beforeEach(() => { testDb = createTestDb(); resetTestConfig(); });
@@ -78,7 +84,7 @@ describe("POST /api/warm", () => {
     const response = await POST(request);
     const body = await response.json();
     expect(response.status).toBe(202);
-    expect(body.targets).toEqual(["cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow", "pinterest", "cdn-purge"]);
+    expect(body.targets).toEqual(["schema", "cdn", "facebook", "linkedin", "twitter", "google", "bing", "indexnow", "pinterest", "cdn-purge"]);
   });
 
   it("should filter out invalid targets", async () => {

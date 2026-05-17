@@ -18,6 +18,12 @@ puppeteer:
     - "--disable-setuid-sandbox"
     - "--disable-dev-shm-usage"
 
+schemaValidation:
+  enabled: true
+  concurrency: 2
+  timeout: 15000
+  delayBetweenRequests: 1000
+
 cdnWarming:
   enabled: true
   concurrency: 3

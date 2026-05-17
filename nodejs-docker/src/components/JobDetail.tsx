@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import SchemaReport from "@/components/SchemaReport";
 
 interface Stat {
   target: string;
@@ -259,6 +260,11 @@ export default function JobDetail({ job, onBack }: JobDetailProps) {
           </div>
         )}
       </div>
+
+      {/* Schema Validation Report */}
+      {job.targets.includes("schema") && (
+        <SchemaReport jobId={job.id} />
+      )}
 
       {Object.keys(statsByTarget).length > 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">

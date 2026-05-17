@@ -32,6 +32,7 @@
     "puppeteer-core": "^24.37.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "structured-data-testing-tool": "^4.5.0",
     "uuid": "^13.0.0",
     "yaml": "^2.8.2"
   },

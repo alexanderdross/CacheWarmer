@@ -104,6 +104,12 @@ export interface AppConfig {
     accessToken: string;
     network: string;
   };
+  schemaValidation: {
+    enabled: boolean;
+    concurrency: number;
+    timeout: number;
+    delayBetweenRequests: number;
+  };
   excludePatterns: string;
   logging: {
     level: string;

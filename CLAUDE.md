@@ -310,6 +310,7 @@ nodejs-docker/src/
         ├── bing-indexer.ts         # Bing Webmaster API
         ├── indexnow.ts             # IndexNow protocol
         ├── pinterest-warmer.ts     # Pinterest Rich Pins
+        ├── schema-validator.ts    # Google Structured Data validation
         ├── webhooks.ts             # Webhook notifications
         └── email-notifications.ts  # Email notifications
 ```
