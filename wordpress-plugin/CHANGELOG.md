@@ -5,6 +5,7 @@ All notable changes to the CacheWarmer WordPress plugin will be documented in th
 ## [1.1.0] - 2026-03-08
 
 ### Added
+- **Schema Validation** warming target (Premium+) — validates structured data (JSON-LD, Microdata, RDFa) on every page before warming begins. Reports errors and warnings per URL with exportable schema report (CSV/JSON).
 - URL normalization for sitemap registration to prevent duplicate entries with cosmetically different URLs (trailing slashes, case differences, default ports).
 
 ### Fixed

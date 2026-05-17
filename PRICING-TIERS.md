@@ -41,6 +41,7 @@
 
 | Feature | Free | Premium | Enterprise |
 |---------|:----:|:-------:|:----------:|
+| **Schema Validation** (JSON-LD, Microdata, RDFa) | — | ✅ | ✅ |
 | **CDN Edge Cache** (Desktop + Mobile) | ✅ | ✅ | ✅ |
 | **IndexNow** (Bing, Yandex, Seznam, Naver) | ✅ | ✅ | ✅ |
 | **Facebook Sharing Debugger** | — | ✅ | ✅ |
@@ -247,7 +248,7 @@ class CacheWarmer_License {
             'max_jobs_per_day'     => 50,
             'log_retention_days'   => 90,
             'cdn_concurrency'      => 10,
-            'allowed_targets'      => ['cdn', 'indexnow', 'facebook', 'linkedin', 'twitter', 'google', 'bing'],
+            'allowed_targets'      => ['schema', 'cdn', 'indexnow', 'facebook', 'linkedin', 'twitter', 'google', 'bing'],
             'scheduler_enabled'    => true,
             'api_enabled'          => true,
             'export_enabled'       => true,
@@ -259,7 +260,7 @@ class CacheWarmer_License {
             'max_jobs_per_day'     => PHP_INT_MAX,
             'log_retention_days'   => 365,
             'cdn_concurrency'      => 20,
-            'allowed_targets'      => ['cdn', 'indexnow', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'pinterest', 'cdn-purge'],
+            'allowed_targets'      => ['schema', 'cdn', 'indexnow', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'pinterest', 'cdn-purge'],
             'scheduler_enabled'    => true,
             'api_enabled'          => true,
             'export_enabled'       => true,

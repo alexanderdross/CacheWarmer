@@ -2,7 +2,7 @@
 
 ## Overview
 
-The CacheWarmer Drupal module processes XML sitemaps and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X), submits URLs to search engines (Google, Bing, IndexNow), and can directly purge CDN caches via Cloudflare, Imperva, and Akamai APIs (Enterprise).
+The CacheWarmer Drupal module processes XML sitemaps, validates structured data (schema.org) on every page, and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X), submits URLs to search engines (Google, Bing, IndexNow), and can directly purge CDN caches via Cloudflare, Imperva, and Akamai APIs (Enterprise).
 
 ---
 
@@ -190,7 +190,7 @@ The module adds three admin pages under **Configuration** â†’ **Development** â†
 ### Dashboard Tab
 
 - **Status cards**: Shows counts of Queued, Running, Completed, Failed jobs and total processed URLs
-- **Warm form**: Enter a sitemap URL, select targets (CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow), and start warming
+- **Warm form**: Enter a sitemap URL, select targets (Schema Validation, CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow), and start warming
 - **Jobs table**: Shows recent 20 jobs with status badge, progress bar, target tags, and actions (Details, Delete)
 - **Job detail modal**: Shows full job info with per-target result breakdown (success/failed/skipped counts)
 - **Auto-refresh**: Dashboard polls every 10 seconds for updated job status
@@ -296,7 +296,7 @@ The module creates 3 custom tables via `hook_schema()`:
 | `id` | VARCHAR(36) | UUID primary key |
 | `job_id` | VARCHAR(36) | FK to jobs |
 | `url` | TEXT | Warmed URL |
-| `target` | VARCHAR(50) | cdn / facebook / linkedin / twitter / google / bing / indexnow / cdn-purge:cloudflare / cdn-purge:imperva / cdn-purge:akamai |
+| `target` | VARCHAR(50) | schema / cdn / facebook / linkedin / twitter / google / bing / indexnow / cdn-purge:cloudflare / cdn-purge:imperva / cdn-purge:akamai |
 | `status` | VARCHAR(20) | success / failed / skipped / pending |
 | `http_status` | INT | HTTP response code |
 | `duration_ms` | INT | Duration in milliseconds |

@@ -281,14 +281,18 @@ nodejs-docker/src/
 │       ├── logs/route.ts       # GET — URL results log
 │       ├── settings/route.ts   # GET/PUT — Configuration
 │       ├── export/route.ts     # GET — CSV/JSON export
-│       └── export-failed/route.ts # GET — Failed URLs export
+│       ├── export-failed/route.ts # GET — Failed URLs export
+│       └── schema-report/
+│           ├── route.ts        # GET — Schema validation report
+│           └── export/route.ts # POST — Schema report CSV/JSON export
 ├── components/
 │   ├── InputField.tsx          # Reusable input component
-│   ├── JobDetail.tsx           # Job detail view
+│   ├── JobDetail.tsx           # Job detail view (integrates SchemaReport)
 │   ├── JobTable.tsx            # Jobs listing table
 │   ├── NavBar.tsx              # Navigation bar
 │   ├── SettingsSection.tsx     # Settings group component
 │   ├── SitemapManager.tsx      # Sitemap CRUD UI
+│   ├── SchemaReport.tsx        # Schema validation report (filterable, exportable)
 │   ├── StatusCard.tsx          # Status metric card
 │   └── WarmForm.tsx            # Warming initiation form
 └── lib/
@@ -480,9 +484,23 @@ All three platforms (WordPress, Drupal, Node.js) use the same logical schema:
 | id | TEXT (UUID) | Primary key |
 | job_id | TEXT (FK) | Reference to job |
 | url | TEXT | The warmed URL |
-| target | TEXT | cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest |
+| target | TEXT | schema / cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest |
 | status | TEXT | success / failed / skipped / pending |
 | http_status | INTEGER | HTTP status code |
+| duration_ms | INTEGER | Duration in milliseconds |
+| error | TEXT | Error message (optional) |
+| created_at | DATETIME | Timestamp |
+
+### schema_results (Node.js only)
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT (UUID) | Primary key |
+| job_id | TEXT (FK) | Reference to job |
+| url | TEXT | Validated URL |
+| status | TEXT | valid / warnings / errors / pending |
+| schemas | TEXT (JSON) | Detected schema types (e.g. ["Article", "Organization"]) |
+| errors | TEXT (JSON) | Array of error objects |
+| warnings | TEXT (JSON) | Array of warning objects |
 | duration_ms | INTEGER | Duration in milliseconds |
 | error | TEXT | Error message (optional) |
 | created_at | DATETIME | Timestamp |
@@ -508,6 +526,8 @@ All three platforms (WordPress, Drupal, Node.js) use the same logical schema:
 | PUT | `/api/settings` | Update configuration |
 | GET | `/api/export` | CSV/JSON export |
 | GET | `/api/export-failed` | Export failed URLs |
+| GET | `/api/schema-report` | Schema validation report |
+| POST | `/api/schema-report/export` | Schema report CSV/JSON export |
 
 ---
 
