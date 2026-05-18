@@ -3,7 +3,7 @@
  * Plugin Name: CacheWarmer License Manager
  * Plugin URI: https://cachewarmer.drossmedia.de
  * Description: Central license management dashboard for CacheWarmer (WordPress, Drupal, Node.js/Docker). Manages license keys, tracks installations, processes Stripe payments, and provides a REST API for license validation and heartbeat checks.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Alexander Dross / Dross:Media
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'CWLM_VERSION', '1.0.0' );
+define( 'CWLM_VERSION', '1.0.1' );
 define( 'CWLM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CWLM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CWLM_PLUGIN_FILE', __FILE__ );
@@ -27,7 +27,7 @@ define( 'CWLM_DB_PREFIX', 'cwlm_' );
 define( 'CWLM_GRACE_PERIOD_DAYS', 14 );
 
 // Latest CacheWarmer plugin/module version (for update checks).
-define( 'CWLM_LATEST_PRODUCT_VERSION', '1.1.0' );
+define( 'CWLM_LATEST_PRODUCT_VERSION', '1.1.1' );
 
 // Product URLs.
 define( 'CWLM_PRODUCT_URL', 'https://cachewarmer.drossmedia.de' );

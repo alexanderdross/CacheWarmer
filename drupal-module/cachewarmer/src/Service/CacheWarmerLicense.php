@@ -380,7 +380,7 @@ class CacheWarmerLicense {
       'site_url' => \Drupal::request()->getSchemeAndHttpHost(),
       'platform' => 'drupal',
       'platform_version' => \Drupal::VERSION,
-      'product_version' => '1.1.0',
+      'product_version' => '1.1.1',
     ];
 
     try {
