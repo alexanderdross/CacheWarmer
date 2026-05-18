@@ -31,7 +31,6 @@ export async function sendJobCompletedEmail(jobData: {
 
   if (emailConfig.smtpHost) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const nodemailer = require("nodemailer") as { createTransport: (opts: Record<string, unknown>) => { sendMail: (opts: Record<string, string>) => Promise<void> } };
       const transporter = nodemailer.createTransport({
         host: emailConfig.smtpHost,

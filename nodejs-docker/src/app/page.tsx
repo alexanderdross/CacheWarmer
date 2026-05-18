@@ -28,7 +28,6 @@ export default function Dashboard() {
   const [statusData, setStatusData] = useState<StatusData | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [jobDetail, setJobDetail] = useState<any>(null);
 
   const fetchStatus = useCallback(async () => {

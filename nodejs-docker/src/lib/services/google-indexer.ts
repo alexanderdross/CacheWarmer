@@ -37,7 +37,6 @@ export async function submitToGoogle(
   });
 
   const client = await auth.getClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const indexing = google.indexing({ version: "v3", auth: client as any });
 
   // Respect daily quota
