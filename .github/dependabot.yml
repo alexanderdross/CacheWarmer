@@ -51,6 +51,15 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "pnpm/action-setup"
+        versions: [">=5"]
+      - dependency-name: "actions/checkout"
+        versions: [">=5"]
+      - dependency-name: "actions/setup-node"
+        versions: [">=5"]
+      - dependency-name: "actions/upload-artifact"
+        versions: [">=5"]
     labels:
       - "dependencies"
       - "ci"
