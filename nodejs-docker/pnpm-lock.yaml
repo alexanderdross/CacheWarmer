@@ -33,8 +33,8 @@ importers:
         specifier: ^13.1.3
         version: 13.1.3
       puppeteer-core:
-        specifier: ^25.0.3
-        version: 25.0.3
+        specifier: ^25.0.4
+        version: 25.0.4
       react:
         specifier: ^19.2.6
         version: 19.2.6
@@ -2995,8 +2995,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  puppeteer-core@25.0.3:
-    resolution: {integrity: sha512-mNT7RWTAzgo9Q+TD8s1XzIOd6/7ZkbF40A0yNYanZOZZ7zSrFN1Am+EtL0nAMU5QWSSv6Dgi+3unRk0saeGcOg==}
+  puppeteer-core@25.0.4:
+    resolution: {integrity: sha512-K1LQKDP6w1rIr1jUyN9obH16TO/DCy86k3q+FBd2prGY+TStxhFySxmaZZuRF+0D3BJXjwCYFke7tMHCH4olTA==}
     engines: {node: '>=22.12.0'}
 
   qs@6.15.0:
@@ -6630,7 +6630,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  puppeteer-core@25.0.3:
+  puppeteer-core@25.0.4:
     dependencies:
       '@puppeteer/browsers': 3.0.3
       chromium-bidi: 16.0.1(devtools-protocol@0.0.1608973)
