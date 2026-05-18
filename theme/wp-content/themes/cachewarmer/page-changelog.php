@@ -20,6 +20,24 @@ cachewarmer_breadcrumb('Changelog');
 <section class="section section-gray">
     <div class="container max-w-4xl mx-auto">
 
+        <!-- v1.1.1 -->
+        <div class="changelog-entry">
+            <div class="changelog-entry-header">
+                <span class="changelog-version">v1.1.1</span>
+                <span class="changelog-date">May 2026</span>
+            </div>
+
+            <div class="changelog-category">
+                <h2><?php cachewarmer_icon('refresh', '', 18); ?> Maintenance</h2>
+                <ul>
+                    <li><strong>Self-hosted (Node.js / Docker):</strong> bumped <code>better-sqlite3</code> 12.6.2 &rarr; 12.10.0 (SQLite 3.53.1, Node.js 26 prebuilds).</li>
+                    <li><strong>Self-hosted (Node.js / Docker):</strong> bumped <code>typescript</code> 5.9.3 &rarr; 6.0.3, <code>puppeteer-core</code> 25.0.3 &rarr; 25.0.4, <code>tailwindcss</code> + <code>@tailwindcss/postcss</code> 4.2.1 &rarr; 4.3.0, <code>postcss</code> 8.5.6 &rarr; 8.5.14, <code>fast-xml-parser</code> 5.4.1 &rarr; 5.8.0, <code>ioredis</code> 5.9.3 &rarr; 5.10.1, <code>uuid</code> 13.0.0 &rarr; 14.0.0, <code>bullmq</code> 5.76.x, <code>yaml</code> 2.9.0.</li>
+                    <li><strong>CI:</strong> pinned <code>pnpm/action-setup@v4</code> with explicit <code>version: 10.29.3</code> to keep <code>pnpm install --frozen-lockfile</code> stable on GitHub Actions runners.</li>
+                    <li><strong>All platforms:</strong> patch version bump (WordPress plugin 1.1.0 &rarr; 1.1.1, Drupal module 1.1.0 &rarr; 1.1.1, Self-hosted 1.1.0 &rarr; 1.1.1, License Manager 1.0.0 &rarr; 1.0.1, Theme 2.4.0 &rarr; 2.4.1) reflecting the underlying dependency and CI updates.</li>
+                </ul>
+            </div>
+        </div>
+
         <!-- v1.1.0 -->
         <div class="changelog-entry">
             <div class="changelog-entry-header">

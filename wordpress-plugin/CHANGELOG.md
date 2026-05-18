@@ -2,6 +2,11 @@
 
 All notable changes to the CacheWarmer WordPress plugin will be documented in this file.
 
+## [1.1.1] - 2026-05-18
+
+### Changed
+- Patch release covering coordinated dependency and CI maintenance across the project. No functional changes to the WordPress plugin itself.
+
 ## [1.1.0] - 2026-03-08
 
 ### Added
