@@ -22,7 +22,7 @@
   "packageManager": "pnpm@10.29.3",
   "dependencies": {
     "better-sqlite3": "^12.6.2",
-    "bullmq": "^5.70.1",
+    "bullmq": "^5.76.10",
     "fast-xml-parser": "^5.4.1",
     "googleapis": "^171.4.0",
     "ioredis": "^5.9.3",
