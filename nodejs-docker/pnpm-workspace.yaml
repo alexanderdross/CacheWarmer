@@ -1,0 +1,2 @@
+minimumReleaseAge: 20160         # 14 days (14 * 24 * 60 minutes)
+minimumReleaseAgeStrict: true
