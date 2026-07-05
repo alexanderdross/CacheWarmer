@@ -12,6 +12,14 @@ on:
       - "nodejs-docker/**"
       - ".github/workflows/nodejs-ci.yml"
 
+env:
+  # better-sqlite3 compiles native code requiring a C++20-capable compiler.
+  # The self-hosted runner's default g++ is GCC 9 (only knows -std=c++2a and
+  # rejects -std=c++20), so pin gcc/g++ 12 for the node-gyp build. The
+  # "Install C++20 build toolchain" step installs them before pnpm install.
+  CC: gcc-12
+  CXX: g++-12
+
 defaults:
   run:
     working-directory: nodejs-docker
@@ -30,6 +38,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
 
@@ -46,6 +56,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: npx tsc --noEmit
 
@@ -62,6 +74,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:unit
 
@@ -78,6 +92,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:integration
 
@@ -94,6 +110,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:security
 
@@ -111,6 +129,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
@@ -128,6 +148,8 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:coverage
       - name: Upload coverage artifact
@@ -152,5 +174,7 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: nodejs-docker/pnpm-lock.yaml
+      - name: Install C++20 build toolchain (better-sqlite3)
+        run: apt-get update && apt-get install -y --no-install-recommends gcc-12 g++-12
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level=critical
