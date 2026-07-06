@@ -1,0 +1,68 @@
+name: PHP CI
+
+# The Node.js module is gated by nodejs-ci.yml. This workflow gates the PHP
+# side of the monorepo — the WordPress plugin, Drupal module, marketing theme,
+# and the license-manager plugin — none of which had any pre-merge check.
+on:
+  pull_request:
+    paths:
+      - "wordpress-plugin/**"
+      - "drupal-module/**"
+      - "cachewarmer-license-manager/**"
+      - "theme/**"
+      - ".github/workflows/php-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "wordpress-plugin/**"
+      - "drupal-module/**"
+      - "cachewarmer-license-manager/**"
+      - "theme/**"
+      - ".github/workflows/php-ci.yml"
+
+concurrency:
+  group: php-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  php-lint:
+    name: PHP syntax (php ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Lint against the floor (8.1 — Drupal module requirement) and the
+        # WordPress plugin / license-manager target (8.2) so a construct that
+        # only parses on newer PHP is caught.
+        php: ["8.1", "8.2"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Lint every PHP source file
+        # `php -l` prints parse errors to stderr (kept) and "No syntax errors"
+        # to stdout (discarded). xargs exits non-zero if any file fails.
+        run: |
+          find wordpress-plugin drupal-module cachewarmer-license-manager theme \
+            -name '*.php' -not -path '*/vendor/*' -print0 \
+            | xargs -0 -r -n1 -P4 php -l > /dev/null
+
+  composer-validate:
+    name: Composer validate (license-manager)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+      # The license-manager is the only PHP component with a composer.json.
+      # Validate its schema (no lock file is committed, so skip the lock check).
+      - name: Validate composer.json
+        working-directory: cachewarmer-license-manager
+        run: composer validate --no-check-lock --no-check-publish
