@@ -37,7 +37,7 @@ jobs:
         # Lint against the floor (8.1 — Drupal module requirement) and the
         # WordPress plugin / license-manager target (8.2) so a construct that
         # only parses on newer PHP is caught.
-        php: ["8.1", "8.2"]
+        php: ["8.2", "8.4"]
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
