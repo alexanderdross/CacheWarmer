@@ -4,8 +4,9 @@ updates:
   - package-ecosystem: "npm"
     directory: "/nodejs-docker"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
+    cooldown:
+      default-days: 14
     open-pull-requests-limit: 10
     groups:
       next-and-react:
@@ -44,8 +45,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
+    cooldown:
+      default-days: 14
     open-pull-requests-limit: 5
     groups:
       github-actions:
