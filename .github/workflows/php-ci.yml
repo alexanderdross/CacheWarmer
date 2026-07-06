@@ -30,7 +30,7 @@ permissions:
 jobs:
   php-lint:
     name: PHP syntax (php ${{ matrix.php }})
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,7 @@ jobs:
 
   composer-validate:
     name: Composer validate (license-manager)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
