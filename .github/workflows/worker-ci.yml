@@ -5,6 +5,9 @@ name: Worker CI
 #
 # No build toolchain step here, unlike nodejs-ci.yml — this package has no
 # native dependencies to compile.
+#
+# Node 22, not the 20 the other workflows pin: wrangler 4 refuses to run on
+# anything older. The 20 belongs to nodejs-docker's toolchain, not this one.
 
 on:
   pull_request:
@@ -36,7 +39,7 @@ jobs:
           version: 10.29.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
@@ -52,7 +55,7 @@ jobs:
           version: 10.29.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
@@ -72,7 +75,7 @@ jobs:
           version: 10.29.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
