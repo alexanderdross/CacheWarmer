@@ -389,6 +389,64 @@ $t->assertEqual( 'CDN concurrency: single URL still warmed twice', 2, count( $si
 update_option( 'cachewarmer_cdn_concurrency', 3 );
 
 // ──────────────────────────────────────────────
+// Unit Tests — CDN Warmer verdicts
+// ──────────────────────────────────────────────
+$t->suite( '2. Unit Tests — CDN Warmer verdicts' );
+
+$cw_verdict = function ( array $fill, array $probe, ?string $vary = null ): string {
+    return CacheWarmer_CDN_Warmer::classify_cache_verdict( $fill, $probe, $vary )['verdict'];
+};
+
+// A miss on the fill is the SUCCESS signal for a warmer — it means the request
+// populated the cache. A hit there means the run changed nothing.
+$t->assertEqual( 'Verdict: miss then hit is "warmed"', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ) ) );
+$t->assertEqual( 'Verdict: hit then hit is "already_warm"', 'already_warm', $cw_verdict( array( 'cfCacheStatus' => 'HIT' ), array( 'cfCacheStatus' => 'HIT' ) ) );
+$t->assertEqual( 'Verdict: expired then hit counts as warmed', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'EXPIRED' ), array( 'cfCacheStatus' => 'HIT' ) ) );
+$t->assertEqual( 'Verdict: miss twice is "not_cacheable"', 'not_cacheable', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'MISS' ) ) );
+$t->assertEqual( 'Verdict: BYPASS is reported as bypassed', 'bypassed', $cw_verdict( array( 'cfCacheStatus' => 'BYPASS' ), array( 'cfCacheStatus' => 'MISS' ) ) );
+$t->assertEqual( 'Verdict: DYNAMIC means the zone does not cache it', 'zone_not_caching', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'DYNAMIC' ) ) );
+$t->assertEqual( 'Verdict: Akamai TCP_ headers are understood', 'warmed', $cw_verdict( array( 'xCache' => 'TCP_MISS' ), array( 'xCache' => 'TCP_HIT' ) ) );
+$t->assertEqual( 'Verdict: a non-zero Age implies a hit', 'warmed', $cw_verdict( array( 'age' => '0' ), array( 'age' => '42' ) ) );
+$t->assertEqual( 'Verdict: no cache headers yields "unknown"', 'unknown', $cw_verdict( array(), array() ) );
+
+// The two passes send different user agents, so an origin that varies on that
+// header puts them in separate cache entries and the pair proves nothing.
+$t->assertEqual(
+    'Verdict: Vary on User-Agent makes the pair meaningless',
+    'indeterminate',
+    $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ), 'Accept-Encoding, User-Agent' )
+);
+$t->assertEqual(
+    'Verdict: a harmless Vary still allows a judgement',
+    'warmed',
+    $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ), 'Accept-Encoding' )
+);
+
+$cw_no_store = CacheWarmer_CDN_Warmer::classify_cache_verdict(
+    array( 'cfCacheStatus' => 'MISS' ),
+    array( 'cfCacheStatus' => 'MISS', 'cacheControl' => 'no-store, max-age=0' )
+);
+$t->assertEqual( 'Verdict: names Cache-Control as the reason', 'Cache-Control: no-store', $cw_no_store['reason'] );
+
+// The mobile pass carries the verdict, because it is the probe.
+$requests_stub::$calls = array();
+$verdict_warmer  = new CacheWarmer_CDN_Warmer();
+$verdict_results = $verdict_warmer->warm( array( 'https://example.com/a', 'https://example.com/b' ), 'test-job-verdict' );
+$t->assertEqual( 'Verdict: fill pass carries no verdict', null, $verdict_results[0]['cache_headers']['verdict'] ?? null );
+$t->assertNotEmpty( 'Verdict: probe pass carries one', $verdict_results[2]['cache_headers']['verdict'] ?? '' );
+
+// Persistence: the headers used to be collected and then dropped, because
+// neither the insert nor the table had anywhere to put them.
+$db_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-database.php' );
+$jm_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-job-manager.php' );
+$t->assertContains( 'Schema: url_results has a cache_headers column', $db_src, 'cache_headers TEXT DEFAULT NULL' );
+$t->assertContains( 'Schema: url_results has a viewport column', $db_src, 'viewport VARCHAR(50) DEFAULT NULL' );
+$t->assertContains( 'DB: insert stores the cache headers as JSON', $db_src, "wp_json_encode( \$data['cache_headers'] )" );
+$t->assertContains( 'DB: an upgrade path exists for existing installs', $db_src, 'function maybe_upgrade' );
+$t->assertContains( 'Job manager: forwards the cache headers', $jm_src, "'cache_headers' => \$result['cache_headers'] ?? null" );
+$t->assert( 'DB version bumped so the upgrade fires', str_contains( $main_content, "CACHEWARMER_DB_VERSION', '1.1.0'" ) );
+
+// ──────────────────────────────────────────────
 // Unit Tests — CDN Purge (Akamai EdgeGrid, Cloudflare batching)
 // ──────────────────────────────────────────────
 $t->suite( '2. Unit Tests — CDN Purge' );

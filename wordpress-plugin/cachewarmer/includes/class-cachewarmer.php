@@ -59,6 +59,7 @@ class CacheWarmer {
             new CacheWarmer_Admin( $this->job_manager, $this->database );
         }
 
+        add_action( 'admin_init', array( $this->database, 'maybe_upgrade' ) );
         add_action( 'cachewarmer_process_job', array( $this->job_manager, 'process_job' ), 10, 1 );
         add_action( 'cachewarmer_scheduled_warm', array( $this->scheduler, 'run_scheduled_warm' ), 10, 1 );
 

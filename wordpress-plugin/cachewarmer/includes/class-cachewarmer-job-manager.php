@@ -206,6 +206,8 @@ class CacheWarmer_Job_Manager {
                     'http_status' => $result['http_status'] ?? null,
                     'duration_ms' => $result['duration_ms'] ?? null,
                     'error'       => $result['error'] ?? null,
+                    'viewport'    => $result['viewport'] ?? null,
+                    'cache_headers' => $result['cache_headers'] ?? null,
                 ) );
                 $processed++;
                 $this->db->update_job( $job_id, array( 'processed_urls' => $processed ) );

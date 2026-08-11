@@ -54,6 +54,8 @@ class CacheWarmer_Database {
             http_status INT DEFAULT NULL,
             duration_ms INT DEFAULT NULL,
             error TEXT DEFAULT NULL,
+            viewport VARCHAR(50) DEFAULT NULL,
+            cache_headers TEXT DEFAULT NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_job_id (job_id),
@@ -65,6 +67,20 @@ class CacheWarmer_Database {
         dbDelta( $sql );
 
         update_option( 'cachewarmer_db_version', CACHEWARMER_DB_VERSION );
+    }
+
+    /**
+     * Re-run the schema when the plugin ships a newer database version.
+     *
+     * create_tables() only ran on activation, so an updated plugin never
+     * gained new columns on an existing site. dbDelta adds missing columns
+     * when the CREATE TABLE statement is re-applied.
+     */
+    public function maybe_upgrade(): void {
+        if ( get_option( 'cachewarmer_db_version' ) === CACHEWARMER_DB_VERSION ) {
+            return;
+        }
+        $this->create_tables();
     }
 
     // ──────────────────────────────────────────────
@@ -278,9 +294,13 @@ class CacheWarmer_Database {
                 'http_status' => $data['http_status'] ?? null,
                 'duration_ms' => $data['duration_ms'] ?? null,
                 'error'       => $data['error'] ?? null,
+                'viewport'    => $data['viewport'] ?? null,
+                'cache_headers' => ! empty( $data['cache_headers'] )
+                    ? wp_json_encode( $data['cache_headers'] )
+                    : null,
                 'created_at'  => current_time( 'mysql', true ),
             ),
-            array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' )
+            array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s' )
         );
     }
 

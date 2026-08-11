@@ -127,7 +127,7 @@ wordpress-plugin/cachewarmer/
 ### Database Tables (using wpdb prefix)
 1. **wp_cachewarmer_sitemaps** — id, url, domain, cron_expression, created_at, last_warmed_at
 2. **wp_cachewarmer_jobs** — id, sitemap_id, sitemap_url, status, total_urls, processed_urls, targets (JSON), started_at, completed_at, error
-3. **wp_cachewarmer_url_results** — id, job_id, url, target, status, http_status, duration_ms, error, created_at *(no viewport/cache_headers columns — see Warm verification below)*
+3. **wp_cachewarmer_url_results** — id, job_id, url, target, status, http_status, duration_ms, error, viewport, cache_headers, created_at
 
 ### REST API (namespace: `cachewarmer/v1`)
 | Method | Route | Purpose |
@@ -458,17 +458,16 @@ Target identifiers accepted by the APIs: `schema`, `cdn`, `facebook`,
 `linkedin`, `twitter`, `google`, `bing`, `indexnow`, `pinterest`, `cdn-purge`.
 The Drupal module accepts all of these except `schema` and `cdn-purge`.
 
-**Warm verification.** The Node.js and Drupal editions treat the desktop pass
-as a cache fill and the following pass as a probe, recording a verdict
-(`warmed`, `already_warm`, `not_cacheable`, `bypassed`, `zone_not_caching`,
+**Warm verification.** All three editions treat the desktop pass as a cache
+fill and the following pass as a probe, recording a verdict (`warmed`,
+`already_warm`, `not_cacheable`, `bypassed`, `zone_not_caching`,
 `indeterminate`, `unknown`) alongside the raw cache headers. MISS on a fill
-request is the success signal, not a warning.
+request is the success signal, not a warning — a probe that comes back HIT is
+what proves the fill landed.
 
-The **WordPress plugin does not**: its CDN warmer collects cache headers, but
-`insert_url_result()` drops them and `wp_cachewarmer_url_results` has no
-`viewport` or `cache_headers` column to receive them. Bringing it in line needs
-the same treatment Drupal got — two columns, a `dbDelta` migration and the
-classifier.
+Where the origin sends `Vary: User-Agent` the two passes address different
+cache entries, so the verdict is `indeterminate` rather than claimed either
+way.
 
 ---
 

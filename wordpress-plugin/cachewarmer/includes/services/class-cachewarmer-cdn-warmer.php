@@ -107,14 +107,35 @@ class CacheWarmer_CDN_Warmer {
      * walked each chunk with a plain foreach, so the chunking had no effect
      * and every request was sequential — the "CDN Concurrency" setting did
      * nothing at all. Each round of URLs now goes out in parallel.
+     *
+     * The first pass fills the cache and every later pass acts as a probe, so
+     * a warm can be shown to have worked without any extra requests.
      */
     public function warm( array $urls, string $job_id, ?callable $on_result = null ): array {
         $results     = array();
         $concurrency = max( 1, $this->concurrency );
 
         foreach ( array_chunk( $urls, $concurrency ) as $batch ) {
-            foreach ( $this->passes() as $pass ) {
+            $fills = array();
+
+            foreach ( $this->passes() as $index => $pass ) {
                 foreach ( $this->fetch_batch( $batch, $pass['ua'], $pass['viewport'] ) as $result ) {
+                    $url = $result['url'];
+
+                    if ( 0 === $index ) {
+                        $fills[ $url ] = $result['cache_headers'] ?? array();
+                    } elseif ( ! empty( $result['cache_headers'] ) ) {
+                        $verdict = self::classify_cache_verdict(
+                            $fills[ $url ] ?? array(),
+                            $result['cache_headers'],
+                            $result['cache_headers']['vary'] ?? null
+                        );
+                        $result['cache_headers']['verdict'] = $verdict['verdict'];
+                        if ( isset( $verdict['reason'] ) ) {
+                            $result['cache_headers']['verdictReason'] = $verdict['reason'];
+                        }
+                    }
+
                     $results[] = $result;
                     if ( $on_result ) {
                         $on_result( $result );
@@ -124,6 +145,81 @@ class CacheWarmer_CDN_Warmer {
         }
 
         return $results;
+    }
+
+    /**
+     * Reduce a CDN cache header to a coarse state.
+     */
+    private static function cache_state( array $headers ): string {
+        $raw = strtoupper( $headers['cfCacheStatus'] ?? $headers['xCache'] ?? '' );
+        if ( '' === $raw ) {
+            return (int) ( $headers['age'] ?? 0 ) > 0 ? 'hit' : 'unknown';
+        }
+        if ( str_contains( $raw, 'BYPASS' ) ) {
+            return 'bypass';
+        }
+        if ( str_contains( $raw, 'DYNAMIC' ) ) {
+            return 'dynamic';
+        }
+        if ( str_contains( $raw, 'HIT' ) ) {
+            return 'hit';
+        }
+        if ( str_contains( $raw, 'MISS' ) || str_contains( $raw, 'EXPIRED' ) ) {
+            return 'miss';
+        }
+        return 'unknown';
+    }
+
+    /**
+     * Judge a fill/probe pair.
+     *
+     * For a warmer, MISS on the fill is the success signal — the request
+     * populated the cache. HIT there means it was already warm and the run
+     * changed nothing.
+     *
+     * @return array{verdict:string,reason?:string}
+     */
+    public static function classify_cache_verdict( array $fill, array $probe, ?string $probe_vary = null ): array {
+        // The passes send different user agents. If the origin varies on that
+        // header they address separate cache entries, so the pair proves
+        // nothing either way.
+        if ( ! empty( $probe_vary ) && false !== stripos( $probe_vary, 'user-agent' ) ) {
+            return array(
+                'verdict' => 'indeterminate',
+                'reason'  => 'Origin sends Vary: User-Agent, so the two passes are separate cache entries',
+            );
+        }
+
+        $fill_state  = self::cache_state( $fill );
+        $probe_state = self::cache_state( $probe );
+
+        if ( 'bypass' === $fill_state || 'bypass' === $probe_state ) {
+            return array(
+                'verdict' => 'bypassed',
+                'reason'  => $probe['cacheControl'] ?? 'Cache bypassed',
+            );
+        }
+        if ( 'dynamic' === $probe_state ) {
+            return array(
+                'verdict' => 'zone_not_caching',
+                'reason'  => 'CDN reports the response as DYNAMIC',
+            );
+        }
+        if ( 'hit' === $probe_state ) {
+            return array( 'verdict' => 'hit' === $fill_state ? 'already_warm' : 'warmed' );
+        }
+        if ( 'miss' === $probe_state ) {
+            $cache_control = strtolower( $probe['cacheControl'] ?? '' );
+            if ( str_contains( $cache_control, 'no-store' ) ) {
+                return array( 'verdict' => 'not_cacheable', 'reason' => 'Cache-Control: no-store' );
+            }
+            if ( str_contains( $cache_control, 'private' ) ) {
+                return array( 'verdict' => 'not_cacheable', 'reason' => 'Cache-Control: private' );
+            }
+            return array( 'verdict' => 'not_cacheable', 'reason' => 'Still a miss after the fill request' );
+        }
+
+        return array( 'verdict' => 'unknown' );
     }
 
     /**
@@ -218,6 +314,7 @@ class CacheWarmer_CDN_Warmer {
                 'cfCacheStatus' => $this->header_from( $response, 'cf-cache-status' ),
                 'age'           => $this->header_from( $response, 'age' ),
                 'cacheControl'  => $this->header_from( $response, 'cache-control' ),
+                'vary'          => $this->header_from( $response, 'vary' ),
             ) );
 
             $results[] = array(
@@ -397,6 +494,7 @@ class CacheWarmer_CDN_Warmer {
             'cfCacheStatus' => wp_remote_retrieve_header( $response, 'cf-cache-status' ) ?: null,
             'age'           => wp_remote_retrieve_header( $response, 'age' ) ?: null,
             'cacheControl'  => wp_remote_retrieve_header( $response, 'cache-control' ) ?: null,
+            'vary'          => wp_remote_retrieve_header( $response, 'vary' ) ?: null,
         ) );
 
         return array(
