@@ -41,6 +41,17 @@ jobs:
         php: ["8.2", "8.4"]
     steps:
       - uses: actions/checkout@v7
+      - name: Repair sudo for root
+        # setup-php shells out to `sudo apt-get`. This runner image runs as
+        # root but ships a sudoers without a root entry, so sudo refuses, the
+        # action retries in a sleep loop, and the job hangs until it is killed
+        # — 56 minutes before timeout-minutes existed. nodejs-ci.yml never hit
+        # this because it calls apt-get directly.
+        run: |
+          if [ "$(id -u)" = "0" ] && ! sudo -n true 2>/dev/null; then
+            echo 'root ALL=(ALL:ALL) ALL' >> /etc/sudoers
+          fi
+          sudo -n true
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -59,6 +70,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      - name: Repair sudo for root
+        # setup-php shells out to `sudo apt-get`. This runner image runs as
+        # root but ships a sudoers without a root entry, so sudo refuses, the
+        # action retries in a sleep loop, and the job hangs until it is killed
+        # — 56 minutes before timeout-minutes existed. nodejs-ci.yml never hit
+        # this because it calls apt-get directly.
+        run: |
+          if [ "$(id -u)" = "0" ] && ! sudo -n true 2>/dev/null; then
+            echo 'root ALL=(ALL:ALL) ALL' >> /etc/sudoers
+          fi
+          sudo -n true
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
