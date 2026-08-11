@@ -1,0 +1,93 @@
+name: Worker CI
+
+# Gates cloudflare-worker/, which nothing else covers: nodejs-ci.yml triggers
+# only on nodejs-docker/**, php-ci.yml only on the PHP modules.
+#
+# No build toolchain step here, unlike nodejs-ci.yml — this package has no
+# native dependencies to compile.
+
+on:
+  pull_request:
+    paths:
+      - "cloudflare-worker/**"
+      - ".github/workflows/worker-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cloudflare-worker/**"
+      - ".github/workflows/worker-ci.yml"
+
+concurrency:
+  group: worker-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: cloudflare-worker
+
+jobs:
+  typecheck:
+    name: Typecheck (tsc)
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: npx tsc --noEmit
+
+  test:
+    name: Unit Tests
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: npx vitest run
+
+  # `wrangler deploy --dry-run` bundles and validates bindings, migrations and
+  # config without contacting Cloudflare — no account, no credentials. It is
+  # the only thing that catches a broken deploy config before a deploy, and
+  # the three account configs drift independently.
+  bundle:
+    name: Validate deploy configs
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Dry-run every wrangler config
+        run: |
+          set -euo pipefail
+          failed=0
+          for config in wrangler.jsonc deploy/*/wrangler.jsonc; do
+            echo "::group::$config"
+            if npx wrangler deploy --config "$config" --dry-run; then
+              echo "OK"
+            else
+              echo "::error file=cloudflare-worker/$config::wrangler could not build this config"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed
