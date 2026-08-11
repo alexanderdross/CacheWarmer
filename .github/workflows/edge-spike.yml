@@ -233,9 +233,12 @@ jobs:
           # Body and status captured separately rather than with
           # --fail-with-body: that flag needs curl 7.76 and the runner is
           # Ubuntu 20.04, whose curl is 7.68.
+          # `|| echo 000` so a transport failure still reaches the check below
+          # with a readable message, instead of set -e killing the step silently.
           CODE=$(curl -sS --max-time 120 -o spike-out/spike.json -w "%{http_code}" \
             -H "Authorization: Bearer $ADMIN_TOKEN" \
-            "${{ steps.worker.outputs.base }}/spike?url=$TARGET&regions=${{ inputs.regions }}")
+            "${{ steps.worker.outputs.base }}/spike?url=$TARGET&regions=${{ inputs.regions }}" \
+            || echo 000)
           cat spike-out/spike.json
           echo
           if [ "$CODE" != "200" ]; then
