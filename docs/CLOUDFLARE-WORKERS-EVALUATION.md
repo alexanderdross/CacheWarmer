@@ -215,7 +215,24 @@ Was bei drei Accounts zu beachten ist:
 - **D1 lebt in einem Account** — zentral im Hub, nicht je Satellit, sonst zerfällt das Reporting in drei Silos.
 - **Secrets liegen dreifach.** Ein `wrangler secret put` je Account; ein Rotationsskript über die drei Profile spart späteren Ärger.
 
-> **Zuzuordnen vor dem ersten Deploy:** Die Account-IDs stehen im Dashboard. Aus der Account-Liste liegt `webmaster@trade.aero` auf `34d3b942…` und `Dross:Media` auf `e8d2e50a…`; welcher Eintrag zu `alexander.dross@me.com` gehört, ist zu bestätigen — nicht raten, sonst deployt der erste Lauf in den falschen Account.
+### Deploy-Ziele
+
+| Account | Anzeigename | Account-ID | Rolle |
+|---|---|---|---|
+| `mail@drossmedia.de` | Dross:Media | `e8d2e50aa1f1d61d8c68ba490d7cdec1` | Warmer **+ Hub** (D1, Report-Endpunkt) |
+| `alexander.dross@me.com` | Alexander Dross \| Privat | `c1df5fbc1f923a0ea0a81889306082c5` | Warmer (Satellit) |
+| `webmaster@trade.aero` | Webmaster@trade.aero's Account | `34d3b942d12ae7cbcf19142fead79259` | Warmer (Satellit) |
+
+Account-IDs sind Kennungen, keine Geheimnisse — sie gehören regulär in die eingecheckte Wrangler-Config und sind allein nicht verwertbar. Genau dort sollten sie auch stehen, als zweite Sicherung neben dem Wrangler-Profil:
+
+```
+cloudflare-worker/
+├── src/                          # eine Codebasis für alle drei
+└── deploy/
+    ├── drossmedia/wrangler.jsonc     # account_id e8d2e50a… + D1 + Report-Route
+    ├── privat/wrangler.jsonc         # account_id c1df5fbc…
+    └── trade-aero/wrangler.jsonc     # account_id 34d3b942…
+```
 
 ```
 Cron Trigger (nachts)
@@ -281,7 +298,7 @@ EdgeGrid nach WebCrypto zu portieren ist mechanisch — aber zwei Details erzeug
 | Purge-Ratenlimits gelten **pro Account**, nicht pro Job | Bei mehreren Zonen im selben Account ein globaler Token-Bucket (ein DO oder das native Rate-Limiting-Binding) — der feste `delay(500)` von heute ist kein Limiter |
 | D1 schreibt single-region; mehrere Regions-DOs schreiben quer | Im DO puffern, per `D1.batch()` je Step flushen |
 | Zonen liegen in drei getrennten Accounts | Je Account ein Deploy derselben Codebasis. Admin-Rechte ersetzen die Account-Grenze **nicht**. |
-| Deploy landet im falschen Account | Wrangler-Profil **plus** `account_id` in der Config als zweite Sicherung; Account-IDs vorher verifizieren, nicht raten |
+| Deploy landet im falschen Account | Wrangler-Profil **plus** gepinnte `account_id` je Deploy-Verzeichnis (siehe Tabelle oben) — Wrangler bricht dann ab, statt daneben zu deployen |
 | Drei Deploys driften auseinander | Ein Repo, ein Build, drei `wrangler deploy --profile …` in einem Skript oder einer CI-Matrix — nie manuell einzeln deployen |
 | Secrets und Tokens dreifach zu pflegen | Rotationsskript über die drei Profile von Anfang an mitbauen |
 | Purge-Token muss drei Accounts abdecken | API-Token von `mail@drossmedia.de` mit `Zone:Cache Purge` über alle drei Accounts scopen — Tokens sind benutzer-, nicht accountgebunden |
