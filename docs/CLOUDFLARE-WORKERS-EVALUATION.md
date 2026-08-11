@@ -6,7 +6,7 @@
 
 Lohnt es sich, CacheWarmer als Cloudflare Worker zu realisieren, statt bzw. neben dem heutigen Node/Docker-Modul? Ziel ist **echtes Warming von Seiten im Cloudflare-CDN** plus Purge/Warm für andere CDNs per API.
 
-**Rahmen:** Nicht kommerziell — nur für eigene Projekte (TradeAero, AIPAero, …). Diese verteilen sich auf **drei getrennte Cloudflare-Accounts** (`trade.aero`, `mail@drossmedia.de`, `alexander.dross@me.com`); nur `mail@drossmedia.de` hat Admin-Rechte auf die einzelnen Accounts. Das Ergebnis ist eine **zusätzliche Komponente**; WordPress-Plugin, Drupal-Modul und Node/Docker-Stack bleiben unangetastet.
+**Rahmen:** Nicht kommerziell — nur für eigene Projekte (TradeAero, AIPAero, …). Diese verteilen sich auf **drei getrennte Cloudflare-Accounts**, die **alle drei** gewarmt werden müssen: `webmaster@trade.aero`, `alexander.dross@me.com` und `mail@drossmedia.de`. Nur `mail@drossmedia.de` hat Admin-Rechte auf die einzelnen Accounts — für Workers und Cache zählt aber die Account-Grenze, nicht die Benutzerberechtigung. Das Ergebnis ist eine **zusätzliche Komponente**; WordPress-Plugin, Drupal-Modul und Node/Docker-Stack bleiben unangetastet.
 
 Der entscheidende Befund vorab: Der heutige Warmer feuert einen Request ab und protokolliert den HTTP-Status — er prüft **nie**, ob das CDN die Seite tatsächlich gecacht hat. Auf Workers ist genau diese Verifikation trivial. Das, nicht die Performance, ist das eigentliche Argument für den Umbau.
 
@@ -158,7 +158,9 @@ Damit wird aus "200 URLs angefragt" ein "187 von 200 nachweislich im Edge-Cache,
 | 10.000 URLs/Mon. | $0 | $0 (Beta) | ~$0,75 | €5–20/Mon. |
 | 100.000 URLs/Mon. | $0 | $0 (Beta) | ~$7,50 | €10–40/Mon. |
 
-Basis: $0,09/Browser-Stunde, ~3 s je Seite. Der Duration-Anteil ist marginal — der Kostentreiber bei Browser Run ist die **Concurrency** ($2,00 je Browser über die 10 inklusive; 30 parallel = +$40/Mon.). Anders gesagt: mit den 10 inklusive Browsern dauern 10.000 Seiten ~50 Minuten, was für einen Nachtlauf reicht und nichts extra kostet — man muss den Lauf nur über Workflows stückeln, weil ein Cron-Trigger nach 15 Minuten endet.
+**Achtung, Sockel × 3:** Workers Paid ist accountgebunden, drei Deploys heißen also **$15/Monat Grundkosten**, nicht $5. Die Verbrauchsspalten oben bleiben davon unberührt — sie verteilen sich nur auf drei Rechnungen, und die Browser-Run-Freikontingente verdreifachen sich mit.
+
+Basis: $0,09/Browser-Stunde, ~3 s je Seite. Der Duration-Anteil ist marginal — der Kostentreiber bei Browser Run ist die **Concurrency** ($2,00 je Browser über die 10 inklusive; 30 parallel = +$40/Mon.). Bei drei Accounts stehen 30 gleichzeitige Browser ohne Aufpreis zur Verfügung, sofern die Läufe je Account getrennt bleiben. Anders gesagt: mit den 10 inklusive Browsern dauern 10.000 Seiten ~50 Minuten, was für einen Nachtlauf reicht und nichts extra kostet — man muss den Lauf nur über Workflows stückeln, weil ein Cron-Trigger nach 15 Minuten endet.
 
 Reines `fetch()`-Warming ist innerhalb des $5-Sockels effektiv kostenlos, weil Cloudflare Subrequests nicht berechnet und Wartezeit auf Netz nicht als CPU-Zeit zählt.
 
@@ -174,27 +176,46 @@ Der reale Unterschied ist die Laufzeit. Der heutige Stack fährt Concurrency 3 m
 
 **Neue, eigenständige Komponente `cloudflare-worker/` im Monorepo.** Kein Ersatz, keine gemeinsame Codebasis mit `nodejs-docker/` — die Runtimes sind zu verschieden, ein geteilter Layer würde beide Seiten verbiegen.
 
-### Hub-and-Satellite statt Deploy-überall
+### Eine Codebasis, drei Deploys
 
-Weil Warming, Verifikation und Purge die Account-Grenze überqueren und nur die `cf`-Feinsteuerung nicht, ist ein Deploy in *jeden* Account unnötiger Aufwand. Besser gestuft:
+Alle drei Accounts müssen gewarmt werden — `webmaster@trade.aero`, `alexander.dross@me.com`, `mail@drossmedia.de`. Damit ist die Entscheidung eindeutig: **je Account ein Deploy derselben Codebasis.**
 
-**Stufe 1 — nur der Hub (Start hier).** Ein einziger Worker in `mail@drossmedia.de`: Orchestrierung, D1, Reporting, Purge für alle Accounts über ein Admin-API-Token, plus L1-Warming und Verifikation für *alle* Zonen. Deckt den überwiegenden Teil des Nutzens ab, kostet einmal $5/Monat, und es gibt genau einen Ort für Code, Zustand und Secrets.
+Der Grund ist nicht, dass ein zentraler Worker die anderen Zonen nicht warmen *könnte* — er kann es sehr wahrscheinlich. Der Grund ist die **Ungleichbehandlung**: Für Zonen im eigenen Account gäbe es `cacheEverything`, `cacheTtl`, `cacheTags` und regionalen Fan-out, für die beiden fremden Accounts nur ein blankes `fetch()`. Zwei von drei Projekten liefen dauerhaft im schwächeren Modus. Bei $5/Monat je Account ist das kein Kompromiss, den man eingehen muss.
 
-**Stufe 2 — Satelliten nur dort, wo es sich messbar lohnt.** Ein baugleicher Worker im jeweiligen Account, wenn eine Zone `cacheEverything`/`cacheTtl`-Kontrolle oder regionalen Lower-Tier-Fill (L2) wirklich braucht. Der Satellit meldet Ergebnisse per HTTPS an den Hub zurück — Service Bindings gehen über Account-Grenzen nicht, also ein Endpunkt mit Shared Secret im Worker-Secret.
+Nebenwirkung: Die Gleichbehandlung macht den accountübergreifenden Fill-Test (Abschnitt 7, Schritt 2) **entbehrlich als Gating-Entscheidung** — er wird zum Nice-to-have für einen Notfall-Fallback statt zur Voraussetzung.
+
+```
+mail@drossmedia.de          alexander.dross@me.com      webmaster@trade.aero
+┌────────────────────┐      ┌────────────────────┐      ┌────────────────────┐
+│ Warmer + HUB       │◀─────│ Warmer (Satellit)  │      │ Warmer (Satellit)  │
+│ Cron │ DO │ D1     │      │ Cron │ DO          │      │ Cron │ DO          │
+│ Report-Endpunkt    │◀─────┼────────────────────┼──────┤                    │
+└────────────────────┘ HTTPS└────────────────────┘      └────────────────────┘
+   eigene Zonen                eigene Zonen                 eigene Zonen
+```
+
+- **Jeder Deploy warmt nur die Zonen seines eigenen Accounts** — immer mit voller `cf`-Kontrolle, immer mit Verifikation, immer mit optionalem Regions-Fan-out.
+- **Jeder Deploy hat seinen eigenen Cron Trigger.** Kein account-übergreifendes Anstoßen, keine gemeinsame Ausfallstelle: Fällt ein Account aus, laufen die anderen zwei weiter.
+- **Der Deploy in `mail@drossmedia.de` ist zusätzlich der Hub**: hält D1 und den Report-Endpunkt. Die beiden Satelliten schicken ihre Job-Zusammenfassung nach Abschluss per HTTPS dorthin (Shared Secret als Worker-Secret) — Service Bindings gehen über Account-Grenzen nicht. Das Volumen ist ein Datensatz je Lauf, also unkritisch.
+- **Purge bleibt trotzdem accountübergreifend möglich** und ist der eine Fall, für den ein einzelnes Admin-Token von `mail@drossmedia.de` reicht — nützlich für Ad-hoc-Purges aus einem Skript heraus, ohne den jeweiligen Worker anzufassen.
 
 Operativ macht **Wrangler Auth Profiles** (seit Juli 2026) das sauber: je Account ein Profil, an ein Verzeichnis gebunden, plus `account_id` in der Wrangler-Config als Fehlgriff-Sicherung — damit kann ein `deploy` nicht im falschen Account landen.
 
 ```sh
 wrangler auth create trade-aero
 wrangler auth activate trade-aero ./cloudflare-worker/deploy/trade-aero
+wrangler deploy --profile trade-aero
 ```
 
-Was bei getrennten Accounts zu beachten ist:
+Was bei drei Accounts zu beachten ist:
 
-- **Workers Paid gilt pro Account** — $5/Monat je Satellit. Nur-Hub bleibt bei $5.
-- **Browser-Run-Kontingente sind pro Account** (10 gleichzeitige Browser, 10 Std./Monat inklusive). Getrennte Accounts heißen getrennte Töpfe — mehr Parallelität, aber auch mehrere Rechnungen.
-- **Purge-Ratenlimits sind pro Account**, hier also ein Vorteil: kein gemeinsamer Bucket, keine Konkurrenz zwischen den Projekten.
-- **D1 lebt in einem Account.** Zentral im Hub halten, nicht je Satellit — sonst zerfällt das Reporting.
+- **Workers Paid gilt pro Account** — 3 × $5 = **$15/Monat** gesamt.
+- **Browser-Run-Kontingente sind pro Account** (10 gleichzeitige Browser, 10 Std./Monat inklusive). Drei getrennte Töpfe heißt dreifache Parallelität ohne Aufpreis — hier ist die Trennung ein Vorteil.
+- **Purge-Ratenlimits sind pro Account**, ebenfalls ein Vorteil: kein gemeinsamer Bucket, keine Konkurrenz zwischen den Projekten.
+- **D1 lebt in einem Account** — zentral im Hub, nicht je Satellit, sonst zerfällt das Reporting in drei Silos.
+- **Secrets liegen dreifach.** Ein `wrangler secret put` je Account; ein Rotationsskript über die drei Profile spart späteren Ärger.
+
+> **Zuzuordnen vor dem ersten Deploy:** Die Account-IDs stehen im Dashboard. Aus der Account-Liste liegt `webmaster@trade.aero` auf `34d3b942…` und `Dross:Media` auf `e8d2e50a…`; welcher Eintrag zu `alexander.dross@me.com` gehört, ist zu bestätigen — nicht raten, sonst deployt der erste Lauf in den falschen Account.
 
 ```
 Cron Trigger (nachts)
@@ -259,7 +280,10 @@ EdgeGrid nach WebCrypto zu portieren ist mechanisch — aber zwei Details erzeug
 | Browser Run wird vom Origin als Bot erkannt und liefert eine Bot-Variante | Die würde dann **im Cache landen und echten Besuchern ausgeliefert**. Vor Einsatz gegen eine echte Seite gegenprüfen. |
 | Purge-Ratenlimits gelten **pro Account**, nicht pro Job | Bei mehreren Zonen im selben Account ein globaler Token-Bucket (ein DO oder das native Rate-Limiting-Binding) — der feste `delay(500)` von heute ist kein Limiter |
 | D1 schreibt single-region; mehrere Regions-DOs schreiben quer | Im DO puffern, per `D1.batch()` je Step flushen |
-| Zonen liegen in drei getrennten Accounts | Hub-Worker deckt Warming, Verifikation und Purge accountübergreifend ab; Satelliten nur bei nachgewiesenem Bedarf. Admin-Rechte ersetzen die Account-Grenze **nicht**. |
+| Zonen liegen in drei getrennten Accounts | Je Account ein Deploy derselben Codebasis. Admin-Rechte ersetzen die Account-Grenze **nicht**. |
+| Deploy landet im falschen Account | Wrangler-Profil **plus** `account_id` in der Config als zweite Sicherung; Account-IDs vorher verifizieren, nicht raten |
+| Drei Deploys driften auseinander | Ein Repo, ein Build, drei `wrangler deploy --profile …` in einem Skript oder einer CI-Matrix — nie manuell einzeln deployen |
+| Secrets und Tokens dreifach zu pflegen | Rotationsskript über die drei Profile von Anfang an mitbauen |
 | Purge-Token muss drei Accounts abdecken | API-Token von `mail@drossmedia.de` mit `Zone:Cache Purge` über alle drei Accounts scopen — Tokens sind benutzer-, nicht accountgebunden |
 | `locationHint` ist Best-Effort, sam/afr/me weichen aus | Tatsächliche Colo über `request.cf.colo` protokollieren |
 | Warming-Requests verzerren Analytics | Eigener User-Agent + Header; Browser Run ist über `cf-biso-*` ohnehin markiert |
@@ -274,7 +298,7 @@ EdgeGrid nach WebCrypto zu portieren ist mechanisch — aber zwei Details erzeug
 Reihenfolge ist wichtig — Schritt 1 entscheidet, ob der Rest sinnvoll ist.
 
 1. **Spike (halber Tag).** Minimal-Worker auf einer eigenen Zone: `fetch(url, {cf:{cacheEverything:true}})`, dann zweiter `fetch(url)`, `cf-cache-status` und `request.cf.colo` loggen. Erwartung: zweiter Request meldet HIT. **Trägt das nicht, ist der Hauptnutzen weg — dann nur die Bugs in Abschnitt 8 fixen.**
-2. **Accountübergreifender Fill — der Gating-Test.** Zone in Account B purgen, aus dem Hub-Worker in `mail@drossmedia.de` warmen, erneut abrufen und auf HIT prüfen. **Scheitert das, fällt der Hub-Ansatz weg und es braucht einen Satelliten je Account** — der Unterschied zwischen einem Deploy und dreien.
+2. **Accountübergreifender Fill (optional).** Zone in Account B purgen, aus `mail@drossmedia.de` warmen, erneut abrufen und auf HIT prüfen. Seit die Entscheidung auf drei Deploys gefallen ist, gatet dieser Test nichts mehr — er klärt nur, ob ein Notfall-Fallback aus dem Hub heraus möglich wäre, wenn ein Satellit ausfällt.
 3. **Tier-Delta messen.** TTFB derselben URL in drei Zuständen vergleichen: kalt, nur Upper Tier warm (L1), Lower Tier warm (L2). **Das ist die Zahl, die entscheidet, ob Multi-Region überhaupt Aufwand verdient.** Fällt sie klein aus, reicht der Hub allein und Abschnitt 5 Stufe 2 entfällt ersatzlos.
 4. **Regionstest.** Zwei DOs mit `locationHint: "weur"` und `"enam"`, dieselbe URL warmen, tatsächliches Colo über das `cf-ray`-Suffix vergleichen. Belegt, dass die Regionsverteilung real ist und nicht nur angefragt.
 5. **Purge→Warm→Verify** über 20 URLs einer echten Zone: nach dem Lauf müssen alle 20 HIT melden. Dabei die nötige Wartezeit zwischen Fill und Probe kalibrieren (0 / 100 ms / 500 ms / 1 s).
@@ -304,8 +328,9 @@ Diese Defekte bestehen unabhängig von der Workers-Entscheidung, sind billig zu 
 
 1. **Abschnitt 8 abarbeiten.** Höchster Nutzen pro Aufwand, keine Cloudflare-Abhängigkeit, wirkt auf alle Editionen.
 2. **Puppeteer für CDN-Warming durch `fetch()` + HTMLRewriter ersetzen** — im Node-Modul. Nimmt den Chromium-Speicherboden weg und beschleunigt um Größenordnungen. Puppeteer bleibt nur für die Social-Warmer, den einzigen legitimen Browser-Bedarf.
-3. **Spike fahren** (Verifikationsschritte 1–4). Erst danach entscheiden.
-4. **Falls der Spike trägt: Worker als zusätzlicher Motor** in `cloudflare-worker/`, Workflows als Spine, Regions-DOs für den Fan-out.
+3. **Spike fahren** (Verifikationsschritte 1, 3, 4) in *einem* Account. Klärt, ob Fill-Verifikation und Regionsverteilung tragen — bevor dreimal deployed wird.
+4. **Falls der Spike trägt: Worker in `cloudflare-worker/`**, Workflows als Spine, Regions-DOs für den Fan-out. **Ein Deploy je Account** (`webmaster@trade.aero`, `alexander.dross@me.com`, `mail@drossmedia.de`), der drossmedia-Deploy zusätzlich als Hub mit D1 und Report-Endpunkt.
+5. **Erst einen Account produktiv nehmen**, eine Woche laufen lassen, dann die anderen beiden nachziehen. Drei gleichzeitige Erstinbetriebnahmen verdreifachen nur die Fehlersuche.
 
 Die unbequeme Zusammenfassung: Der Workers-Umbau ist ein legitimes *Feature* — Multi-Region-Fill und belastbare Verifikation — aber er repariert nicht, was heute kaputt ist. Ihn vor den Schritten 1 und 2 zu bauen würde die Bugs nur in eine neue Runtime umziehen.
 
