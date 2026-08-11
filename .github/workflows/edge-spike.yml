@@ -1,0 +1,306 @@
+name: Edge Spike
+
+# Runs the CacheWarmer Edge verification spike against a real Cloudflare zone.
+#
+# The Workers design rests on three assumptions that have only ever been
+# asserted: that a Worker fetch() fills the edge cache, that fill and probe land
+# in the same data centre, and that locationHint actually moves the work. This
+# workflow measures all three. It exists as CI rather than a local script
+# because nothing else in the development environment can reach Cloudflare.
+#
+# Manual only — it deploys to a real account and must never fire on a push.
+#
+# Requires one repository secret:
+#   CLOUDFLARE_API_TOKEN — scopes: Workers Scripts:Edit, D1:Edit, Zone:Read,
+#                          Account Settings:Read
+#
+# Note that GitHub only offers a workflow_dispatch workflow once the file is on
+# the default branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Page to spike against (must be a zone in the target account)"
+        required: true
+        default: "https://cachewarmer.drossmedia.de/"
+      regions:
+        description: "Comma-separated locationHint regions to compare"
+        required: true
+        default: "weur,enam"
+      redeploy:
+        description: "Deploy the Worker before spiking. Off spikes the deployed one untouched."
+        type: boolean
+        required: true
+        default: true
+
+concurrency:
+  group: edge-spike
+  cancel-in-progress: false
+
+env:
+  ACCOUNT_ID: e8d2e50aa1f1d61d8c68ba490d7cdec1
+  WORKER_NAME: cachewarmer-edge
+  WRANGLER_CONFIG: deploy/drossmedia/wrangler.jsonc
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: e8d2e50aa1f1d61d8c68ba490d7cdec1
+
+defaults:
+  run:
+    working-directory: cloudflare-worker
+
+jobs:
+  spike:
+    name: Deploy and measure
+    runs-on: self-hosted
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: cloudflare-worker/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # Everything checkable without the account runs first, so a typo surfaces
+      # before anything is deployed to a real Cloudflare account.
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Validate the deploy config (no upload)
+        run: npx wrangler deploy --config "$WRANGLER_CONFIG" --dry-run
+
+      - name: Check the API token
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set. Add it as a repository secret."
+            exit 1
+          fi
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify \
+            | node -e '
+              let raw = ""; process.stdin.on("data", c => raw += c).on("end", () => {
+                const body = JSON.parse(raw);
+                if (!body.success) {
+                  console.error("Token verify failed:", JSON.stringify(body.errors));
+                  process.exit(1);
+                }
+                console.log("Token status:", body.result.status);
+              });'
+
+      # The zone name may be the apex while the URL points at a subdomain, so
+      # match the longest zone that is a suffix of the host rather than
+      # assuming host === zone name.
+      - name: Resolve the zone
+        id: zone
+        run: |
+          set -euo pipefail
+          HOST=$(node -e 'console.log(new URL(process.argv[1]).hostname)' "${{ inputs.url }}")
+          echo "Host: $HOST"
+          ZONE_JSON=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/zones?account.id=$ACCOUNT_ID&per_page=50")
+          eval "$(node -e '
+            let raw = ""; process.stdin.on("data", c => raw += c).on("end", () => {
+              const host = process.argv[1];
+              const body = JSON.parse(raw);
+              if (!body.success) {
+                console.log(`echo "::error::zone lookup failed: ${JSON.stringify(body.errors)}"; exit 1`);
+                return;
+              }
+              const match = body.result
+                .filter(z => host === z.name || host.endsWith("." + z.name))
+                .sort((a, b) => a.name.length - b.name.length)
+                .pop();
+              if (!match) {
+                const names = body.result.map(z => z.name).join(", ");
+                console.log(`echo "::error::no zone in this account matches ${host}. Zones: ${names}"; exit 1`);
+                return;
+              }
+              console.log(`ZONE_NAME=${match.name}`);
+              console.log(`ZONE_ID=${match.id}`);
+              console.log(`ZONE_PLAN=${(match.plan && match.plan.legacy_id) || "unknown"}`);
+            });' "$HOST" <<< "$ZONE_JSON")"
+          echo "Host $HOST sits in zone $ZONE_NAME ($ZONE_ID), plan $ZONE_PLAN"
+          {
+            echo "host=$HOST"
+            echo "zone_name=$ZONE_NAME"
+            echo "zone_id=$ZONE_ID"
+            echo "zone_plan=$ZONE_PLAN"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Apply the D1 schema
+        if: ${{ inputs.redeploy }}
+        run: |
+          npx wrangler d1 execute cachewarmer-reports --remote --yes \
+            --config "$WRANGLER_CONFIG" --file schema.sql
+
+      # CONFIG is injected rather than read from the file so the zone id never
+      # has to be hard-coded before it is known.
+      - name: Deploy
+        if: ${{ inputs.redeploy }}
+        run: |
+          set -euo pipefail
+          # `zone` is the host being warmed; `zoneId` belongs to the zone that
+          # contains it, which for a subdomain is the apex. Building the
+          # sitemap URL from the zone name instead of the host would point at
+          # the wrong site entirely.
+          CONFIG=$(node -e '
+            const [host, zoneId] = process.argv.slice(1);
+            console.log(JSON.stringify({
+              account: "mail@drossmedia.de",
+              accountId: process.env.ACCOUNT_ID,
+              sites: [{
+                id: "cachewarmer",
+                zone: host,
+                zoneId,
+                sitemapUrl: `https://${host}/sitemap.xml`,
+                plan: "free",
+                regions: ["weur"],
+                maxUrls: 500,
+                cf: { cacheEverything: true, cacheTtl: 3600 },
+              }],
+            }));' \
+            "${{ steps.zone.outputs.host }}" \
+            "${{ steps.zone.outputs.zone_id }}")
+          echo "CONFIG: $CONFIG"
+          npx wrangler deploy --config "$WRANGLER_CONFIG" --var "CONFIG:$CONFIG"
+
+      # Generated per run so the repository needs only the one secret, and set
+      # even when the code is not redeployed — the previous run's token is not
+      # recoverable, so without this a redeploy-off run could never authenticate.
+      # Masked immediately: it goes on the wire in an Authorization header below.
+      - name: Set a fresh ADMIN_TOKEN
+        run: |
+          set -euo pipefail
+          TOKEN=$(node -e 'console.log(require("crypto").randomBytes(24).toString("hex"))')
+          echo "::add-mask::$TOKEN"
+          echo "ADMIN_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          printf '%s' "$TOKEN" | npx wrangler secret put ADMIN_TOKEN --config "$WRANGLER_CONFIG"
+
+      - name: Resolve the worker URL
+        id: worker
+        run: |
+          set -euo pipefail
+          SUB=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/subdomain" \
+            | node -e '
+              let raw = ""; process.stdin.on("data", c => raw += c).on("end", () => {
+                const body = JSON.parse(raw);
+                if (!body.success || !body.result || !body.result.subdomain) {
+                  console.error("Could not read the workers.dev subdomain:", raw);
+                  process.exit(1);
+                }
+                process.stdout.write(body.result.subdomain);
+              });')
+          BASE="https://$WORKER_NAME.$SUB.workers.dev"
+          echo "Worker: $BASE"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+      # A fresh deploy is not instantly routable; /health is unauthenticated and
+      # is the cheapest way to wait for it.
+      - name: Wait for the worker to answer
+        run: |
+          set -euo pipefail
+          BASE="${{ steps.worker.outputs.base }}"
+          for attempt in $(seq 1 30); do
+            CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 "$BASE/health" || echo 000)
+            if [ "$CODE" = "200" ]; then
+              echo "Ready after $attempt attempt(s)."
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP $CODE"
+            sleep 5
+          done
+          echo "::error::$BASE/health never returned 200"
+          exit 1
+
+      - name: Run the spike
+        run: |
+          set -euo pipefail
+          mkdir -p spike-out
+          TARGET=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "${{ inputs.url }}")
+          # Body and status captured separately rather than with
+          # --fail-with-body: that flag needs curl 7.76 and the runner is
+          # Ubuntu 20.04, whose curl is 7.68.
+          CODE=$(curl -sS --max-time 120 -o spike-out/spike.json -w "%{http_code}" \
+            -H "Authorization: Bearer $ADMIN_TOKEN" \
+            "${{ steps.worker.outputs.base }}/spike?url=$TARGET&regions=${{ inputs.regions }}")
+          cat spike-out/spike.json
+          echo
+          if [ "$CODE" != "200" ]; then
+            echo "::error::/spike returned HTTP $CODE"
+            exit 1
+          fi
+
+      # Question 3 is answered here, not by the spike call: the regional Durable
+      # Objects run asynchronously, and their colos only appear once each has
+      # finished its chunk.
+      - name: Collect the regional results
+        run: |
+          set -euo pipefail
+          BASE="${{ steps.worker.outputs.base }}"
+          IFS=',' read -ra REGIONS <<< "${{ inputs.regions }}"
+          for region in "${REGIONS[@]}"; do
+            region=$(echo "$region" | tr -d '[:space:]')
+            echo "--- $region"
+            for attempt in $(seq 1 12); do
+              curl -sS --max-time 20 -H "Authorization: Bearer $ADMIN_TOKEN" \
+                "$BASE/results?site=spike&region=$region" > "spike-out/region-$region.json" || true
+              STATUS=$(node -e '
+                try {
+                  const b = require("fs").readFileSync(process.argv[1], "utf8");
+                  process.stdout.write((JSON.parse(b).progress || {}).status || "none");
+                } catch { process.stdout.write("none"); }' "spike-out/region-$region.json")
+              if [ "$STATUS" = "completed" ] || [ "$STATUS" = "failed" ]; then break; fi
+              sleep 5
+            done
+            cat "spike-out/region-$region.json"
+            echo
+          done
+
+      - name: Write the summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "## Edge spike"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| URL | \`${{ inputs.url }}\` |"
+            echo "| Zone | \`${{ steps.zone.outputs.zone_name }}\` (\`${{ steps.zone.outputs.zone_id }}\`), plan \`${{ steps.zone.outputs.zone_plan }}\` |"
+            echo "| Regions | \`${{ inputs.regions }}\` |"
+            echo "| Worker | \`${{ steps.worker.outputs.base }}\` |"
+            echo
+            echo "### /spike"
+            echo '```json'
+            cat spike-out/spike.json 2>/dev/null || echo "(no result — the step above failed)"
+            echo '```'
+            for f in spike-out/region-*.json; do
+              [ -e "$f" ] || continue
+              echo "### $(basename "$f" .json)"
+              echo '```json'
+              cat "$f"
+              echo '```'
+            done
+            echo
+            echo "Zone id for deploy/drossmedia/wrangler.jsonc: \`${{ steps.zone.outputs.zone_id }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edge-spike-results
+          path: cloudflare-worker/spike-out/
+          if-no-files-found: warn

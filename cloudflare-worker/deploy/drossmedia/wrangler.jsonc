@@ -19,6 +19,10 @@
   "observability": { "enabled": true },
   "limits": { "subrequests": 50 },
 
+  // There are no routes, so this is the only way in. The spike and every
+  // admin endpoint sit behind ADMIN_TOKEN; only /health is open.
+  "workers_dev": true,
+
   "durable_objects": {
     "bindings": [{ "name": "REGION_WARMER", "class_name": "RegionWarmer" }]
   },
@@ -28,8 +32,9 @@
     {
       "binding": "DB",
       "database_name": "cachewarmer-reports",
-      // Fill in after: wrangler d1 create cachewarmer-reports
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      // Created in weur (served from AMS). An identifier, not a secret — same
+      // as account_id above.
+      "database_id": "68ab7c60-96a1-4583-ac67-ebbf8448672b"
     }
   ],
 

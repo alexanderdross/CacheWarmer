@@ -8,7 +8,8 @@
 import { loadConfig, URLS_PER_CHUNK, type Env, type Region, type SiteConfig } from "./config";
 import { chunk, fetchSitemapUrls, sortByPriority } from "./sitemap";
 import { purgeUrls } from "./purge";
-import { DEFAULT_WARM_OPTIONS, warmAndVerify } from "./warm";
+import { DEFAULT_WARM_OPTIONS } from "./warm";
+import { spike } from "./spike";
 import type { JobProgress, WarmJobSpec } from "./region-warmer";
 
 export { RegionWarmer } from "./region-warmer";
@@ -101,52 +102,6 @@ async function runSite(env: Env, site: SiteConfig, hubReportUrl?: string) {
   };
 }
 
-/**
- * Spike endpoint — answers the questions that gate the whole design:
- *
- *   1. Does a Worker fetch() actually fill the edge cache? (verdict === warmed)
- *   2. Do fill and probe land in the same data centre? (colo)
- *   3. Does locationHint move the work to another region? (compare colos)
- *
- * Deliberately synchronous and chatty: it exists to be read by a human once.
- */
-async function spike(env: Env, url: string, regions: Region[]) {
-  const direct = await warmAndVerify(url, {
-    ...DEFAULT_WARM_OPTIONS,
-    cf: { cacheEverything: true, cacheTtl: 300 },
-  });
-
-  const byRegion = await Promise.all(
-    regions.map(async (region) => {
-      const id = env.REGION_WARMER.idFromName(`spike:${region}:${url}`);
-      const stub = env.REGION_WARMER.get(id, { locationHint: region });
-      await stub.start({ jobId: `spike-${region}`, siteId: "spike", region, urls: [url] });
-      return { region, queued: true };
-    }),
-  );
-
-  return {
-    question1_fillWorks: {
-      verdict: direct.verdict,
-      reason: direct.reason,
-      fillState: direct.fill.state,
-      probeState: direct.probe.state,
-      expectation: "verdict 'warmed' means a Worker fetch() does fill the edge cache",
-    },
-    question2_sameColo: {
-      fillColo: direct.fill.colo,
-      probeColo: direct.probe.colo,
-      agree: direct.fill.colo === direct.probe.colo,
-      expectation: "fill and probe must share a colo, or verification proves nothing",
-    },
-    question3_regions: {
-      dispatched: byRegion,
-      next: "poll /status and compare the colos reported per region",
-    },
-    timings: { fillMs: direct.fill.durationMs, probeMs: direct.probe.durationMs },
-  };
-}
-
 export default {
   /** Scheduled warming. Cron triggers cap at 15 minutes, so the DO chain does
    *  the long tail — this handler only fans out and returns. */
@@ -221,8 +176,12 @@ export default {
       const siteId = url.searchParams.get("site");
       const region = (url.searchParams.get("region") ?? "auto") as Region | "auto";
       if (!siteId) return json({ error: "site query parameter is required" }, 400);
-      const id = env.REGION_WARMER.idFromName(`${siteId}:${region}`);
-      return json({ site: siteId, region, results: await env.REGION_WARMER.get(id).results() });
+      const stub = env.REGION_WARMER.get(env.REGION_WARMER.idFromName(`${siteId}:${region}`));
+      // Progress belongs next to the failures: only failures are stored per
+      // URL, so a run where everything worked returns an empty list, and the
+      // counts and colos are the only evidence it ran at all.
+      const [progress, results] = await Promise.all([stub.progress(), stub.results()]);
+      return json({ site: siteId, region, progress, results });
     }
 
     if (url.pathname === "/warm" && request.method === "POST") {

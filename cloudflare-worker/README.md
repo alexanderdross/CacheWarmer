@@ -63,8 +63,9 @@ src/
 ├── sitemap.ts        Sitemap + sitemap-index parsing via HTMLRewriter
 ├── purge.ts          Cloudflare purge, batched at 100, paced per account plan
 ├── region-warmer.ts  Durable Object; chains 25-URL chunks across alarms
+├── spike.ts          Verification harness — the measurements below
 ├── config.ts         Site config, bindings, budget constants
-└── index.ts          Cron, HTTP endpoints, spike harness
+└── index.ts          Cron and HTTP endpoints
 schema.sql            D1 tables for the hub's /report endpoint
 deploy/
 ├── drossmedia/       hub  — pins account_id, binds D1
@@ -80,7 +81,7 @@ All except `/health` and `/report` require `Authorization: Bearer $ADMIN_TOKEN`.
 |---|---|---|
 | GET | `/health` | Liveness |
 | GET | `/status` | Per-site, per-region job progress |
-| GET | `/results?site=&region=` | Per-URL detail, failures first |
+| GET | `/results?site=&region=` | Job progress plus per-URL detail, failures first |
 | POST | `/warm[?site=]` | Trigger a run now |
 | GET | `/spike?url=&regions=` | Verification harness, see below |
 | POST | `/report` | Hub only: satellites push job summaries here |
@@ -116,17 +117,21 @@ Per account, once:
 wrangler auth create drossmedia            # pick the account in the OAuth flow
 wrangler auth activate drossmedia .
 
-wrangler d1 create cachewarmer-reports     # hub only; paste the id into the config
+# Hub only. The database already exists and its id is checked into
+# deploy/drossmedia/wrangler.jsonc; applying the schema is idempotent.
 wrangler d1 execute cachewarmer-reports --remote \
   --config deploy/drossmedia/wrangler.jsonc --file schema.sql
+
 wrangler secret put ADMIN_TOKEN --config deploy/drossmedia/wrangler.jsonc
 wrangler secret put HUB_SECRET --config deploy/drossmedia/wrangler.jsonc
 wrangler secret put CF_PURGE_TOKEN --config deploy/drossmedia/wrangler.jsonc
 ```
 
-Then fill in the `REPLACE_WITH_*` placeholders in each
-`deploy/*/wrangler.jsonc` — zone IDs, the D1 database id, and the hub hostname
-the satellites report to.
+Then fill in the remaining `REPLACE_WITH_*` placeholders in each
+`deploy/*/wrangler.jsonc` — the zone IDs and the hub hostname the satellites
+report to. The Edge Spike workflow resolves the zone id at deploy time and
+prints it in its run summary, so the first spike run also tells you what to
+paste here.
 
 ```sh
 npm run deploy:drossmedia
@@ -134,21 +139,38 @@ npm run deploy:drossmedia
 
 ## Spike: run this first
 
-Before deploying all three, answer the questions the design rests on:
+Before deploying all three, answer the questions the design rests on. The
+easiest way is the **Edge Spike** workflow
+(`.github/workflows/edge-spike.yml`): run it from the Actions tab, and it
+deploys, measures and writes the results into the run summary. It needs one
+repository secret, `CLOUDFLARE_API_TOKEN` (scopes: Workers Scripts:Edit,
+D1:Edit, Zone:Read, Account Settings:Read).
+
+By hand it is:
 
 ```sh
 curl -H "Authorization: Bearer $ADMIN_TOKEN" \
   "https://<worker>/spike?url=https://example.com/&regions=weur,enam"
 ```
 
-1. **Does a Worker `fetch()` actually fill the edge cache?**
-   `question1_fillWorks.verdict` should be `warmed`. If it is `not_cacheable`
-   on a page that is plainly cacheable, the whole verification premise fails.
-2. **Do fill and probe land in the same data centre?**
-   `question2_sameColo.agree` must be `true`, or verification proves nothing.
-3. **Does `locationHint` move the work?** Poll `/status` afterwards and compare
-   the `colos` reported per region. If they are identical, the regional
-   fan-out — the only thing Workers uniquely adds — is not real.
+1. **Does the zone cache HTML at all?** `question1a_zoneCachesHtml` measures a
+   warm with no `cf` object — what an ordinary visitor's request achieves.
+   `zone_not_caching` here is normal for a default zone, and makes 1b the
+   deciding measurement rather than a failure.
+2. **Does the `cf` override work?** `question1b_cfOverrideWorks.verdict` should
+   be `warmed`. If it is `not_cacheable` on a page that is plainly cacheable,
+   the whole verification premise fails.
+3. **Do fill and probe land in the same data centre?**
+   `question2_sameColo.*.agree` must be `true`, or verification proves nothing.
+4. **Does `locationHint` move the work?** Each entry under
+   `question3_regions.dispatched` carries a ready-made `poll` URL. Fetch them
+   and compare `progress.colos`. If they are identical, the regional fan-out —
+   the only thing Workers uniquely adds — is not real.
+
+Each measurement runs against its own `?cw-spike=` cache key so the runs stay
+independent. That is also the first thing to suspect if everything comes back
+`not_cacheable`: a zone that refuses to cache query-string URLs will look worse
+here than it is.
 
 Also worth measuring before investing further: the TTFB difference between
 cold, upper-tier-warm and lower-tier-warm. That number decides whether
