@@ -10,6 +10,10 @@
 require_once __DIR__ . '/bootstrap.php';
 
 // Load plugin classes.
+// The CDN warmer consults the license class in its constructor, so it has to
+// be loaded first — without it the suite fataled at the CDN Warmer section and
+// every test after it never ran.
+require_once CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-license.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-sitemap-parser.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-warmer.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-facebook-warmer.php';
@@ -306,6 +310,203 @@ $cdn_warmer->warm(
     }
 );
 $t->assertEqual( 'CDN: callback invoked for each result', 2, count( $callback_results ) );
+
+// ──────────────────────────────────────────────
+// Unit Tests — CDN Warmer concurrency
+// ──────────────────────────────────────────────
+$t->suite( '2. Unit Tests — CDN Warmer concurrency' );
+
+// Everything above ran through the sequential wp_remote_get fallback, since
+// no Requests class exists in this stub environment. Defining one now lets the
+// concurrent path be exercised — and records how it was called.
+if ( ! class_exists( '\WpOrg\Requests\Requests' ) ) {
+    eval(
+        'namespace WpOrg\Requests;
+        class Requests {
+            public static array $calls = array();
+            public static function request_multiple( array $requests, array $options = array() ) {
+                self::$calls[] = array_map( static function ( $r ) { return $r["url"]; }, $requests );
+                $responses = array();
+                foreach ( $requests as $key => $request ) {
+                    $response = new \stdClass();
+                    $response->status_code = 200;
+                    $response->headers = array( "cf-cache-status" => "HIT" );
+                    $response->url = $request["url"];
+                    $responses[ $key ] = $response;
+                }
+                return $responses;
+            }
+        }'
+    );
+}
+
+$requests_stub = '\WpOrg\Requests\Requests';
+$requests_stub::$calls = array();
+
+update_option( 'cachewarmer_cdn_concurrency', 3 );
+$concurrent_warmer = new CacheWarmer_CDN_Warmer();
+$concurrent_results = $concurrent_warmer->warm(
+    array( 'https://example.com/a', 'https://example.com/b', 'https://example.com/c' ),
+    'test-job-concurrent'
+);
+
+// The bug: array_chunk() produced batches, then a plain foreach walked them
+// one URL at a time, so the concurrency setting changed nothing. Real
+// parallelism means one call carrying the whole batch, not three calls of one.
+$t->assertEqual( 'CDN concurrency: one batched call per pass, not per URL', 2, count( $requests_stub::$calls ) );
+$t->assertEqual( 'CDN concurrency: desktop pass carries all 3 URLs at once', 3, count( $requests_stub::$calls[0] ) );
+$t->assertEqual( 'CDN concurrency: mobile pass carries all 3 URLs at once', 3, count( $requests_stub::$calls[1] ) );
+$t->assertEqual( 'CDN concurrency: 6 results for 3 URLs (desktop+mobile)', 6, count( $concurrent_results ) );
+
+// Ordering has to survive parallelism: the desktop pass fills the cache, so
+// every desktop request must precede every mobile one.
+$t->assertEqual( 'CDN concurrency: desktop results come first', 'desktop', $concurrent_results[0]['viewport'] );
+$t->assertEqual( 'CDN concurrency: desktop pass covers the batch', 'desktop', $concurrent_results[2]['viewport'] );
+$t->assertEqual( 'CDN concurrency: mobile pass follows', 'mobile', $concurrent_results[3]['viewport'] );
+$t->assertEqual( 'CDN concurrency: cache headers captured', 'HIT', $concurrent_results[0]['cache_headers']['cfCacheStatus'] );
+
+// Concurrency splits the work into rounds rather than one giant batch.
+$requests_stub::$calls = array();
+update_option( 'cachewarmer_cdn_concurrency', 2 );
+$chunked_warmer = new CacheWarmer_CDN_Warmer();
+$chunked_warmer->warm(
+    array( 'https://example.com/a', 'https://example.com/b', 'https://example.com/c' ),
+    'test-job-chunked'
+);
+// 3 URLs at concurrency 2 gives chunks of [a,b] and [c]. The pair is batched
+// once per pass; the trailing single URL has nothing to parallelise and takes
+// the sequential path, so only 2 batched calls are made.
+$t->assertEqual( 'CDN concurrency: only multi-URL chunks are batched', 2, count( $requests_stub::$calls ) );
+$t->assertEqual( 'CDN concurrency: first chunk holds 2 URLs', 2, count( $requests_stub::$calls[0] ) );
+$t->assertEqual( 'CDN concurrency: second pass repeats the same 2 URLs', 2, count( $requests_stub::$calls[1] ) );
+
+// A single URL has nothing to parallelise, so it takes the sequential path.
+$requests_stub::$calls = array();
+$single = $chunked_warmer->warm( array( 'https://example.com/page1' ), 'test-job-single' );
+$t->assertEqual( 'CDN concurrency: single URL skips the batch path', 0, count( $requests_stub::$calls ) );
+$t->assertEqual( 'CDN concurrency: single URL still warmed twice', 2, count( $single ) );
+
+update_option( 'cachewarmer_cdn_concurrency', 3 );
+
+// ──────────────────────────────────────────────
+// Unit Tests — CDN Warmer verdicts
+// ──────────────────────────────────────────────
+$t->suite( '2. Unit Tests — CDN Warmer verdicts' );
+
+$cw_verdict = function ( array $fill, array $probe, ?string $vary = null ): string {
+    return CacheWarmer_CDN_Warmer::classify_cache_verdict( $fill, $probe, $vary )['verdict'];
+};
+
+// A miss on the fill is the SUCCESS signal for a warmer — it means the request
+// populated the cache. A hit there means the run changed nothing.
+$t->assertEqual( 'Verdict: miss then hit is "warmed"', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ) ) );
+$t->assertEqual( 'Verdict: hit then hit is "already_warm"', 'already_warm', $cw_verdict( array( 'cfCacheStatus' => 'HIT' ), array( 'cfCacheStatus' => 'HIT' ) ) );
+$t->assertEqual( 'Verdict: expired then hit counts as warmed', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'EXPIRED' ), array( 'cfCacheStatus' => 'HIT' ) ) );
+$t->assertEqual( 'Verdict: miss twice is "not_cacheable"', 'not_cacheable', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'MISS' ) ) );
+$t->assertEqual( 'Verdict: BYPASS is reported as bypassed', 'bypassed', $cw_verdict( array( 'cfCacheStatus' => 'BYPASS' ), array( 'cfCacheStatus' => 'MISS' ) ) );
+$t->assertEqual( 'Verdict: DYNAMIC means the zone does not cache it', 'zone_not_caching', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'DYNAMIC' ) ) );
+$t->assertEqual( 'Verdict: Akamai TCP_ headers are understood', 'warmed', $cw_verdict( array( 'xCache' => 'TCP_MISS' ), array( 'xCache' => 'TCP_HIT' ) ) );
+$t->assertEqual( 'Verdict: a non-zero Age implies a hit', 'warmed', $cw_verdict( array( 'age' => '0' ), array( 'age' => '42' ) ) );
+$t->assertEqual( 'Verdict: no cache headers yields "unknown"', 'unknown', $cw_verdict( array(), array() ) );
+
+// The two passes send different user agents, so an origin that varies on that
+// header puts them in separate cache entries and the pair proves nothing.
+$t->assertEqual(
+    'Verdict: Vary on User-Agent makes the pair meaningless',
+    'indeterminate',
+    $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ), 'Accept-Encoding, User-Agent' )
+);
+$t->assertEqual(
+    'Verdict: a harmless Vary still allows a judgement',
+    'warmed',
+    $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ), 'Accept-Encoding' )
+);
+
+// Fastly reports both tiers comma-separated; only the last segment describes
+// the edge that answered. Matching the whole string read "HIT, MISS" as a hit.
+$t->assertEqual( 'Verdict: two-tier "MISS, HIT" is a hit', 'warmed', $cw_verdict( array( 'xCache' => 'MISS, MISS' ), array( 'xCache' => 'MISS, HIT' ) ) );
+$t->assertEqual( 'Verdict: two-tier "HIT, MISS" is a miss', 'not_cacheable', $cw_verdict( array( 'xCache' => 'HIT, MISS' ), array( 'xCache' => 'HIT, MISS' ) ) );
+
+// These are all served from cache; treating them as unknown would report
+// genuinely cached pages as unverified.
+$t->assertEqual( 'Verdict: REVALIDATED counts as cached', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'REVALIDATED' ) ) );
+$t->assertEqual( 'Verdict: STALE counts as cached', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'STALE' ) ) );
+$t->assertEqual( 'Verdict: UPDATING counts as cached', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'UPDATING' ) ) );
+
+// The concurrent path bypasses WP_Http, so installs relying on it must fall
+// back rather than have the setting silently ignored.
+$cdn_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-warmer.php' );
+$t->assertContains( 'Concurrency: honours WP_HTTP_BLOCK_EXTERNAL', $cdn_src, 'WP_HTTP_BLOCK_EXTERNAL' );
+$t->assertContains( 'Concurrency: honours pre_http_request', $cdn_src, 'pre_http_request' );
+
+// admin_init never fires for cron or REST, so the migration must not hang off it.
+$init_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer.php' );
+$t->assertContains( 'Upgrade: runs on plugins_loaded', $init_src, "add_action( 'plugins_loaded', array( \$this->database, 'maybe_upgrade' ) )" );
+
+$cw_no_store = CacheWarmer_CDN_Warmer::classify_cache_verdict(
+    array( 'cfCacheStatus' => 'MISS' ),
+    array( 'cfCacheStatus' => 'MISS', 'cacheControl' => 'no-store, max-age=0' )
+);
+$t->assertEqual( 'Verdict: names Cache-Control as the reason', 'Cache-Control: no-store', $cw_no_store['reason'] );
+
+// The mobile pass carries the verdict, because it is the probe.
+$requests_stub::$calls = array();
+$verdict_warmer  = new CacheWarmer_CDN_Warmer();
+$verdict_results = $verdict_warmer->warm( array( 'https://example.com/a', 'https://example.com/b' ), 'test-job-verdict' );
+$t->assertEqual( 'Verdict: fill pass carries no verdict', null, $verdict_results[0]['cache_headers']['verdict'] ?? null );
+$t->assertNotEmpty( 'Verdict: probe pass carries one', $verdict_results[2]['cache_headers']['verdict'] ?? '' );
+
+// Persistence: the headers used to be collected and then dropped, because
+// neither the insert nor the table had anywhere to put them.
+$db_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-database.php' );
+$jm_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-job-manager.php' );
+$t->assertContains( 'Schema: url_results has a cache_headers column', $db_src, 'cache_headers TEXT DEFAULT NULL' );
+$t->assertContains( 'Schema: url_results has a viewport column', $db_src, 'viewport VARCHAR(50) DEFAULT NULL' );
+$t->assertContains( 'DB: insert stores the cache headers as JSON', $db_src, "wp_json_encode( \$data['cache_headers'] )" );
+$t->assertContains( 'DB: an upgrade path exists for existing installs', $db_src, 'function maybe_upgrade' );
+$t->assertContains( 'Job manager: forwards the cache headers', $jm_src, "'cache_headers' => \$result['cache_headers'] ?? null" );
+$t->assert( 'DB version bumped so the upgrade fires', str_contains( $main_content, "CACHEWARMER_DB_VERSION', '1.1.0'" ) );
+
+// ──────────────────────────────────────────────
+// Unit Tests — CDN Purge (Akamai EdgeGrid, Cloudflare batching)
+// ──────────────────────────────────────────────
+$t->suite( '2. Unit Tests — CDN Purge' );
+
+$purge_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-purge-warmer.php' );
+
+// Akamai's reference clients feed the base64 signing key straight into the
+// second HMAC. Decoding it first yields a valid-looking but wrong signature,
+// which the API rejects with a 401 and no useful detail.
+$t->assert(
+    'Akamai: signing key is not base64-decoded before signing',
+    ! str_contains( $purge_src, 'base64_decode( $signing_key )' )
+);
+$t->assertContains(
+    'Akamai: signature keyed on the base64 string',
+    $purge_src,
+    "hash_hmac( 'sha256', \$data_to_sign, \$signing_key, true )"
+);
+
+// The timestamp keeps the colons in the time portion — this implementation
+// always had it right, unlike the Node one.
+$t->assertContains( 'Akamai: timestamp format yyyyMMddTHH:mm:ss+0000', $purge_src, "gmdate( 'Ymd\\TH:i:s+0000' )" );
+$t->assert(
+    'Akamai: timestamp really contains colons',
+    (bool) preg_match( '/^\d{8}T\d{2}:\d{2}:\d{2}\+0000$/', gmdate( 'Ymd\TH:i:s+0000' ) )
+);
+
+$t->assertContains( 'Cloudflare: purge batches at 100 per request', $purge_src, '$batch_size = 100;' );
+
+// Purging after warming discards the cache the job just built — the same
+// inversion that was fixed in the Node module.
+$jm_purge_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-job-manager.php' );
+$purge_pos = strpos( $jm_purge_src, "CDN purge must run BEFORE any warming" );
+$warm_pos  = strpos( $jm_purge_src, "// Execute each enabled target sequentially." );
+$t->assert( 'Order: purge block exists', false !== $purge_pos );
+$t->assert( 'Order: purge runs before the warming targets', $purge_pos !== false && $warm_pos !== false && $purge_pos < $warm_pos );
+$t->assertContains( 'Order: propagation wait is clamped', $jm_purge_src, 'MAX_PROPAGATION_WAIT_SECONDS' );
+$t->assertContains( 'Akamai: propagation estimate is returned', $purge_src, "'estimated_seconds' => \$estimated" );
+$t->assert( 'Cloudflare: no longer batches at 30', ! str_contains( $purge_src, '$batch_size = 30;' ) );
 
 // ──────────────────────────────────────────────
 // Unit Tests — Facebook Warmer

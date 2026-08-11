@@ -22,7 +22,7 @@ define( 'CACHEWARMER_VERSION', '1.1.1' );
 define( 'CACHEWARMER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CACHEWARMER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'CACHEWARMER_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-define( 'CACHEWARMER_DB_VERSION', '1.0.0' );
+define( 'CACHEWARMER_DB_VERSION', '1.1.0' );
 
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer.php';
 

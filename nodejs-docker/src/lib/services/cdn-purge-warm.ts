@@ -9,6 +9,12 @@ export interface CdnPurgeResult {
   httpStatus?: number;
   durationMs: number;
   error?: string;
+  /**
+   * Seconds the provider expects the purge to need to propagate. Akamai
+   * reports this; the caller waits it out before warming, so the warm does
+   * not race the invalidation.
+   */
+  estimatedSeconds?: number;
 }
 
 function delay(ms: number): Promise<void> {
@@ -34,8 +40,9 @@ async function purgeCloudflare(urls: string[]): Promise<CdnPurgeResult[]> {
 
   const results: CdnPurgeResult[] = [];
 
-  // Cloudflare allows up to 30 URLs per purge request
-  const batchSize = 30;
+  // Cloudflare accepts 100 operations per single-file purge request
+  // (500 on Enterprise). Batching at 30 cost 3.3x the API calls for nothing.
+  const batchSize = 100;
   for (let i = 0; i < urls.length; i += batchSize) {
     const batch = urls.slice(i, i + batchSize);
     const start = Date.now();
@@ -185,7 +192,7 @@ async function purgeImperva(urls: string[]): Promise<CdnPurgeResult[]> {
  * Generate EdgeGrid Authorization header for Akamai API requests.
  * Implements the EG1-HMAC-SHA256 signing algorithm.
  */
-function generateEdgeGridAuth(
+export function generateEdgeGridAuth(
   method: string,
   url: string,
   body: string,
@@ -194,9 +201,13 @@ function generateEdgeGridAuth(
   accessToken: string
 ): string {
   const parsedUrl = new URL(url);
+  // EdgeGrid requires yyyyMMddTHH:mm:ss+0000 — the date loses its hyphens but
+  // the time KEEPS its colons. Stripping both (/[-:]/g) yields a timestamp
+  // Akamai rejects, and because the timestamp is also the signing key, the
+  // signature is wrong too.
   const timestamp = new Date()
     .toISOString()
-    .replace(/[-:]/g, "")
+    .replace(/-/g, "")
     .replace(/\.\d+Z$/, "+0000");
   const nonce = randomUUID();
 
@@ -296,6 +307,7 @@ async function purgeAkamai(urls: string[]): Promise<CdnPurgeResult[]> {
             status: "success",
             httpStatus: response.status,
             durationMs,
+            estimatedSeconds: json.estimatedSeconds,
           });
           logger.info(
             { url, provider: "akamai", purgeId: json.purgeId, estimatedSeconds: json.estimatedSeconds, durationMs },

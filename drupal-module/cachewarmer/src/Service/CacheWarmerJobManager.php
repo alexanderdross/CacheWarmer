@@ -25,12 +25,18 @@ class CacheWarmerJobManager {
   protected CacheWarmerWebhooks $webhooks;
   protected CacheWarmerEmail $email;
   protected PinterestWarmer $pinterestWarmer;
+  protected CdnPurgeWarmer $cdnPurgeWarmer;
 
   /**
    * Allowed warming targets.
    */
+  /**
+   * Upper bound for the purge propagation wait, in seconds.
+   */
+  protected const MAX_PROPAGATION_WAIT_SECONDS = 60;
+
   protected const ALLOWED_TARGETS = [
-    'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest',
+    'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge',
   ];
 
   public function __construct(
@@ -48,6 +54,7 @@ class CacheWarmerJobManager {
     CacheWarmerWebhooks $webhooks,
     CacheWarmerEmail $email,
     PinterestWarmer $pinterestWarmer,
+    CdnPurgeWarmer $cdnPurgeWarmer,
   ) {
     $this->database = $database;
     $this->sitemapParser = $sitemapParser;
@@ -63,6 +70,7 @@ class CacheWarmerJobManager {
     $this->webhooks = $webhooks;
     $this->email = $email;
     $this->pinterestWarmer = $pinterestWarmer;
+    $this->cdnPurgeWarmer = $cdnPurgeWarmer;
   }
 
   /**
@@ -196,14 +204,50 @@ class CacheWarmerJobManager {
         'targets' => $targets,
       ]);
 
-      // Process each target.
+      // CDN purge runs before every warming phase, regardless of where the
+      // caller put it in the targets array. Purging afterwards would discard
+      // the cache the job just built.
+      if (in_array('cdn-purge', $targets, TRUE) && $this->isTargetEnabled('cdn-purge', $config)) {
+        $purgeOnResult = function (string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error) use ($jobId, &$processedCount) {
+          $this->database->insertUrlResult($jobId, $url, 'cdn-purge', $status, $httpStatus, $durationMs, $error);
+          $processedCount++;
+          $this->database->updateJob($jobId, ['processed_urls' => $processedCount]);
+        };
+
+        $purgeResults = $this->cdnPurgeWarmer->purge($urls, $jobId, $purgeOnResult);
+
+        // Akamai reports how long invalidation takes to propagate. Clamped,
+        // because the value comes from a third party and an implausible one
+        // would otherwise stall the job.
+        $propagation = 0;
+        foreach ($purgeResults as $purgeResult) {
+          $propagation = max($propagation, (int) ($purgeResult['estimatedSeconds'] ?? 0));
+        }
+        $propagation = min($propagation, self::MAX_PROPAGATION_WAIT_SECONDS);
+        if ($propagation > 0) {
+          $this->logger->info('Waiting @seconds s for CDN purge to propagate before warming job @id', [
+            '@seconds' => $propagation,
+            '@id' => $jobId,
+          ]);
+          sleep($propagation);
+        }
+      }
+
+      // Process the remaining targets.
       foreach ($targets as $target) {
+        if ($target === 'cdn-purge') {
+          // Already handled above.
+          continue;
+        }
         if (!$this->isTargetEnabled($target, $config)) {
           continue;
         }
 
-        $targetOnResult = function (string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error) use ($jobId, $target, &$processedCount) {
-          $this->database->insertUrlResult($jobId, $url, $target, $status, $httpStatus, $durationMs, $error);
+        // The CDN warmer supplies a viewport and cache headers; the other
+        // targets do not. Both were previously absent from this signature, so
+        // PHP discarded them and the cache headers never reached the database.
+        $targetOnResult = function (string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error, ?string $viewport = NULL, ?array $cacheHeaders = NULL) use ($jobId, $target, &$processedCount) {
+          $this->database->insertUrlResult($jobId, $url, $target, $status, $httpStatus, $durationMs, $error, $viewport, $cacheHeaders);
           $processedCount++;
           $this->database->updateJob($jobId, [
             'processed_urls' => $processedCount,
@@ -269,6 +313,20 @@ class CacheWarmerJobManager {
    * Checks if a target is enabled in config.
    */
   protected function isTargetEnabled(string $target, $config): bool {
+    if ($target === 'cdn-purge') {
+      // Active as soon as one provider is switched on; the generic
+      // "<target>.enabled" lookup cannot express that.
+      $anyProvider = (bool) $config->get('cloudflare.enabled')
+        || (bool) $config->get('imperva.enabled')
+        || (bool) $config->get('akamai.enabled');
+      if (!$anyProvider) {
+        return FALSE;
+      }
+      // isTargetAllowed() is otherwise never called in this module, so without
+      // this check "Enterprise only" would be a claim rather than a rule.
+      return \Drupal::service('cachewarmer.license')->isTargetAllowed('cdn-purge');
+    }
+
     return (bool) $config->get("{$target}.enabled");
   }
 
@@ -307,6 +365,10 @@ class CacheWarmerJobManager {
 
       case 'pinterest':
         $this->pinterestWarmer->warm($urls, $jobId, $onResult);
+        break;
+
+      case 'cdn-purge':
+        $this->cdnPurgeWarmer->purge($urls, $jobId, $onResult);
         break;
     }
   }

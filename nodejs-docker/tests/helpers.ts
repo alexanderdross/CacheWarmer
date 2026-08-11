@@ -93,7 +93,6 @@ export function createMockConfig() {
       host: "0.0.0.0",
       apiKey: "test-api-key-12345",
     },
-    redis: { host: "localhost", port: 6379 },
     database: { path: ":memory:" },
     puppeteer: {
       executablePath: "/usr/bin/chromium-browser",
@@ -103,6 +102,9 @@ export function createMockConfig() {
     cdnWarming: {
       enabled: true,
       concurrency: 2,
+      engine: "fetch",
+      maxAssetsPerPage: 20,
+      assetHosts: [],
       waitUntil: "networkidle0",
       timeout: 10000,
       userAgents: {

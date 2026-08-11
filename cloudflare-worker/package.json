@@ -1,0 +1,26 @@
+{
+  "name": "cachewarmer-edge",
+  "version": "0.1.0",
+  "description": "Cache warming on Cloudflare Workers with verified edge cache fills",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy:drossmedia": "wrangler deploy --config deploy/drossmedia/wrangler.jsonc",
+    "deploy:privat": "wrangler deploy --config deploy/privat/wrangler.jsonc",
+    "deploy:trade-aero": "wrangler deploy --config deploy/trade-aero/wrangler.jsonc",
+    "deploy:all": "pnpm deploy:drossmedia && pnpm deploy:privat && pnpm deploy:trade-aero"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260811.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.120.1"
+  }
+}

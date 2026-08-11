@@ -134,6 +134,14 @@ export async function PUT(request: NextRequest) {
       if (updates.cdnWarming.enabled !== undefined) config.cdnWarming.enabled = updates.cdnWarming.enabled;
       if (updates.cdnWarming.concurrency !== undefined) config.cdnWarming.concurrency = updates.cdnWarming.concurrency;
       if (updates.cdnWarming.timeout !== undefined) config.cdnWarming.timeout = updates.cdnWarming.timeout;
+      // Only the two known engines; an unknown value would silently fall back
+      // to fetch at warm time and the setting would look accepted but ignored.
+      if (updates.cdnWarming.engine === "fetch" || updates.cdnWarming.engine === "browser") {
+        config.cdnWarming.engine = updates.cdnWarming.engine;
+      }
+      if (updates.cdnWarming.maxAssetsPerPage !== undefined) {
+        config.cdnWarming.maxAssetsPerPage = Math.max(0, Number(updates.cdnWarming.maxAssetsPerPage) || 0);
+      }
     }
 
     if (updates.server) {

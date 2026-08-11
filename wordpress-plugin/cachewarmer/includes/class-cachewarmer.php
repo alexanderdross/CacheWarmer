@@ -59,6 +59,10 @@ class CacheWarmer {
             new CacheWarmer_Admin( $this->job_manager, $this->database );
         }
 
+        // plugins_loaded, not admin_init: cron and REST requests never reach
+        // admin_init, and a job running before the upgrade would write to a
+        // table without the new columns.
+        add_action( 'plugins_loaded', array( $this->database, 'maybe_upgrade' ) );
         add_action( 'cachewarmer_process_job', array( $this->job_manager, 'process_job' ), 10, 1 );
         add_action( 'cachewarmer_scheduled_warm', array( $this->scheduler, 'run_scheduled_warm' ), 10, 1 );
 

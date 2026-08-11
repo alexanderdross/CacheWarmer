@@ -82,8 +82,10 @@ class CacheWarmer_CDN_Purge_Warmer {
      * Batch size: 30 URLs per request.
      */
     private function purge_cloudflare( array $urls, ?callable $on_result ): array {
-        $results    = array();
-        $batch_size = 30;
+        $results = array();
+        // Cloudflare accepts 100 operations per single-file purge request
+        // (500 on Enterprise). Batching at 30 cost 3.3x the API calls.
+        $batch_size = 100;
 
         foreach ( array_chunk( $urls, $batch_size ) as $idx => $batch ) {
             $start = microtime( true );
@@ -297,14 +299,20 @@ class CacheWarmer_CDN_Purge_Warmer {
                 $body        = json_decode( wp_remote_retrieve_body( $response ), true );
 
                 if ( $http_status >= 200 && $http_status < 300 ) {
+                    // Akamai reports how long the invalidation needs to
+                    // propagate. The job manager waits it out before warming,
+                    // so the warm does not race the purge.
+                    $estimated = isset( $body['estimatedSeconds'] ) ? (int) $body['estimatedSeconds'] : 0;
+
                     foreach ( $batch as $url ) {
                         $result = array(
-                            'url'         => $url,
-                            'target'      => 'cdn-purge',
-                            'status'      => 'success',
-                            'http_status' => $http_status,
-                            'duration_ms' => $duration_ms,
-                            'error'       => null,
+                            'url'               => $url,
+                            'target'            => 'cdn-purge',
+                            'status'            => 'success',
+                            'http_status'       => $http_status,
+                            'duration_ms'       => $duration_ms,
+                            'error'             => null,
+                            'estimated_seconds' => $estimated,
                         );
                         $results[] = $result;
                         if ( $on_result ) {
@@ -386,8 +394,13 @@ class CacheWarmer_CDN_Purge_Warmer {
         );
 
         // Signature = HMAC-SHA256(data_to_sign, signing_key).
+        //
+        // The key here is the base64 STRING, not its decoded bytes. Akamai's
+        // reference clients feed the encoded string straight into HMAC
+        // (Python's edgegrid-python calls key.encode() on it), so decoding it
+        // first — as this did — produces a different signature and a 401.
         $signature = base64_encode(
-            hash_hmac( 'sha256', $data_to_sign, base64_decode( $signing_key ), true )
+            hash_hmac( 'sha256', $data_to_sign, $signing_key, true )
         );
 
         return $auth_data . 'signature=' . $signature;

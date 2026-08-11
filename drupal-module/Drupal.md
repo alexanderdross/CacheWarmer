@@ -2,7 +2,15 @@
 
 ## Overview
 
-The CacheWarmer Drupal module processes XML sitemaps, validates structured data (schema.org) on every page, and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X), submits URLs to search engines (Google, Bing, IndexNow), and can directly purge CDN caches via Cloudflare, Imperva, and Akamai APIs (Enterprise).
+The CacheWarmer Drupal module processes XML sitemaps and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X, Pinterest) and submits URLs to search engines (Google, Bing, IndexNow).
+
+It can also purge CDN caches directly via the Cloudflare, Imperva and Akamai
+APIs before warming (Enterprise).
+
+> **Not available in this edition, by decision.** Structured-data (schema.org)
+> validation lives only in the Node.js module and is not planned for Drupal —
+> it is a content-quality check rather than a warming feature. This is a
+> deliberate scope choice, not an outstanding gap.
 
 ---
 
@@ -57,7 +65,35 @@ Navigate to **Configuration** → **Development** → **CacheWarmer** → **Sett
 | Timeout | 30s | Request timeout in seconds (5–120) |
 | User Agent | `Mozilla/5.0 (compatible; CacheWarmer/1.0)` | Custom user agent string |
 
-CDN warming sends HTTP GET requests with both desktop and mobile user-agents to trigger CDN edge cache population.
+CDN warming sends HTTP GET requests with both desktop and mobile user-agents to
+trigger CDN edge cache population. The desktop pass is the cache fill and the
+mobile pass is the probe that proves the fill landed — see
+[Warm verification](#warm-verification).
+
+### Advanced CDN Warming (Enterprise)
+
+| Setting | Description |
+|---------|-------------|
+| Custom User Agent | Overrides the agent on **every** pass, mobile included. Leave empty to keep the built-in pair. |
+| Custom HTTP Headers | One `Name: Value` per line, sent on every warming request. |
+| Additional Passes | One `Label\|User-Agent` per line. Each adds a further request per URL, recorded under that label. Omit the user agent to reuse the desktop one. |
+| Authentication Cookies | Sent as a `Cookie` header so pages behind a login can be warmed. |
+
+Two notes on the format:
+
+- **Additional passes are user agents, not pixel sizes.** The WordPress edition
+  takes `WxH Label` lines because it was written against a browser engine; a
+  plain HTTP request cannot honour a viewport, so lines there produce extra
+  passes that differ only in their label. Drupal takes the agent directly, which
+  actually changes the request that reaches the CDN.
+- **Authentication cookies accept either form.** A ready-made header
+  (`a=1; b=2`) or the WordPress edition's JSON
+  (`[{"name":"a","value":"1"}]`), so a value can be moved between the two
+  without editing.
+
+Each of the four is gated in `CdnWarmer` at request time, not just hidden
+behind the settings form's overlay: without an Enterprise licence the values
+are stored but never applied.
 
 ### Facebook Sharing Debugger
 
@@ -132,38 +168,6 @@ Batch-submits up to 10,000 URLs per request. Supported by Bing, Yandex, Seznam, 
 2. Create a text file at `https://yoursite.com/{key}.txt` containing the key
 3. Enter the key and key location URL in settings
 
-### CDN Cache Purge (Enterprise)
-
-Directly purge CDN caches via provider APIs before re-warming. All three providers are configured independently.
-
-#### Cloudflare
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Enabled | No | Toggle Cloudflare cache purge |
-| API Token | — | Cloudflare API Token with Zone:Cache Purge permission |
-| Zone ID | — | Cloudflare Zone ID (32-char hex string) |
-
-#### Imperva (Incapsula)
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Enabled | No | Toggle Imperva cache purge |
-| API ID | — | Imperva API ID |
-| API Key | — | Imperva API Key |
-| Site ID | — | Imperva Site ID (numeric) |
-
-#### Akamai
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Enabled | No | Toggle Akamai Fast Purge |
-| Host | — | Akamai API hostname (e.g. `akaa-xxxxx.luna.akamaiapis.net`) |
-| Client Token | — | EdgeGrid client_token |
-| Client Secret | — | EdgeGrid client_secret |
-| Access Token | — | EdgeGrid access_token |
-| Network | production | `production` or `staging` |
-
 ### Scheduled Warming
 
 | Setting | Default | Description |
@@ -190,7 +194,7 @@ The module adds three admin pages under **Configuration** → **Development** �
 ### Dashboard Tab
 
 - **Status cards**: Shows counts of Queued, Running, Completed, Failed jobs and total processed URLs
-- **Warm form**: Enter a sitemap URL, select targets (Schema Validation, CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow), and start warming
+- **Warm form**: Enter a sitemap URL, select targets (CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow, Pinterest, CDN Purge), and start warming
 - **Jobs table**: Shows recent 20 jobs with status badge, progress bar, target tags, and actions (Details, Delete)
 - **Job detail modal**: Shows full job info with per-target result breakdown (success/failed/skipped counts)
 - **Auto-refresh**: Dashboard polls every 10 seconds for updated job status
@@ -296,12 +300,38 @@ The module creates 3 custom tables via `hook_schema()`:
 | `id` | VARCHAR(36) | UUID primary key |
 | `job_id` | VARCHAR(36) | FK to jobs |
 | `url` | TEXT | Warmed URL |
-| `target` | VARCHAR(50) | schema / cdn / facebook / linkedin / twitter / google / bing / indexnow / cdn-purge:cloudflare / cdn-purge:imperva / cdn-purge:akamai |
+| `target` | VARCHAR(50) | cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest / cdn-purge |
 | `status` | VARCHAR(20) | success / failed / skipped / pending |
 | `http_status` | INT | HTTP response code |
 | `duration_ms` | INT | Duration in milliseconds |
 | `error` | TEXT | Error message |
+| `viewport` | VARCHAR(32) | Which pass produced the row: `desktop`, `mobile`, or a custom label |
+| `cache_headers` | TEXT | JSON: the CDN cache headers plus the warm verdict |
 | `created_at` | VARCHAR(20) | Result timestamp |
+
+`viewport` and `cache_headers` are added to existing installs by
+`cachewarmer_update_10001`.
+
+### Warm verification
+
+An HTTP 200 does not mean a page is in the edge cache. Each URL is therefore
+requested twice: the desktop pass fills the cache and the mobile pass probes
+it, and the pair is classified into `cache_headers.verdict`.
+
+| Verdict | Meaning |
+|---------|---------|
+| `warmed` | Fill missed, probe hit — the run did something. |
+| `already_warm` | Hit on both. Nothing to do, still fine. |
+| `not_cacheable` | Two requests, still no hit; `verdictReason` names why. |
+| `bypassed` | A rule, cookie or `Cache-Control` skipped the cache. |
+| `zone_not_caching` | The CDN returns `DYNAMIC` for this content. |
+| `indeterminate` | `Vary: User-Agent`, so the two passes addressed different cache entries and prove nothing. |
+| `unknown` | The response carried no cache headers to read. |
+
+`MISS` on the fill is the **success** signal, not a warning — a probe that
+comes back `HIT` is what proves the fill landed. Cloudflare
+(`cf-cache-status`), Akamai (`x-cache: TCP_*`), Fastly and CloudFront two-tier
+values, and a bare non-zero `Age` are all understood.
 
 ---
 
@@ -322,7 +352,12 @@ All services are registered in `cachewarmer.services.yml` and use Drupal's depen
 | `cachewarmer.google_indexer` | `GoogleIndexer` | Google Indexing API |
 | `cachewarmer.bing_indexer` | `BingIndexer` | Bing Webmaster API |
 | `cachewarmer.indexnow` | `IndexNow` | IndexNow protocol |
+| `cachewarmer.pinterest_warmer` | `PinterestWarmer` | Pinterest Rich Pins |
 | `cachewarmer.cdn_purge_warmer` | `CdnPurgeWarmer` | CDN cache purge (Cloudflare, Imperva, Akamai) |
+| `cachewarmer.license` | `CacheWarmerLicense` | License validation and feature gating |
+| `cachewarmer.sitemap_detector` | `CacheWarmerSitemapDetector` | Local sitemap auto-detection |
+| `cachewarmer.webhooks` | `CacheWarmerWebhooks` | Webhook notifications |
+| `cachewarmer.email` | `CacheWarmerEmail` | Email notifications |
 | `cachewarmer.job_manager` | `CacheWarmerJobManager` | Job orchestration |
 
 ### Background Processing
@@ -385,7 +420,12 @@ drupal-module/cachewarmer/
 │       ├── GoogleIndexer.php                   # Google indexing service
 │       ├── BingIndexer.php                     # Bing indexing service
 │       ├── IndexNow.php                        # IndexNow service
-│       └── CdnPurgeWarmer.php                  # CDN purge (Cloudflare, Imperva, Akamai)
+│       ├── PinterestWarmer.php                 # Pinterest Rich Pins
+│       ├── CdnPurgeWarmer.php                  # CDN purge (Cloudflare, Imperva, Akamai)
+│       ├── CacheWarmerLicense.php              # License validation
+│       ├── CacheWarmerSitemapDetector.php      # Sitemap auto-detection
+│       ├── CacheWarmerWebhooks.php             # Webhook notifications
+│       └── CacheWarmerEmail.php                # Email notifications
 ├── templates/
 │   ├── cachewarmer-dashboard.html.twig         # Dashboard template
 │   └── cachewarmer-sitemaps.html.twig          # Sitemaps template
@@ -411,9 +451,6 @@ drupal-module/cachewarmer/
 | **Google** | Service Account JSON | [Google Cloud Console](https://console.cloud.google.com) — Enable Indexing API |
 | **Bing** | Webmaster API Key | [Bing Webmaster Tools](https://www.bing.com/webmasters) |
 | **IndexNow** | Self-generated key | Generate UUID + host as text file on your domain |
-| **Cloudflare** | API Token + Zone ID | [Cloudflare Dashboard](https://dash.cloudflare.com) — API Token with Zone:Cache Purge |
-| **Imperva** | API ID + API Key + Site ID | [Imperva Console](https://my.imperva.com) — Account Settings → API |
-| **Akamai** | EdgeGrid Credentials | [Akamai Control Center](https://control.akamai.com) — Identity & Access → API Clients |
 
 ---
 

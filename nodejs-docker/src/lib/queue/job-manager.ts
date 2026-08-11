@@ -11,7 +11,11 @@ import { submitToGoogle } from "@/lib/services/google-indexer";
 import { submitToBing } from "@/lib/services/bing-indexer";
 import { warmPinterest } from "@/lib/services/pinterest-warmer";
 import { purgeCdnCache } from "@/lib/services/cdn-purge-warm";
-import { validateSchemaMarkup } from "@/lib/services/schema-validator";
+import {
+  validateSchemaHtml,
+  validateSchemaMarkup,
+  type SchemaValidationResult,
+} from "@/lib/services/schema-validator";
 import { sendWebhook } from "@/lib/services/webhooks";
 import { sendJobCompletedEmail } from "@/lib/services/email-notifications";
 import logger from "@/lib/logger";
@@ -145,6 +149,12 @@ export async function processJob(jobId: string): Promise<void> {
     // Parse sitemap
     logger.info({ jobId, sitemapUrl: job.sitemap_url }, "Parsing sitemap");
     const sitemapUrls = await parseSitemap(job.sitemap_url);
+
+    // Priority-based warming: sort by priority descending.
+    // This has to happen BEFORE the URL list is derived — sorting afterwards
+    // leaves `urls` in sitemap order and silently disables the feature.
+    sitemapUrls.sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
+
     let urls = sitemapUrls.map((u) => u.loc);
 
     // Apply exclude patterns
@@ -159,45 +169,110 @@ export async function processJob(jobId: string): Promise<void> {
       }
     }
 
-    // Priority-based warming: sort by priority descending
-    sitemapUrls.sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
-
     db.prepare("UPDATE jobs SET total_urls = ? WHERE id = ?").run(urls.length, jobId);
 
     sendWebhook("job.started", { jobId, sitemapUrl: job.sitemap_url, urlCount: urls.length, targets }).catch((err) => logger.warn({ err }, "notification failed"));
 
     let processed = 0;
 
-    // Schema Validation (runs first as pre-check)
-    if (targets.includes("schema")) {
-      logger.info({ jobId, urlCount: urls.length }, "Starting schema validation");
-      await validateSchemaMarkup(urls, (result) => {
-        saveSchemaResult(
-          jobId, result.url, result.status, result.schemas,
-          result.errors, result.warnings, result.durationMs, result.error
-        );
-        saveUrlResult(
-          jobId, result.url, "schema",
-          result.status === "errors" ? "failed" : "success",
-          undefined, result.durationMs,
-          result.errors.length > 0 ? `${result.errors.length} schema error(s)` : result.error
-        );
+    // CDN Purge (Cloudflare, Imperva, Akamai)
+    //
+    // Must run BEFORE any warming: purging afterwards discards the cache the
+    // job just spent its whole run building. Akamai reports how long its
+    // invalidation takes to propagate, so wait that out before warming —
+    // otherwise the warm races the purge and the fill is thrown away too.
+    if (targets.includes("cdn-purge")) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting CDN cache purge (Cloudflare/Imperva/Akamai)");
+      const purgeResults = await purgeCdnCache(urls, (result) => {
+        saveUrlResult(jobId, result.url, `cdn-purge:${result.provider}`, result.status, result.httpStatus, result.durationMs, result.error);
         processed++;
         updateJobProgress(jobId, processed);
       });
+
+      // Clamped: this value comes from a third party, and an implausible one
+      // would otherwise stall the job indefinitely. Akamai reports ~5s.
+      const MAX_PROPAGATION_WAIT_SECONDS = 60;
+      const propagationSeconds = Math.min(
+        purgeResults.reduce((max, r) => Math.max(max, r.estimatedSeconds ?? 0), 0),
+        MAX_PROPAGATION_WAIT_SECONDS
+      );
+      if (propagationSeconds > 0) {
+        logger.info({ jobId, propagationSeconds }, "Waiting for CDN purge to propagate before warming");
+        await new Promise((resolve) => setTimeout(resolve, propagationSeconds * 1000));
+      }
+    }
+
+    const wantsSchema = targets.includes("schema");
+    const wantsCdn = targets.includes("cdn");
+
+    const recordSchemaResult = (result: SchemaValidationResult) => {
+      saveSchemaResult(
+        jobId, result.url, result.status, result.schemas,
+        result.errors, result.warnings, result.durationMs, result.error
+      );
+      saveUrlResult(
+        jobId, result.url, "schema",
+        result.status === "errors" ? "failed" : "success",
+        undefined, result.durationMs,
+        result.errors.length > 0 ? `${result.errors.length} schema error(s)` : result.error
+      );
+      processed++;
+      updateJobProgress(jobId, processed);
+    };
+
+    // Schema validation without CDN warming: nobody else is loading the pages,
+    // so it has to fetch them itself.
+    if (wantsSchema && !wantsCdn) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting schema validation");
+      await validateSchemaMarkup(urls, recordSchemaResult);
     }
 
     // CDN Warming
-    if (targets.includes("cdn")) {
-      logger.info({ jobId, urlCount: urls.length }, "Starting CDN warming");
-      await warmUrls(urls, (result) => {
-        saveUrlResult(
-          jobId, result.url, "cdn", result.status, result.httpStatus,
-          result.durationMs, result.error, result.viewport, result.cacheHeaders
-        );
-        processed++;
-        updateJobProgress(jobId, processed);
-      });
+    if (wantsCdn) {
+      logger.info(
+        { jobId, urlCount: urls.length, withSchema: wantsSchema },
+        "Starting CDN warming"
+      );
+
+      // When schema validation is also requested it rides along on the HTML the
+      // browser has already loaded, instead of fetching every page again.
+      // onHtml only fires for URLs whose desktop pass succeeded, so track which
+      // ones were validated; the rest still need a schema row or they vanish
+      // from the report entirely.
+      const schemaValidated = new Set<string>();
+
+      await warmUrls(
+        urls,
+        (result) => {
+          saveUrlResult(
+            jobId, result.url, "cdn", result.status, result.httpStatus,
+            result.durationMs, result.error, result.viewport, result.cacheHeaders
+          );
+          processed++;
+          updateJobProgress(jobId, processed);
+        },
+        wantsSchema
+          ? async (url, html) => {
+              schemaValidated.add(url);
+              recordSchemaResult(await validateSchemaHtml(url, html));
+            }
+          : undefined
+      );
+
+      if (wantsSchema) {
+        for (const url of urls) {
+          if (schemaValidated.has(url)) continue;
+          recordSchemaResult({
+            url,
+            status: "failed",
+            schemas: [],
+            errors: [],
+            warnings: [],
+            durationMs: 0,
+            error: "Page could not be loaded, so its markup was not validated",
+          });
+        }
+      }
       await closeBrowser();
     }
 
@@ -270,16 +345,6 @@ export async function processJob(jobId: string): Promise<void> {
       logger.info({ jobId, urlCount: urls.length }, "Starting Pinterest warming");
       await warmPinterest(urls, (result) => {
         saveUrlResult(jobId, result.url, "pinterest", result.status, result.httpStatus, result.durationMs, result.error);
-        processed++;
-        updateJobProgress(jobId, processed);
-      });
-    }
-
-    // CDN Purge + Warm (Cloudflare, Imperva, Akamai)
-    if (targets.includes("cdn-purge")) {
-      logger.info({ jobId, urlCount: urls.length }, "Starting CDN cache purge (Cloudflare/Imperva/Akamai)");
-      await purgeCdnCache(urls, (result) => {
-        saveUrlResult(jobId, result.url, `cdn-purge:${result.provider}`, result.status, result.httpStatus, result.durationMs, result.error);
         processed++;
         updateJobProgress(jobId, processed);
       });

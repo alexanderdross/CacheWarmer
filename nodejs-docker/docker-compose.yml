@@ -7,17 +7,10 @@ services:
       - ./data:/app/data
       - ./credentials:/app/credentials:ro
       - ./config.yaml:/app/config.yaml:ro
-    depends_on:
-      - redis
     restart: unless-stopped
     environment:
       - NODE_ENV=production
 
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-
-volumes:
-  redis-data:
+# Jobs run in-process and state lives in SQLite under ./data, so there is no
+# queue broker to run. A Redis service used to be declared here alongside
+# bullmq and ioredis dependencies, but nothing ever connected to it.

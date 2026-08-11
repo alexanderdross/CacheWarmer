@@ -13,15 +13,16 @@ The product is commercially distributed in three tiers: **Free**, **Premium**, a
 
 ## Repository Components
 
-This monorepo contains **5 components**:
+This monorepo contains **6 components**:
 
 | # | Component | Location | Tech Stack | Status |
 |---|-----------|----------|------------|--------|
-| 1 | **WordPress Theme** (marketing website) | `theme/wp-content/themes/cachewarmer/` | PHP, WordPress, Stripe | v2.4.0 |
-| 2 | **CacheWarmer WordPress Plugin** | `wordpress-plugin/cachewarmer/` | PHP 8.0+, WordPress 6.0+ | v1.1.0 |
-| 3 | **CacheWarmer Drupal Module** | `drupal-module/cachewarmer/` | PHP 8.1+, Drupal 10/11 | v1.1.0 |
-| 4 | **CacheWarmer Node.js / Docker Module** | `nodejs-docker/` | Next.js 16, TypeScript, React 19, Tailwind CSS 4 | v1.1.0 |
-| 5 | **License Manager Plugin** | `cachewarmer-license-manager/` | PHP 8.0+, WordPress 6.0+, Stripe | v1.0.0 |
+| 1 | **WordPress Theme** (marketing website) | `theme/wp-content/themes/cachewarmer/` | PHP, WordPress, Stripe | v2.4.1 |
+| 2 | **CacheWarmer WordPress Plugin** | `wordpress-plugin/cachewarmer/` | PHP 8.0+, WordPress 6.0+ | v1.1.1 |
+| 3 | **CacheWarmer Drupal Module** | `drupal-module/cachewarmer/` | PHP 8.1+, Drupal 10/11 | v1.1.1 |
+| 4 | **CacheWarmer Node.js / Docker Module** | `nodejs-docker/` | Next.js 16, TypeScript, React 19, Tailwind CSS 4 | v1.1.1 |
+| 5 | **License Manager Plugin** | `cachewarmer-license-manager/` | PHP 8.0+, WordPress 6.0+, Stripe | v1.0.1 |
+| 6 | **CacheWarmer Edge** (Cloudflare Worker) | `cloudflare-worker/` | TypeScript, Workers, Durable Objects, D1 | v0.1.0 |
 
 > **License Management Architecture:** The standalone `cachewarmer-license-manager` WordPress plugin (`cwlm/v1` API namespace, 6 MySQL tables, Stripe integration, Admin UI) handles all license CRUD, activation/deactivation, heartbeat checks, and Stripe webhooks. The theme's `functions.php` provides a lightweight Stripe Checkout integration for the pricing page. License *validation* logic lives inside each platform module (WordPress plugin's `class-cachewarmer-license.php`, Drupal module's `CacheWarmerLicense.php`).
 
@@ -37,7 +38,7 @@ Marketing/sales website for cachewarmer.drossmedia.de with integrated Stripe pay
 
 ### Theme Details
 - **Theme Name:** CacheWarmer
-- **Version:** 2.4.0
+- **Version:** 2.4.1
 - **License:** MIT
 - **Text Domain:** cachewarmer
 - **Fonts:** Inter (400, 500), Outfit (600, 700) — self-hosted WOFF2
@@ -77,7 +78,7 @@ Marketing/sales website for cachewarmer.drossmedia.de with integrated Stripe pay
 ## 2. CacheWarmer WordPress Plugin
 
 **Path:** `wordpress-plugin/cachewarmer/`
-**Version:** 1.1.0
+**Version:** 1.1.1
 **Requires:** WordPress 6.0+, PHP 8.0+
 **License:** GPL v2+
 
@@ -126,7 +127,7 @@ wordpress-plugin/cachewarmer/
 ### Database Tables (using wpdb prefix)
 1. **wp_cachewarmer_sitemaps** — id, url, domain, cron_expression, created_at, last_warmed_at
 2. **wp_cachewarmer_jobs** — id, sitemap_id, sitemap_url, status, total_urls, processed_urls, targets (JSON), started_at, completed_at, error
-3. **wp_cachewarmer_url_results** — id, job_id, url, target, status, http_status, duration_ms, error, created_at
+3. **wp_cachewarmer_url_results** — id, job_id, url, target, status, http_status, duration_ms, error, viewport, cache_headers, created_at
 
 ### REST API (namespace: `cachewarmer/v1`)
 | Method | Route | Purpose |
@@ -156,7 +157,7 @@ wordpress-plugin/cachewarmer/
 ## 3. CacheWarmer Drupal Module
 
 **Path:** `drupal-module/cachewarmer/`
-**Version:** 1.1.0
+**Version:** 1.1.1
 **Requires:** Drupal 10/11, PHP 8.1+
 **Package:** Performance
 **Dependencies:** drupal:rest, drupal:serialization
@@ -167,7 +168,7 @@ drupal-module/cachewarmer/
 ├── cachewarmer.info.yml          # Module metadata
 ├── cachewarmer.module            # Hooks: help, cron, mail, theme
 ├── cachewarmer.install           # DB schema (3 tables)
-├── cachewarmer.services.yml      # 14+ service definitions (DI)
+├── cachewarmer.services.yml      # 16 service definitions (DI) + logger channel
 ├── cachewarmer.routing.yml       # 15+ routes
 ├── cachewarmer.permissions.yml   # "Administer CacheWarmer" permission
 ├── cachewarmer.links.menu.yml    # Admin menu
@@ -203,7 +204,8 @@ drupal-module/cachewarmer/
 │       ├── GoogleIndexer.php             # Google Indexing API
 │       ├── BingIndexer.php               # Bing Webmaster API
 │       ├── IndexNow.php                  # IndexNow protocol
-│       └── PinterestWarmer.php           # Pinterest Rich Pins
+│       ├── PinterestWarmer.php           # Pinterest Rich Pins
+│       └── CdnPurgeWarmer.php            # CDN purge: Cloudflare/Imperva/Akamai (Enterprise)
 ├── templates/
 │   ├── cachewarmer-dashboard.html.twig   # Dashboard template
 │   └── cachewarmer-sitemaps.html.twig    # Sitemap management template
@@ -215,7 +217,7 @@ drupal-module/cachewarmer/
 ### Database Tables
 1. **cachewarmer_sitemaps** — Same schema as WordPress version
 2. **cachewarmer_jobs** — Same schema as WordPress version
-3. **cachewarmer_url_results** — Same schema as WordPress version
+3. **cachewarmer_url_results** — Same schema as WordPress version (`viewport` and `cache_headers` added by `cachewarmer_update_10001`)
 
 ### Admin Routes
 - `/admin/config/performance/cachewarmer` — Dashboard
@@ -234,7 +236,7 @@ drupal-module/cachewarmer/
 ## 4. CacheWarmer Node.js / Docker Module
 
 **Path:** `nodejs-docker/`
-**Version:** 1.1.0
+**Version:** 1.1.1
 **Framework:** Next.js 16 (App Router) with React 19
 **Runtime:** Node.js 20+
 **Package Manager:** pnpm 10.29.3
@@ -247,8 +249,9 @@ drupal-module/cachewarmer/
 | Framework | Next.js 16 (App Router) |
 | UI | React 19, Tailwind CSS 4 |
 | Database | SQLite via better-sqlite3 |
-| Job Queue | BullMQ + ioredis |
-| Browser | puppeteer-core |
+| Job Execution | In-process from the API route; no broker |
+| Browser | puppeteer-core (LinkedIn and Twitter/X only) |
+| CDN Warming | `fetch()` plus a subresource scanner; Chromium is opt-in |
 | Sitemap Parsing | fast-xml-parser |
 | Google API | googleapis |
 | Logging | pino + pino-pretty |
@@ -302,10 +305,11 @@ nodejs-docker/src/
     ├── db/
     │   └── database.ts         # SQLite schema + CRUD operations
     ├── queue/
-    │   └── job-manager.ts      # BullMQ job orchestration
+    │   └── job-manager.ts      # Job orchestration (in-process, no broker)
     └── services/
         ├── sitemap-parser.ts       # XML sitemap parser
-        ├── cdn-warmer.ts           # CDN edge cache warming
+        ├── cdn-warmer.ts           # CDN edge cache warming (fetch or browser engine)
+        ├── subresources.ts         # Extracts CSS/JS/image URLs from warmed HTML
         ├── cdn-purge-warm.ts       # CDN purge (Cloudflare/Imperva/Akamai)
         ├── facebook-warmer.ts      # Facebook Graph API
         ├── linkedin-warmer.ts      # LinkedIn Post Inspector
@@ -319,12 +323,26 @@ nodejs-docker/src/
         └── email-notifications.ts  # Email notifications
 ```
 
+### CDN warming engine
+
+`cdnWarming.engine` selects how a page is requested:
+
+| Engine | What it does | When to use it |
+|--------|--------------|----------------|
+| `fetch` (default) | Plain HTTP requests, plus the subresources found in the returned HTML (`maxAssetsPerPage`, capped to the page's own host and any `assetHosts`) | Everything, normally |
+| `browser` | Drives Chromium via puppeteer-core | Pages that assemble their real content client-side, where fetch would warm a shell |
+
+An edge cache observes neither layout nor script execution, so the only thing
+the browser contributed to warming was implicit subresource loading —
+`subresources.ts` does that explicitly and without a browser process. Chromium
+is still required for the LinkedIn and Twitter/X warmers either way.
+
 ### Configuration
-Central config via `nodejs-docker/config.yaml`. Supports all warming services, Redis connection, SQLite path, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
+Central config via `nodejs-docker/config.yaml`. Supports all warming services, SQLite path, the CDN warming engine, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
 
 ### Docker Deployment
 - **Dockerfile:** Multi-stage build (Node.js 20-slim + Chromium), runs as non-root `nextjs` user
-- **docker-compose.yml:** CacheWarmer service + Redis 7 Alpine, with volumes for data, credentials, and config
+- **docker-compose.yml:** CacheWarmer service only — jobs run in-process and state lives in SQLite, so there is no broker to run
 
 ### Testing
 ```
@@ -378,7 +396,7 @@ nodejs-docker/tests/
 ## 5. License Manager Plugin
 
 **Path:** `cachewarmer-license-manager/`
-**Version:** 1.0.0
+**Version:** 1.0.1
 **Requires:** WordPress 6.0+, PHP 8.0+
 
 ### Architecture
@@ -431,22 +449,43 @@ Standalone WordPress plugin with `cwlm/v1` REST API namespace. Handles license C
 
 ---
 
-## Warming Targets (All Platforms)
+## Warming Targets
 
-| Target | Free | Premium | Enterprise | Method |
-|--------|:----:|:-------:|:----------:|--------|
-| Schema Validation | -- | Yes | Yes | Local structured data testing (JSON-LD, Microdata, RDFa) |
-| CDN Edge Cache | Yes | Yes | Yes | HTTP GET (desktop + mobile user-agents) |
-| IndexNow | Yes | Yes | Yes | Batch POST to api.indexnow.org |
-| Facebook | -- | Yes | Yes | Graph API v19.0 scrape endpoint |
-| LinkedIn | -- | Yes | Yes | Post Inspector API |
-| Twitter/X | -- | Yes | Yes | Tweet Composer intent URL |
-| Google | -- | Yes | Yes | Indexing API v3 (URL_UPDATED) |
-| Bing | -- | Yes | Yes | Webmaster URL Submission API |
-| Pinterest | -- | Yes | Yes | Rich Pin Validator |
-| Cloudflare Purge | -- | -- | Yes | API v4 zone cache purge (30 URLs/batch) |
-| Imperva Purge | -- | -- | Yes | Cloud WAF API v1 |
-| Akamai Purge | -- | -- | Yes | Fast Purge API v3 (50 URLs/batch, EdgeGrid auth) |
+Availability depends on the licence tier **and** on the edition. Earlier
+revisions of this file listed only tiers, which implied every target exists
+everywhere — it does not.
+
+| Target | Free | Premium | Enterprise | Node | WP | Drupal | Method |
+|--------|:----:|:-------:|:----------:|:----:|:--:|:------:|--------|
+| Schema Validation | -- | Yes | Yes | Yes | -- | -- | Local structured data testing (JSON-LD, Microdata, RDFa) |
+| CDN Edge Cache | Yes | Yes | Yes | Yes | Yes | Yes | HTTP GET (desktop + mobile user-agents) |
+| IndexNow | Yes | Yes | Yes | Yes | Yes | Yes | Batch POST to api.indexnow.org |
+| Facebook | -- | Yes | Yes | Yes | Yes | Yes | Graph API v19.0 scrape endpoint |
+| LinkedIn | -- | Yes | Yes | Yes | Yes | Yes | Post Inspector API |
+| Twitter/X | -- | Yes | Yes | Yes | Yes | Yes | Tweet Composer intent URL |
+| Google | -- | Yes | Yes | Yes | Yes | Yes | Indexing API v3 (URL_UPDATED) |
+| Bing | -- | Yes | Yes | Yes | Yes | Yes | Webmaster URL Submission API |
+| Pinterest | -- | Yes | Yes | Yes | Yes | Yes | Rich Pin Validator |
+| Cloudflare Purge | -- | -- | Yes | Yes | Yes | Yes | API v4 zone cache purge (100 URLs/batch) |
+| Imperva Purge | -- | -- | Yes | Yes | Yes | Yes | Cloud WAF API v1 |
+| Akamai Purge | -- | -- | Yes | Yes | Yes | Yes | Fast Purge API v3 (50 URLs/batch, EdgeGrid auth) |
+
+Target identifiers accepted by the APIs: `schema`, `cdn`, `facebook`,
+`linkedin`, `twitter`, `google`, `bing`, `indexnow`, `pinterest`, `cdn-purge`.
+The Drupal module accepts all of these except `schema`. Structured-data
+validation is deliberately Node.js-only — it is a content-quality check rather
+than a warming target, and porting it to the PHP editions is not planned.
+
+**Warm verification.** All three editions treat the desktop pass as a cache
+fill and the following pass as a probe, recording a verdict (`warmed`,
+`already_warm`, `not_cacheable`, `bypassed`, `zone_not_caching`,
+`indeterminate`, `unknown`) alongside the raw cache headers. MISS on a fill
+request is the success signal, not a warning — a probe that comes back HIT is
+what proves the fill landed.
+
+Where the origin sends `Vary: User-Agent` the two passes address different
+cache entries, so the verdict is `indeterminate` rather than claimed either
+way.
 
 ---
 
@@ -489,6 +528,8 @@ All three platforms (WordPress, Drupal, Node.js) use the same logical schema:
 | http_status | INTEGER | HTTP status code |
 | duration_ms | INTEGER | Duration in milliseconds |
 | error | TEXT | Error message (optional) |
+| viewport | TEXT | Which pass produced the row: desktop / mobile / custom label |
+| cache_headers | TEXT (JSON) | CDN cache headers plus the warm verdict |
 | created_at | DATETIME | Timestamp |
 
 ### schema_results (Node.js only)
@@ -558,6 +599,8 @@ Setup guide: `docs/API_KEYS_SETUP.md`
 | `theme/WEBSITE.md` | Website IA, content strategy, design system for cachewarmer.drossmedia.de |
 | `PRICING-TIERS.md` | Detailed tier definitions, feature matrices, pricing recommendations |
 | `docs/API_KEYS_SETUP.md` | Step-by-step credential setup for all services |
+| `docs/CLOUDFLARE-WORKERS-EVALUATION.md` | Evaluation of a Workers-based warming engine, and the defect list it produced |
+| `cloudflare-worker/README.md` | CacheWarmer Edge — architecture, deploy targets, verification spike |
 | `wordpress-plugin/CHANGELOG.md` | WordPress plugin version history |
 
 ---
@@ -567,8 +610,7 @@ Setup guide: `docs/API_KEYS_SETUP.md`
 ### Prerequisites
 - Node.js 20+
 - pnpm 10.29+
-- Redis (for BullMQ job queue)
-- Chromium (for Puppeteer CDN warming)
+- Chromium (for the LinkedIn and Twitter/X warmers, and for `cdnWarming.engine: browser`)
 
 ### Commands (run from `nodejs-docker/`)
 ```bash
@@ -586,7 +628,7 @@ pnpm lint             # ESLint
 
 ### Docker (from `nodejs-docker/`)
 ```bash
-docker compose up -d  # Start CacheWarmer + Redis
+docker compose up -d  # Start CacheWarmer
 ```
 
 ### Configuration

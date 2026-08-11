@@ -24,15 +24,23 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function validateSingleUrl(url: string): Promise<SchemaValidationResult> {
+/**
+ * Validate markup in HTML that has already been retrieved.
+ *
+ * This is the path that matters: the CDN warmer loads every page anyway, so
+ * handing that HTML over here removes a redundant round trip per URL. It also
+ * avoids structuredDataTest(url), which fetches the page twice on its own.
+ */
+export async function validateSchemaHtml(
+  url: string,
+  html: string
+): Promise<SchemaValidationResult> {
   const start = Date.now();
 
   try {
-    const { structuredDataTest } = await import("structured-data-testing-tool");
+    const { structuredDataTestHtml } = await import("structured-data-testing-tool");
 
-    const result = await structuredDataTest(url, {
-      presets: [],
-    });
+    const result = await structuredDataTestHtml(html, { url, presets: [] });
 
     const schemas = result.schemas || [];
     const schemaTypes = schemas.map((s: { schema: string }) => s.schema || String(s));
@@ -99,6 +107,64 @@ async function validateSingleUrl(url: string): Promise<SchemaValidationResult> {
       };
     }
 
+    logger.warn({ url, error: errorMsg }, "Schema validation failed for URL");
+    return {
+      url,
+      status: "failed",
+      schemas: [],
+      errors: [],
+      warnings: [],
+      durationMs: Date.now() - start,
+      error: errorMsg,
+    };
+  }
+}
+
+/**
+ * Fetch a page once and validate it.
+ *
+ * Used only when schema validation runs without CDN warming; when both are
+ * active the warmer supplies the HTML and no fetch happens here at all.
+ */
+async function validateSingleUrl(url: string): Promise<SchemaValidationResult> {
+  const config = loadConfig();
+  const timeout = config.schemaValidation?.timeout || 15000;
+  const start = Date.now();
+
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(timeout),
+      headers: { "user-agent": "Mozilla/5.0 (compatible; CacheWarmer/1.0)" },
+    });
+
+    if (!response.ok) {
+      return {
+        url,
+        status: "failed",
+        schemas: [],
+        errors: [],
+        warnings: [],
+        durationMs: Date.now() - start,
+        error: `HTTP ${response.status}`,
+      };
+    }
+
+    const html = await response.text();
+    if (!html) {
+      return {
+        url,
+        status: "failed",
+        schemas: [],
+        errors: [],
+        warnings: [],
+        durationMs: Date.now() - start,
+        error: "No HTML returned",
+      };
+    }
+
+    return await validateSchemaHtml(url, html);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     logger.warn({ url, error: errorMsg }, "Schema validation failed for URL");
     return {
       url,

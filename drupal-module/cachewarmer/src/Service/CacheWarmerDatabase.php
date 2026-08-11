@@ -273,7 +273,7 @@ class CacheWarmerDatabase {
   /**
    * Inserts a URL result.
    */
-  public function insertUrlResult(string $jobId, string $url, string $target, string $status, ?int $httpStatus = NULL, ?int $durationMs = NULL, ?string $error = NULL): void {
+  public function insertUrlResult(string $jobId, string $url, string $target, string $status, ?int $httpStatus = NULL, ?int $durationMs = NULL, ?string $error = NULL, ?string $viewport = NULL, ?array $cacheHeaders = NULL): void {
     $this->database->insert('cachewarmer_url_results')
       ->fields([
         'id' => $this->generateUuid(),
@@ -284,6 +284,8 @@ class CacheWarmerDatabase {
         'http_status' => $httpStatus,
         'duration_ms' => $durationMs,
         'error' => $error,
+        'viewport' => $viewport,
+        'cache_headers' => !empty($cacheHeaders) ? json_encode($cacheHeaders) : NULL,
         'created_at' => $this->now(),
       ])
       ->execute();

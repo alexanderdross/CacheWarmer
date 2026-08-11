@@ -11,7 +11,13 @@ interface Config {
   google: { enabled: boolean; serviceAccountKeyFile: string; dailyQuota: number };
   bing: { enabled: boolean; apiKey: string; dailyQuota: number };
   indexNow: { enabled: boolean; key: string; keyLocation: string };
-  cdnWarming: { enabled: boolean; concurrency: number; timeout: number };
+  cdnWarming: {
+    enabled: boolean;
+    concurrency: number;
+    timeout: number;
+    engine?: "fetch" | "browser";
+    maxAssetsPerPage?: number;
+  };
   server: { apiKey: string; port: number };
   notifications: {
     webhookUrl: string;
@@ -109,7 +115,7 @@ export default function SettingsPage() {
       {/* CDN Warming */}
       <SettingsSection
         title="CDN Edge Cache Warming"
-        description="Headless Browser (Puppeteer/Chromium) besucht jede URL, um den CDN-Cache aufzuwaermen."
+        description="Jede URL wird abgerufen, um den CDN-Cache zu fuellen \u2014 und anschliessend ein zweites Mal, um zu pruefen, ob der Fill angekommen ist."
         enabled={config.cdnWarming.enabled}
         onToggle={(v) => updateConfig("cdnWarming", "enabled", v)}
       >
@@ -127,6 +133,34 @@ export default function SettingsPage() {
             onChange={(v) => updateConfig("cdnWarming", "timeout", parseInt(v) || 30000)}
             type="number"
             helpText="Maximale Wartezeit pro URL"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Engine</label>
+            <select
+              value={config.cdnWarming.engine ?? "fetch"}
+              onChange={(e) =>
+                updateConfig("cdnWarming", "engine", e.target.value as "fetch" | "browser")
+              }
+              className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="fetch">HTTP (empfohlen)</option>
+              <option value="browser">Headless Browser</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Ein Edge-Cache sieht weder Layout noch JavaScript. Der Browser lohnt sich nur fuer
+              Seiten, die ihren Inhalt erst im Client zusammenbauen.
+            </p>
+          </div>
+          <InputField
+            label="Assets pro Seite"
+            value={String(config.cdnWarming.maxAssetsPerPage ?? 20)}
+            onChange={(v) =>
+              updateConfig("cdnWarming", "maxAssetsPerPage", Math.max(0, parseInt(v) || 0))
+            }
+            type="number"
+            helpText="CSS, JS und Bilder aus dem HTML mitwaermen. 0 waermt nur das Dokument."
           />
         </div>
       </SettingsSection>

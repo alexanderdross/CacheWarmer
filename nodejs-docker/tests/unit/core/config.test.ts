@@ -24,7 +24,6 @@ describe("Config Module", () => {
   it("should load config from config.yaml", async () => {
     const config = {
       server: { port: 3000, host: "0.0.0.0", apiKey: "test" },
-      redis: { host: "localhost", port: 6379 },
       database: { path: "./data/test.db" },
       puppeteer: { executablePath: "/usr/bin/chromium", headless: true, args: [] },
       cdnWarming: {
@@ -58,7 +57,6 @@ describe("Config Module", () => {
   it("should prefer config.local.yaml over config.yaml", async () => {
     const mainConfig = {
       server: { port: 3000, host: "0.0.0.0", apiKey: "main-key" },
-      redis: { host: "localhost", port: 6379 },
       database: { path: "./data/test.db" },
       puppeteer: { executablePath: "/usr/bin/chromium", headless: true, args: [] },
       cdnWarming: { enabled: true, concurrency: 3, waitUntil: "networkidle0", timeout: 30000, userAgents: { desktop: "D", mobile: "M" } },
@@ -87,7 +85,6 @@ describe("Config Module", () => {
   it("should cache config after first load", async () => {
     const config = {
       server: { port: 3000, host: "0.0.0.0", apiKey: "test" },
-      redis: { host: "localhost", port: 6379 },
       database: { path: "./data/test.db" },
       puppeteer: { executablePath: "/usr/bin/chromium", headless: true, args: [] },
       cdnWarming: { enabled: true, concurrency: 3, waitUntil: "networkidle0", timeout: 30000, userAgents: { desktop: "D", mobile: "M" } },

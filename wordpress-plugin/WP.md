@@ -42,8 +42,8 @@ WordPress plugin version of the CacheWarmer microservice. Provides the same stru
 | Feature | Node.js Version | WordPress Plugin |
 |---------|----------------|-----------------|
 | Runtime | Node.js 20+ / TypeScript | PHP 8.0+ |
-| HTTP Client | Puppeteer (headless browser) | `wp_remote_get/post` (HTTP API) |
-| Job Queue | BullMQ / Redis | WP-Cron background events |
+| HTTP Client | Puppeteer (headless browser) | Requests (parallel) / `wp_remote_get` (fallback) |
+| Job Queue | In-process, no broker | WP-Cron background events |
 | Database | SQLite (better-sqlite3) | WordPress $wpdb (MySQL/MariaDB) |
 | Frontend | Next.js / React | Native WP Admin pages |
 | Auth | Bearer token | WP capabilities + optional Bearer token |
@@ -132,12 +132,17 @@ The plugin creates three custom tables using `dbDelta()`:
 | id | VARCHAR(36) PK | UUID |
 | job_id | VARCHAR(36) FK | Parent job |
 | url | TEXT | Warmed URL |
-| target | VARCHAR(50) | schema/cdn/facebook/linkedin/twitter/google/bing/indexnow/cdn-purge:cloudflare/cdn-purge:imperva/cdn-purge:akamai |
+| target | VARCHAR(50) | cdn/facebook/linkedin/twitter/google/bing/indexnow/pinterest/cdn-purge:cloudflare/cdn-purge:imperva/cdn-purge:akamai |
 | status | VARCHAR(20) | success/failed/skipped/pending |
 | http_status | INT | HTTP response code |
 | duration_ms | INT | Request duration |
 | error | TEXT | Error message |
+| viewport | VARCHAR(50) | Which pass produced the row: desktop / mobile / custom label |
+| cache_headers | TEXT | JSON: CDN cache headers plus the warm verdict |
 | created_at | DATETIME | Timestamp |
+
+> There is no `schema` target in this edition — structured-data validation is
+> implemented only in the Node.js module.
 
 ---
 

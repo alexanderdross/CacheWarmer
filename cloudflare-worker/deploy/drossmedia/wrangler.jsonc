@@ -1,0 +1,51 @@
+{
+  // Account: mail@drossmedia.de (Dross:Media)
+  //
+  // This deploy is also the HUB: it holds D1 and the /report endpoint that the
+  // other two accounts push their job summaries to. Service bindings do not
+  // cross account boundaries, so reporting goes over HTTPS.
+  //
+  // Deploy: wrangler deploy --config deploy/drossmedia/wrangler.jsonc --profile drossmedia
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "cachewarmer-edge",
+  "main": "../../src/index.ts",
+
+  // Pinned so a deploy aimed at the wrong account fails instead of succeeding
+  // somewhere unintended. This is a plain identifier, not a secret.
+  "account_id": "e8d2e50aa1f1d61d8c68ba490d7cdec1",
+
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "limits": { "subrequests": 50 },
+
+  // There are no routes, so this is the only way in. The spike and every
+  // admin endpoint sit behind ADMIN_TOKEN; only /health is open.
+  "workers_dev": true,
+
+  "durable_objects": {
+    "bindings": [{ "name": "REGION_WARMER", "class_name": "RegionWarmer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RegionWarmer"] }],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cachewarmer-reports",
+      // Created in weur (served from AMS). An identifier, not a secret — same
+      // as account_id above.
+      "database_id": "68ab7c60-96a1-4583-ac67-ebbf8448672b"
+    }
+  ],
+
+  "triggers": { "crons": ["15 3 * * *"] },
+
+  "vars": {
+    "CONFIG": "{\"account\":\"mail@drossmedia.de\",\"accountId\":\"e8d2e50aa1f1d61d8c68ba490d7cdec1\",\"sites\":[{\"id\":\"cachewarmer\",\"zone\":\"cachewarmer.drossmedia.de\",\"zoneId\":\"REPLACE_WITH_ZONE_ID\",\"sitemapUrl\":\"https://cachewarmer.drossmedia.de/sitemap.xml\",\"plan\":\"free\",\"regions\":[\"weur\"],\"maxUrls\":500,\"cf\":{\"cacheEverything\":true,\"cacheTtl\":3600}}]}"
+  }
+
+  // Secrets — set with `wrangler secret put --config deploy/drossmedia/wrangler.jsonc`:
+  //   ADMIN_TOKEN     guards /warm, /status, /results and /spike
+  //   HUB_SECRET      shared with the two satellites for /report
+  //   CF_PURGE_TOKEN  Zone:Cache Purge; scoped to a user, so it can span accounts
+}

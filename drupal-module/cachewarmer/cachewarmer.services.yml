@@ -11,6 +11,10 @@ services:
     class: Drupal\cachewarmer\Service\CdnWarmer
     arguments: ['@http_client', '@config.factory', '@cachewarmer.license']
 
+  cachewarmer.cdn_purge_warmer:
+    class: Drupal\cachewarmer\Service\CdnPurgeWarmer
+    arguments: ['@http_client', '@config.factory', '@cachewarmer.license']
+
   cachewarmer.facebook_warmer:
     class: Drupal\cachewarmer\Service\FacebookWarmer
     arguments: ['@http_client', '@config.factory']
@@ -47,6 +51,10 @@ services:
     class: Drupal\cachewarmer\Service\CacheWarmerSitemapDetector
     arguments: ['@http_client']
 
+  logger.channel.cachewarmer:
+    parent: logger.channel_base
+    arguments: ['cachewarmer']
+
   cachewarmer.webhooks:
     class: Drupal\cachewarmer\Service\CacheWarmerWebhooks
     arguments: ['@config.factory', '@http_client', '@logger.channel.cachewarmer', '@cachewarmer.license']
@@ -72,3 +80,4 @@ services:
       - '@cachewarmer.webhooks'
       - '@cachewarmer.email'
       - '@cachewarmer.pinterest_warmer'
+      - '@cachewarmer.cdn_purge_warmer'

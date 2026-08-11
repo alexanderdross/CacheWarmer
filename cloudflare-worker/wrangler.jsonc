@@ -1,0 +1,46 @@
+{
+  // Base configuration, shared by all three account deploys.
+  //
+  // Do NOT deploy with this file directly — it carries no account_id, so
+  // wrangler would fall back to whichever account the active profile selected.
+  // Use deploy/<account>/wrangler.jsonc, each of which pins its account_id.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cachewarmer-edge",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Workers Free caps an invocation at 50 external subrequests and cannot be
+  // raised, so work is chunked to 25 URLs (two subrequests each) and chained
+  // across Durable Object alarms. Raise this only after moving to Paid.
+  "limits": {
+    "subrequests": 50
+  },
+
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "REGION_WARMER",
+        "class_name": "RegionWarmer"
+      }
+    ]
+  },
+
+  "migrations": [
+    {
+      "tag": "v1",
+      // SQLite-backed: the only backend available on Workers Free.
+      "new_sqlite_classes": ["RegionWarmer"]
+    }
+  ],
+
+  "triggers": {
+    // 03:15 UTC. Cron triggers stop after 15 minutes, so this handler only
+    // fans out; the alarm chain in each Durable Object does the long tail.
+    "crons": ["15 3 * * *"]
+  }
+}
