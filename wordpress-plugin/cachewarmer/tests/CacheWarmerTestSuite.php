@@ -475,6 +475,16 @@ $t->assert(
 );
 
 $t->assertContains( 'Cloudflare: purge batches at 100 per request', $purge_src, '$batch_size = 100;' );
+
+// Purging after warming discards the cache the job just built — the same
+// inversion that was fixed in the Node module.
+$jm_purge_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-job-manager.php' );
+$purge_pos = strpos( $jm_purge_src, "CDN purge must run BEFORE any warming" );
+$warm_pos  = strpos( $jm_purge_src, "// Execute each enabled target sequentially." );
+$t->assert( 'Order: purge block exists', false !== $purge_pos );
+$t->assert( 'Order: purge runs before the warming targets', $purge_pos !== false && $warm_pos !== false && $purge_pos < $warm_pos );
+$t->assertContains( 'Order: propagation wait is clamped', $jm_purge_src, 'MAX_PROPAGATION_WAIT_SECONDS' );
+$t->assertContains( 'Akamai: propagation estimate is returned', $purge_src, "'estimated_seconds' => \$estimated" );
 $t->assert( 'Cloudflare: no longer batches at 30', ! str_contains( $purge_src, '$batch_size = 30;' ) );
 
 // ──────────────────────────────────────────────

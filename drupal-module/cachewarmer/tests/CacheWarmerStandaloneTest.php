@@ -115,6 +115,7 @@ $requiredFiles = [
   'src/Service/GoogleIndexer.php',
   'src/Service/BingIndexer.php',
   'src/Service/IndexNow.php',
+  'src/Service/CdnPurgeWarmer.php',
   'templates/cachewarmer-dashboard.html.twig',
   'templates/cachewarmer-sitemaps.html.twig',
   'css/cachewarmer-admin.css',
@@ -149,6 +150,7 @@ $phpFiles = [
   'src/Service/GoogleIndexer.php',
   'src/Service/BingIndexer.php',
   'src/Service/IndexNow.php',
+  'src/Service/CdnPurgeWarmer.php',
 ];
 
 foreach ($phpFiles as $file) {
@@ -191,6 +193,7 @@ $serviceNamespaces = [
   'src/Service/GoogleIndexer.php' => 'Drupal\\cachewarmer\\Service',
   'src/Service/BingIndexer.php' => 'Drupal\\cachewarmer\\Service',
   'src/Service/IndexNow.php' => 'Drupal\\cachewarmer\\Service',
+  'src/Service/CdnPurgeWarmer.php' => 'Drupal\\cachewarmer\\Service',
 ];
 
 foreach ($serviceNamespaces as $file => $ns) {
@@ -464,7 +467,7 @@ $t->suite('3b. Unit Tests — Config Schema');
 
 $schema = file_get_contents("{$moduleDir}/config/schema/cachewarmer.schema.yml");
 $t->assertContains('Schema: root key', $schema, 'cachewarmer.settings:');
-$schemaKeys = ['api_key', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'log_level'];
+$schemaKeys = ['api_key', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'log_level', 'pinterest', 'cdn-purge', 'cloudflare', 'imperva', 'akamai'];
 foreach ($schemaKeys as $key) {
   $t->assertContains("Config schema: {$key}", $schema, "{$key}:");
 }
@@ -476,7 +479,7 @@ foreach ($schemaKeys as $key) {
 $t->suite('3c. Unit Tests — Default Config');
 
 $defaults = file_get_contents("{$moduleDir}/config/install/cachewarmer.settings.yml");
-$defaultKeys = ['api_key', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'log_level'];
+$defaultKeys = ['api_key', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'log_level', 'pinterest', 'cdn-purge', 'cloudflare', 'imperva', 'akamai'];
 foreach ($defaultKeys as $key) {
   $t->assertContains("Default config: {$key}", $defaults, "{$key}:");
 }
@@ -574,7 +577,7 @@ $t->assertContains('Settings: references cachewarmer.settings', $sf, "'cachewarm
 $t->assertContains('Settings: buildForm method', $sf, 'public function buildForm(');
 $t->assertContains('Settings: submitForm method', $sf, 'public function submitForm(');
 
-$sections = ['general', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'logging'];
+$sections = ['general', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'logging', 'cloudflare', 'imperva', 'akamai', 'pinterest'];
 foreach ($sections as $section) {
   $t->assertContains("Settings section: {$section}", $sf, "\$form['{$section}']");
 }
@@ -612,7 +615,7 @@ $t->assertContains('Dashboard: modal', $dt, 'cachewarmer-modal');
 $t->assertContains('Dashboard: progress bar', $dt, 'cachewarmer-progress');
 
 // Target checkboxes
-$targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow'];
+$targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge'];
 foreach ($targets as $target) {
   $t->assertContains("Dashboard: target checkbox {$target}", $dt, "value=\"{$target}\"");
 }
@@ -895,6 +898,114 @@ $noStore = $warmerClass::classifyVerdict(
   ['cfCacheStatus' => 'MISS', 'cacheControl' => 'no-store, max-age=0']
 );
 $t->assertEqual('Verdict: names Cache-Control as the reason', 'Cache-Control: no-store', $noStore['reason']);
+
+// ============================================================================
+// 12. Unit Tests — CDN Purge
+// ============================================================================
+
+$t->suite('12. Unit Tests — CDN Purge');
+
+$purge = file_get_contents("{$moduleDir}/src/Service/CdnPurgeWarmer.php");
+$svc = file_get_contents("{$moduleDir}/cachewarmer.services.yml");
+
+// Wiring.
+$t->assertContains('Purge: service registered', $svc, 'cachewarmer.cdn_purge_warmer:');
+$t->assertContains('Purge: injected into the job manager', $svc, "- '@cachewarmer.cdn_purge_warmer'");
+$t->assertContains('JM: target cdn-purge', $jm, "case 'cdn-purge':");
+$t->assertContains('JM: cdn-purge in ALLOWED_TARGETS', $jm, "'pinterest', 'cdn-purge'");
+
+// The logger channel was injected into cachewarmer.webhooks but never defined,
+// so the container could not build that service.
+$t->assertContains('Services: logger channel is defined', $svc, 'logger.channel.cachewarmer:');
+$t->assertContains('Services: logger channel has a parent', $svc, 'parent: logger.channel_base');
+
+// Provider endpoints and batch sizes.
+$t->assertContains('Purge: Cloudflare zone endpoint', $purge, '/purge_cache');
+$t->assertContains('Purge: Cloudflare batches at 100', $purge, 'CLOUDFLARE_BATCH_SIZE = 100');
+$t->assertContains('Purge: Imperva Cloud WAF endpoint', $purge, 'my.incapsula.com/api/prov/v1/sites/performance/purge');
+$t->assertContains('Purge: Imperva success is res=0', $purge, "0 === (int) \$body['res']");
+$t->assertContains('Purge: Akamai Fast Purge endpoint', $purge, '/ccu/v3/invalidate/url/');
+$t->assertContains('Purge: Akamai batches at 50', $purge, 'AKAMAI_BATCH_SIZE = 50');
+$t->assertContains('Purge: Akamai propagation hint captured', $purge, "estimatedSeconds");
+
+// Licence gating lives in the service; in the settings form it is only a CSS
+// overlay and the fields still save.
+$t->assertContains('Purge: gated per provider by licence', $purge, "can(\"{\$provider}_integration\")");
+$t->assertContains('Purge: unconfigured providers emit skipped rows', $purge, "'skipped'");
+
+// Ordering and propagation wait.
+$t->assertContains('JM: purge runs before the warming loop', $jm, 'CDN purge runs before every warming phase');
+$t->assertContains('JM: propagation wait is clamped', $jm, 'MAX_PROPAGATION_WAIT_SECONDS');
+$t->assert(
+  'JM: purge block precedes the target loop',
+  strpos($jm, "\$this->cdnPurgeWarmer->purge(\$urls, \$jobId, \$purgeOnResult)") < strpos($jm, '// Process the remaining targets.')
+);
+
+// A target without a <target>.enabled config key is inert — that is what
+// silently disabled pinterest on every job.
+$install = file_get_contents("{$moduleDir}/config/install/cachewarmer.settings.yml");
+$t->assertContains('Config: cdn-purge.enabled exists', $install, 'cdn-purge:');
+$t->assertContains('Config: pinterest.enabled exists', $install, 'pinterest:');
+$t->assertContains('JM: cdn-purge enabled when any provider is', $jm, "\$config->get('cloudflare.enabled')");
+$t->assertContains('JM: cdn-purge checks the licence', $jm, "isTargetAllowed('cdn-purge')");
+
+// EdgeGrid signing — behavioural, not string matching.
+require_once "{$moduleDir}/src/Service/CdnPurgeWarmer.php";
+$purgeClass = 'Drupal\\cachewarmer\\Service\\CdnPurgeWarmer';
+
+$ts = '20260811T10:00:00+0000';
+$nonce = '11111111-2222-3333-4444-555555555555';
+$method = 'POST';
+$akUrl = 'https://akaa-x.luna.akamaiapis.net/ccu/v3/invalidate/url/production';
+$akBody = json_encode(['objects' => ['https://example.com/', 'https://example.com/a']]);
+$ct = 'akab-ct';
+$cs = 'secret-value=';
+$at = 'akab-at';
+
+$header = $purgeClass::generateEdgeGridAuth($method, $akUrl, $akBody, $ct, $cs, $at, $ts, $nonce);
+
+$t->assert('EdgeGrid: scheme prefix', str_starts_with($header, 'EG1-HMAC-SHA256 '));
+$t->assertContains('EdgeGrid: carries the client token', $header, 'client_token=akab-ct;');
+$t->assertContains('EdgeGrid: carries the access token', $header, 'access_token=akab-at;');
+$t->assert('EdgeGrid: carries a signature', (bool) preg_match('/signature=[A-Za-z0-9+\/]+=*$/', $header));
+
+// The date loses its hyphens but the time KEEPS its colons. Stripping both —
+// as the Node module did — yields a timestamp Akamai rejects, and since the
+// timestamp is also the signing key the signature is wrong too.
+preg_match('/timestamp=([^;]+);/', $header, $tsMatch);
+$t->assert(
+  'EdgeGrid: timestamp is yyyyMMddTHH:mm:ss+0000',
+  (bool) preg_match('/^\d{8}T\d{2}:\d{2}:\d{2}\+0000$/', $tsMatch[1] ?? ''),
+  'Got: ' . ($tsMatch[1] ?? 'none')
+);
+$t->assert(
+  'EdgeGrid: generated timestamps match the spec too',
+  (bool) preg_match('/^\d{8}T\d{2}:\d{2}:\d{2}\+0000$/', gmdate('Ymd\TH:i:s+0000'))
+);
+
+// Cross-check against the corrected WordPress implementation. Identical inputs
+// must produce an identical header; this is the only meaningful verification
+// available without a live Akamai account.
+$wpParsed = parse_url($akUrl);
+$wpAuthData = sprintf('EG1-HMAC-SHA256 client_token=%s;access_token=%s;timestamp=%s;nonce=%s;', $ct, $at, $ts, $nonce);
+$wpContentHash = base64_encode(hash('sha256', substr($akBody, 0, 131072), TRUE));
+$wpPathQuery = ($wpParsed['path'] ?? '/') . (!empty($wpParsed['query']) ? '?' . $wpParsed['query'] : '');
+$wpDataToSign = implode("\t", [
+  strtoupper($method), 'https', $wpParsed['host'] ?? '', $wpPathQuery, '', $wpContentHash, $wpAuthData,
+]);
+$wpSigningKey = base64_encode(hash_hmac('sha256', $ts, $cs, TRUE));
+$wpSignature = base64_encode(hash_hmac('sha256', $wpDataToSign, $wpSigningKey, TRUE));
+$wpHeader = $wpAuthData . 'signature=' . $wpSignature;
+
+$t->assertEqual('EdgeGrid: byte-identical to the WordPress implementation', $wpHeader, $header);
+
+// The signing key is the base64 STRING, not its decoded bytes. WordPress
+// base64_decode()d it and produced a valid-looking but rejected signature.
+$wrongSignature = base64_encode(hash_hmac('sha256', $wpDataToSign, base64_decode($wpSigningKey), TRUE));
+$t->assert(
+  'EdgeGrid: decoding the signing key would change the signature',
+  $wrongSignature !== $wpSignature
+);
 
 // ============================================================================
 // Done

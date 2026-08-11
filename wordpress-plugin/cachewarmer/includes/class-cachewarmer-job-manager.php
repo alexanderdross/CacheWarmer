@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class CacheWarmer_Job_Manager {
 
+    /**
+     * Upper bound for the purge propagation wait, in seconds.
+     */
+    private const MAX_PROPAGATION_WAIT_SECONDS = 60;
+
     private CacheWarmer_Database $db;
 
     public function __construct( CacheWarmer_Database $db ) {
@@ -213,6 +218,30 @@ class CacheWarmer_Job_Manager {
                 $this->db->update_job( $job_id, array( 'processed_urls' => $processed ) );
             };
 
+            // CDN purge must run BEFORE any warming: purging afterwards
+            // discards the cache the job just spent its whole run building.
+            if ( in_array( 'cdn-purge', $targets, true ) ) {
+                $cf  = get_option( 'cachewarmer_cloudflare_enabled', '0' );
+                $imp = get_option( 'cachewarmer_imperva_enabled', '0' );
+                $ak  = get_option( 'cachewarmer_akamai_enabled', '0' );
+                if ( $cf || $imp || $ak ) {
+                    $purger       = new CacheWarmer_CDN_Purge_Warmer();
+                    $purge_results = $purger->purge( $url_strings, $job_id, $on_result );
+
+                    // Akamai reports how long invalidation takes to propagate.
+                    // Wait it out so the warm does not race the purge; clamped,
+                    // because the value comes from a third party.
+                    $propagation = 0;
+                    foreach ( $purge_results as $purge_result ) {
+                        $propagation = max( $propagation, (int) ( $purge_result['estimated_seconds'] ?? 0 ) );
+                    }
+                    $propagation = min( $propagation, self::MAX_PROPAGATION_WAIT_SECONDS );
+                    if ( $propagation > 0 ) {
+                        sleep( $propagation );
+                    }
+                }
+            }
+
             // Execute each enabled target sequentially.
             if ( in_array( 'cdn', $targets, true ) && get_option( 'cachewarmer_cdn_enabled', '1' ) ) {
                 $warmer = new CacheWarmer_CDN_Warmer();
@@ -252,16 +281,6 @@ class CacheWarmer_Job_Manager {
             if ( in_array( 'pinterest', $targets, true ) && get_option( 'cachewarmer_pinterest_enabled', '0' ) ) {
                 $warmer = new CacheWarmer_Pinterest_Warmer();
                 $warmer->warm( $url_strings, $job_id, $on_result );
-            }
-
-            if ( in_array( 'cdn-purge', $targets, true ) ) {
-                $cf  = get_option( 'cachewarmer_cloudflare_enabled', '0' );
-                $imp = get_option( 'cachewarmer_imperva_enabled', '0' );
-                $ak  = get_option( 'cachewarmer_akamai_enabled', '0' );
-                if ( $cf || $imp || $ak ) {
-                    $purger = new CacheWarmer_CDN_Purge_Warmer();
-                    $purger->purge( $url_strings, $job_id, $on_result );
-                }
             }
 
             // Update sitemap last_warmed_at if linked.

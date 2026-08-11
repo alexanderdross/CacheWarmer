@@ -43,7 +43,7 @@ class CacheWarmerAjaxController extends ControllerBase {
 
     $targets = $data['targets'] ?? [];
     if (!is_array($targets) || empty($targets)) {
-      $targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow'];
+      $targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge'];
     }
 
     $result = $this->jobManager->createJob($sitemapUrl, $targets);
@@ -169,7 +169,7 @@ class CacheWarmerAjaxController extends ControllerBase {
       return new JsonResponse(['success' => FALSE, 'error' => 'Sitemap not found.'], 404);
     }
 
-    $targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow'];
+    $targets = ['cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'pinterest', 'cdn-purge'];
     $result = $this->jobManager->createJob($sitemap->url, $targets, $sitemap->id);
 
     if ($result['status'] === 'rejected') {

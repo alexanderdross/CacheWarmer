@@ -168,7 +168,7 @@ drupal-module/cachewarmer/
 ├── cachewarmer.info.yml          # Module metadata
 ├── cachewarmer.module            # Hooks: help, cron, mail, theme
 ├── cachewarmer.install           # DB schema (3 tables)
-├── cachewarmer.services.yml      # 15 service definitions (DI)
+├── cachewarmer.services.yml      # 16 service definitions (DI) + logger channel
 ├── cachewarmer.routing.yml       # 15+ routes
 ├── cachewarmer.permissions.yml   # "Administer CacheWarmer" permission
 ├── cachewarmer.links.menu.yml    # Admin menu
@@ -204,8 +204,8 @@ drupal-module/cachewarmer/
 │       ├── GoogleIndexer.php             # Google Indexing API
 │       ├── BingIndexer.php               # Bing Webmaster API
 │       ├── IndexNow.php                  # IndexNow protocol
-│       └── PinterestWarmer.php           # Pinterest Rich Pins
-│       # No CdnPurgeWarmer: CDN purge is not implemented in the Drupal edition
+│       ├── PinterestWarmer.php           # Pinterest Rich Pins
+│       └── CdnPurgeWarmer.php            # CDN purge: Cloudflare/Imperva/Akamai (Enterprise)
 ├── templates/
 │   ├── cachewarmer-dashboard.html.twig   # Dashboard template
 │   └── cachewarmer-sitemaps.html.twig    # Sitemap management template
@@ -450,13 +450,13 @@ everywhere — it does not.
 | Google | -- | Yes | Yes | Yes | Yes | Yes | Indexing API v3 (URL_UPDATED) |
 | Bing | -- | Yes | Yes | Yes | Yes | Yes | Webmaster URL Submission API |
 | Pinterest | -- | Yes | Yes | Yes | Yes | Yes | Rich Pin Validator |
-| Cloudflare Purge | -- | -- | Yes | Yes | Yes | **--** | API v4 zone cache purge (100 URLs/batch) |
-| Imperva Purge | -- | -- | Yes | Yes | Yes | **--** | Cloud WAF API v1 |
-| Akamai Purge | -- | -- | Yes | Yes | Yes | **--** | Fast Purge API v3 (50 URLs/batch, EdgeGrid auth) |
+| Cloudflare Purge | -- | -- | Yes | Yes | Yes | Yes | API v4 zone cache purge (100 URLs/batch) |
+| Imperva Purge | -- | -- | Yes | Yes | Yes | Yes | Cloud WAF API v1 |
+| Akamai Purge | -- | -- | Yes | Yes | Yes | Yes | Fast Purge API v3 (50 URLs/batch, EdgeGrid auth) |
 
 Target identifiers accepted by the APIs: `schema`, `cdn`, `facebook`,
 `linkedin`, `twitter`, `google`, `bing`, `indexnow`, `pinterest`, `cdn-purge`.
-The Drupal module accepts all of these except `schema` and `cdn-purge`.
+The Drupal module accepts all of these except `schema`.
 
 **Warm verification.** All three editions treat the desktop pass as a cache
 fill and the following pass as a probe, recording a verdict (`warmed`,

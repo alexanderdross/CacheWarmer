@@ -391,30 +391,22 @@ Abschnitt 8 nicht standen, weil sie nur das Node-Modul betrachtet hatte:
   die Requests liefen in einer verschachtelten `foreach`. Jetzt Guzzle-Pool.
 - **Drupals Priority-Sortierung war als einzige von Anfang an korrekt.**
 
-### Offen: CDN-Purge fehlt in Drupal komplett
+### Erledigt: CDN-Purge in Drupal gebaut
 
-`Drupal.md` und `CLAUDE.md` führen einen Service `cachewarmer.cdn_purge_warmer`
-mit Cloudflare, Imperva und Akamai. **Er existiert nicht** — keine Klasse, kein
-Eintrag in `cachewarmer.services.yml`, kein Target, kein Feld im
-Einstellungsformular, nichts in der Config. Das ist keine Fehlfunktion, sondern
-ein nie gebautes Feature, das die Doku als vorhanden beschreibt.
+Die Lücke ist geschlossen. `src/Service/CdnPurgeWarmer.php` implementiert alle
+drei Provider, ist Enterprise-gegated und läuft — anders als bisher in
+WordPress — **vor** dem Warming, inklusive Wartezeit auf Akamais
+`estimatedSeconds`. Die WordPress-Inversion wurde bei der Gelegenheit ebenfalls
+behoben.
 
-Portierung wäre machbar (das WordPress-Plugin liefert die PHP-Vorlage), umfasst
-aber Service, Config-Schema, neun Formularfelder, Target-Registrierung und
-Tests. Solange keine Zugangsdaten zum Testen vorliegen, wäre es eine dritte
-ungetestete Implementierung derselben heiklen HMAC-Signatur — genau der Grund,
-warum die beiden bestehenden je einen unbemerkten Fehler trugen. Entweder
-bauen und gegen echte Konten verifizieren, oder die Doku ehrlich machen.
+Die Akamai-Signatur wird byteweise gegen die korrigierte WordPress-Fassung
+geprüft. Das belegt, dass beide dasselbe signieren — **nicht**, dass Akamai es
+akzeptiert. Ein Test gegen ein echtes Konto steht weiterhin aus.
 
-## 9. Empfehlung in Reihenfolge
-
-1. **Abschnitt 8 abarbeiten.** Höchster Nutzen pro Aufwand, keine Cloudflare-Abhängigkeit, wirkt auf alle Editionen.
-2. **Puppeteer für CDN-Warming durch `fetch()` + HTMLRewriter ersetzen** — im Node-Modul. Nimmt den Chromium-Speicherboden weg und beschleunigt um Größenordnungen. Puppeteer bleibt nur für die Social-Warmer, den einzigen legitimen Browser-Bedarf.
-3. **Spike fahren** (Verifikationsschritte 1, 3, 4) in *einem* Account. Klärt, ob Fill-Verifikation und Regionsverteilung tragen — bevor dreimal deployed wird.
-4. **Falls der Spike trägt: Worker in `cloudflare-worker/`**, Workflows als Spine, Regions-DOs für den Fan-out. **Ein Deploy je Account** (`webmaster@trade.aero`, `alexander.dross@me.com`, `mail@drossmedia.de`), der drossmedia-Deploy zusätzlich als Hub mit D1 und Report-Endpunkt.
-5. **Erst einen Account produktiv nehmen**, eine Woche laufen lassen, dann die anderen beiden nachziehen. Drei gleichzeitige Erstinbetriebnahmen verdreifachen nur die Fehlersuche.
-
-Die unbequeme Zusammenfassung: Der Workers-Umbau ist ein legitimes *Feature* — Multi-Region-Fill und belastbare Verifikation — aber er repariert nicht, was heute kaputt ist. Ihn vor den Schritten 1 und 2 zu bauen würde die Bugs nur in eine neue Runtime umziehen.
+Zwei angrenzende Defekte kamen dabei mit heraus und wurden mitbehoben:
+`pinterest` war mangels `pinterest.enabled` in der Config bei jedem Job inert,
+und `@logger.channel.cachewarmer` wurde in `cachewarmer.webhooks` injiziert,
+ohne je definiert zu sein — der Service war so nicht instanziierbar.
 
 ---
 

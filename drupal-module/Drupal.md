@@ -4,11 +4,11 @@
 
 The CacheWarmer Drupal module processes XML sitemaps and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X, Pinterest) and submits URLs to search engines (Google, Bing, IndexNow).
 
-> **Not available in this edition.** Structured-data (schema.org) validation and
-> direct CDN cache purging via the Cloudflare, Imperva and Akamai APIs are
-> implemented in the Node.js module; CDN purge additionally in the WordPress
-> plugin. Neither exists in the Drupal module. Earlier revisions of this
-> document described both as present — they never were.
+It can also purge CDN caches directly via the Cloudflare, Imperva and Akamai
+APIs before warming (Enterprise).
+
+> **Not available in this edition.** Structured-data (schema.org) validation is
+> implemented only in the Node.js module.
 
 ---
 
@@ -164,7 +164,7 @@ The module adds three admin pages under **Configuration** → **Development** �
 ### Dashboard Tab
 
 - **Status cards**: Shows counts of Queued, Running, Completed, Failed jobs and total processed URLs
-- **Warm form**: Enter a sitemap URL, select targets (CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow, Pinterest), and start warming
+- **Warm form**: Enter a sitemap URL, select targets (CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow, Pinterest, CDN Purge), and start warming
 - **Jobs table**: Shows recent 20 jobs with status badge, progress bar, target tags, and actions (Details, Delete)
 - **Job detail modal**: Shows full job info with per-target result breakdown (success/failed/skipped counts)
 - **Auto-refresh**: Dashboard polls every 10 seconds for updated job status
@@ -270,7 +270,7 @@ The module creates 3 custom tables via `hook_schema()`:
 | `id` | VARCHAR(36) | UUID primary key |
 | `job_id` | VARCHAR(36) | FK to jobs |
 | `url` | TEXT | Warmed URL |
-| `target` | VARCHAR(50) | cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest |
+| `target` | VARCHAR(50) | cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest / cdn-purge |
 | `status` | VARCHAR(20) | success / failed / skipped / pending |
 | `http_status` | INT | HTTP response code |
 | `duration_ms` | INT | Duration in milliseconds |
@@ -297,6 +297,7 @@ All services are registered in `cachewarmer.services.yml` and use Drupal's depen
 | `cachewarmer.bing_indexer` | `BingIndexer` | Bing Webmaster API |
 | `cachewarmer.indexnow` | `IndexNow` | IndexNow protocol |
 | `cachewarmer.pinterest_warmer` | `PinterestWarmer` | Pinterest Rich Pins |
+| `cachewarmer.cdn_purge_warmer` | `CdnPurgeWarmer` | CDN cache purge (Cloudflare, Imperva, Akamai) |
 | `cachewarmer.license` | `CacheWarmerLicense` | License validation and feature gating |
 | `cachewarmer.sitemap_detector` | `CacheWarmerSitemapDetector` | Local sitemap auto-detection |
 | `cachewarmer.webhooks` | `CacheWarmerWebhooks` | Webhook notifications |
@@ -364,6 +365,7 @@ drupal-module/cachewarmer/
 │       ├── BingIndexer.php                     # Bing indexing service
 │       ├── IndexNow.php                        # IndexNow service
 │       ├── PinterestWarmer.php                 # Pinterest Rich Pins
+│       ├── CdnPurgeWarmer.php                  # CDN purge (Cloudflare, Imperva, Akamai)
 │       ├── CacheWarmerLicense.php              # License validation
 │       ├── CacheWarmerSitemapDetector.php      # Sitemap auto-detection
 │       ├── CacheWarmerWebhooks.php             # Webhook notifications

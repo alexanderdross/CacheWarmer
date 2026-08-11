@@ -21,6 +21,26 @@ google:
   enabled: false
   service_account_json: ''
   daily_quota: 200
+pinterest:
+  enabled: false
+cdn-purge:
+  enabled: false
+cloudflare:
+  enabled: false
+  api_token: ''
+  zone_id: ''
+imperva:
+  enabled: false
+  api_id: ''
+  api_key: ''
+  site_id: ''
+akamai:
+  enabled: false
+  host: ''
+  client_token: ''
+  client_secret: ''
+  access_token: ''
+  network: production
 bing:
   enabled: false
   api_key: ''

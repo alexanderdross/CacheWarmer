@@ -415,6 +415,137 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
       $form['webhooks']['#attributes']['class'][] = 'cw-ent-locked';
       $form['webhooks']['#suffix'] = '<div class="cw-pro-upgrade-overlay"><span class="cw-lock-icon"></span><strong>' . $this->t('Enterprise Feature') . '</strong><p>' . $this->t('Connect CacheWarmer to Slack, Zapier or any webhook endpoint for real-time notifications.') . '</p><a href="' . $pricing_url . '" target="_blank" rel="noopener" class="button button--primary">' . $this->t('Upgrade to Enterprise') . '</a></div></div>';
     }
+    // Cloudflare Cache Purge (Enterprise).
+    $form['cloudflare'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Cloudflare Cache Purge'),
+      '#open' => FALSE,
+    ];
+    if ($is_not_ent) {
+      $form['cloudflare']['#open'] = TRUE;
+      $form['cloudflare']['#prefix'] = '<div class="cw-locked-wrapper">';
+      $form['cloudflare']['#attributes']['class'][] = 'cw-ent-locked';
+      $form['cloudflare']['#suffix'] = '<div class="cw-pro-upgrade-overlay"><span class="cw-lock-icon"></span><strong>' . $this->t('Enterprise Feature') . '</strong><p>' . $this->t('Purge Cloudflare edge cache via the Zone API before warming.') . '</p><a href="' . $pricing_url . '" target="_blank" rel="noopener" class="button button--primary">' . $this->t('Upgrade to Enterprise') . '</a></div></div>';
+    }
+    $form['cloudflare']['cloudflare_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable Cloudflare cache purge'),
+      '#default_value' => $config->get('cloudflare.enabled'),
+    ];
+    $form['cloudflare']['cloudflare_api_token'] = [
+      '#type' => 'password',
+      '#title' => $this->t('API Token (Zone:Cache Purge)'),
+      '#attributes' => ['autocomplete' => 'off'],
+    ];
+    if (!empty($config->get('cloudflare.api_token'))) {
+      $form['cloudflare']['cloudflare_api_token']['#description'] = $this->t('Currently set. Leave empty to keep current value.');
+    }
+    $form['cloudflare']['cloudflare_zone_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Zone ID'),
+      '#default_value' => $config->get('cloudflare.zone_id'),
+    ];
+    // Imperva Cache Purge (Enterprise).
+    $form['imperva'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Imperva Cache Purge'),
+      '#open' => FALSE,
+    ];
+    if ($is_not_ent) {
+      $form['imperva']['#open'] = TRUE;
+      $form['imperva']['#prefix'] = '<div class="cw-locked-wrapper">';
+      $form['imperva']['#attributes']['class'][] = 'cw-ent-locked';
+      $form['imperva']['#suffix'] = '<div class="cw-pro-upgrade-overlay"><span class="cw-lock-icon"></span><strong>' . $this->t('Enterprise Feature') . '</strong><p>' . $this->t('Purge Imperva (Incapsula) CDN cache via the Cloud WAF API.') . '</p><a href="' . $pricing_url . '" target="_blank" rel="noopener" class="button button--primary">' . $this->t('Upgrade to Enterprise') . '</a></div></div>';
+    }
+    $form['imperva']['imperva_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable Imperva cache purge'),
+      '#default_value' => $config->get('imperva.enabled'),
+    ];
+    $form['imperva']['imperva_api_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('API ID'),
+      '#default_value' => $config->get('imperva.api_id'),
+    ];
+    $form['imperva']['imperva_api_key'] = [
+      '#type' => 'password',
+      '#title' => $this->t('API Key'),
+      '#attributes' => ['autocomplete' => 'off'],
+    ];
+    if (!empty($config->get('imperva.api_key'))) {
+      $form['imperva']['imperva_api_key']['#description'] = $this->t('Currently set. Leave empty to keep current value.');
+    }
+    $form['imperva']['imperva_site_id'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Site ID'),
+      '#default_value' => $config->get('imperva.site_id'),
+    ];
+    // Akamai Fast Purge (Enterprise).
+    $form['akamai'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Akamai Fast Purge'),
+      '#open' => FALSE,
+    ];
+    if ($is_not_ent) {
+      $form['akamai']['#open'] = TRUE;
+      $form['akamai']['#prefix'] = '<div class="cw-locked-wrapper">';
+      $form['akamai']['#attributes']['class'][] = 'cw-ent-locked';
+      $form['akamai']['#suffix'] = '<div class="cw-pro-upgrade-overlay"><span class="cw-lock-icon"></span><strong>' . $this->t('Enterprise Feature') . '</strong><p>' . $this->t('Invalidate URLs via the Akamai Fast Purge API with EdgeGrid authentication.') . '</p><a href="' . $pricing_url . '" target="_blank" rel="noopener" class="button button--primary">' . $this->t('Upgrade to Enterprise') . '</a></div></div>';
+    }
+    $form['akamai']['akamai_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable Akamai Fast Purge'),
+      '#default_value' => $config->get('akamai.enabled'),
+    ];
+    $form['akamai']['akamai_host'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('API host'),
+      '#default_value' => $config->get('akamai.host'),
+    ];
+    $form['akamai']['akamai_client_token'] = [
+      '#type' => 'password',
+      '#title' => $this->t('EdgeGrid client token'),
+      '#attributes' => ['autocomplete' => 'off'],
+    ];
+    if (!empty($config->get('akamai.client_token'))) {
+      $form['akamai']['akamai_client_token']['#description'] = $this->t('Currently set. Leave empty to keep current value.');
+    }
+    $form['akamai']['akamai_client_secret'] = [
+      '#type' => 'password',
+      '#title' => $this->t('EdgeGrid client secret'),
+      '#attributes' => ['autocomplete' => 'off'],
+    ];
+    if (!empty($config->get('akamai.client_secret'))) {
+      $form['akamai']['akamai_client_secret']['#description'] = $this->t('Currently set. Leave empty to keep current value.');
+    }
+    $form['akamai']['akamai_access_token'] = [
+      '#type' => 'password',
+      '#title' => $this->t('EdgeGrid access token'),
+      '#attributes' => ['autocomplete' => 'off'],
+    ];
+    if (!empty($config->get('akamai.access_token'))) {
+      $form['akamai']['akamai_access_token']['#description'] = $this->t('Currently set. Leave empty to keep current value.');
+    }
+    $form['akamai']['akamai_network'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Network'),
+      '#options' => ['production' => $this->t('Production'), 'staging' => $this->t('Staging')],
+      '#default_value' => $config->get('akamai.network') ?: 'production',
+    ];
+
+    // Pinterest (Premium). The target shipped without any config key, so
+    // isTargetEnabled() always saw NULL and skipped it on every job.
+    $form['pinterest'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Pinterest Rich Pins'),
+      '#open' => FALSE,
+    ];
+    $form['pinterest']['pinterest_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable Pinterest warming'),
+      '#default_value' => $config->get('pinterest.enabled'),
+    ];
+
     $form['webhooks']['webhook_url'] = [
       '#type' => 'url',
       '#title' => $this->t('Webhook URL'),
@@ -524,6 +655,42 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
 
     // Webhooks.
     $config->set('webhook_url', $form_state->getValue('webhook_url'));
+
+    // CDN purge providers (Enterprise).
+    $config->set('pinterest.enabled', (bool) $form_state->getValue('pinterest_enabled'));
+
+    $config->set('cloudflare.enabled', (bool) $form_state->getValue('cloudflare_enabled'));
+    $cfToken = $form_state->getValue('cloudflare_api_token');
+    if (!empty($cfToken)) {
+      $config->set('cloudflare.api_token', $cfToken);
+    }
+    $config->set('cloudflare.zone_id', $form_state->getValue('cloudflare_zone_id'));
+
+    $config->set('imperva.enabled', (bool) $form_state->getValue('imperva_enabled'));
+    $config->set('imperva.api_id', $form_state->getValue('imperva_api_id'));
+    $impKey = $form_state->getValue('imperva_api_key');
+    if (!empty($impKey)) {
+      $config->set('imperva.api_key', $impKey);
+    }
+    $config->set('imperva.site_id', $form_state->getValue('imperva_site_id'));
+
+    $config->set('akamai.enabled', (bool) $form_state->getValue('akamai_enabled'));
+    $config->set('akamai.host', $form_state->getValue('akamai_host'));
+    foreach (['client_token', 'client_secret', 'access_token'] as $akField) {
+      $akValue = $form_state->getValue('akamai_' . $akField);
+      if (!empty($akValue)) {
+        $config->set('akamai.' . $akField, $akValue);
+      }
+    }
+    $config->set('akamai.network', $form_state->getValue('akamai_network'));
+
+    // cdn-purge is active as soon as one provider is; keep the target switch
+    // in step so isTargetEnabled() and the UI cannot disagree.
+    $config->set('cdn-purge.enabled',
+      (bool) $form_state->getValue('cloudflare_enabled')
+      || (bool) $form_state->getValue('imperva_enabled')
+      || (bool) $form_state->getValue('akamai_enabled')
+    );
 
     $config->set('log_level', $form_state->getValue('log_level'));
 

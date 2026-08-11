@@ -299,14 +299,20 @@ class CacheWarmer_CDN_Purge_Warmer {
                 $body        = json_decode( wp_remote_retrieve_body( $response ), true );
 
                 if ( $http_status >= 200 && $http_status < 300 ) {
+                    // Akamai reports how long the invalidation needs to
+                    // propagate. The job manager waits it out before warming,
+                    // so the warm does not race the purge.
+                    $estimated = isset( $body['estimatedSeconds'] ) ? (int) $body['estimatedSeconds'] : 0;
+
                     foreach ( $batch as $url ) {
                         $result = array(
-                            'url'         => $url,
-                            'target'      => 'cdn-purge',
-                            'status'      => 'success',
-                            'http_status' => $http_status,
-                            'duration_ms' => $duration_ms,
-                            'error'       => null,
+                            'url'               => $url,
+                            'target'            => 'cdn-purge',
+                            'status'            => 'success',
+                            'http_status'       => $http_status,
+                            'duration_ms'       => $duration_ms,
+                            'error'             => null,
+                            'estimated_seconds' => $estimated,
                         );
                         $results[] = $result;
                         if ( $on_result ) {
