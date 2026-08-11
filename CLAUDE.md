@@ -456,7 +456,9 @@ everywhere — it does not.
 
 Target identifiers accepted by the APIs: `schema`, `cdn`, `facebook`,
 `linkedin`, `twitter`, `google`, `bing`, `indexnow`, `pinterest`, `cdn-purge`.
-The Drupal module accepts all of these except `schema`.
+The Drupal module accepts all of these except `schema`. Structured-data
+validation is deliberately Node.js-only — it is a content-quality check rather
+than a warming target, and porting it to the PHP editions is not planned.
 
 **Warm verification.** All three editions treat the desktop pass as a cache
 fill and the following pass as a probe, recording a verdict (`warmed`,

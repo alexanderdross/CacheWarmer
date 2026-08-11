@@ -7,8 +7,10 @@ The CacheWarmer Drupal module processes XML sitemaps and systematically warms CD
 It can also purge CDN caches directly via the Cloudflare, Imperva and Akamai
 APIs before warming (Enterprise).
 
-> **Not available in this edition.** Structured-data (schema.org) validation is
-> implemented only in the Node.js module.
+> **Not available in this edition, by decision.** Structured-data (schema.org)
+> validation lives only in the Node.js module and is not planned for Drupal —
+> it is a content-quality check rather than a warming feature. This is a
+> deliberate scope choice, not an outstanding gap.
 
 ---
 
