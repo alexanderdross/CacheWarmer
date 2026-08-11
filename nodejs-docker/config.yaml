@@ -3,10 +3,6 @@ server:
   host: "0.0.0.0"
   apiKey: "change-me-in-production"
 
-redis:
-  host: "localhost"
-  port: 6379
-
 database:
   path: "./data/cachewarmer.db"
 

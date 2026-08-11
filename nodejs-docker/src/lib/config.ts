@@ -8,10 +8,6 @@ export interface AppConfig {
     host: string;
     apiKey: string;
   };
-  redis: {
-    host: string;
-    port: number;
-  };
   database: {
     path: string;
   };

@@ -145,6 +145,12 @@ export async function processJob(jobId: string): Promise<void> {
     // Parse sitemap
     logger.info({ jobId, sitemapUrl: job.sitemap_url }, "Parsing sitemap");
     const sitemapUrls = await parseSitemap(job.sitemap_url);
+
+    // Priority-based warming: sort by priority descending.
+    // This has to happen BEFORE the URL list is derived — sorting afterwards
+    // leaves `urls` in sitemap order and silently disables the feature.
+    sitemapUrls.sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
+
     let urls = sitemapUrls.map((u) => u.loc);
 
     // Apply exclude patterns
@@ -159,16 +165,42 @@ export async function processJob(jobId: string): Promise<void> {
       }
     }
 
-    // Priority-based warming: sort by priority descending
-    sitemapUrls.sort((a, b) => (b.priority ?? 0.5) - (a.priority ?? 0.5));
-
     db.prepare("UPDATE jobs SET total_urls = ? WHERE id = ?").run(urls.length, jobId);
 
     sendWebhook("job.started", { jobId, sitemapUrl: job.sitemap_url, urlCount: urls.length, targets }).catch((err) => logger.warn({ err }, "notification failed"));
 
     let processed = 0;
 
-    // Schema Validation (runs first as pre-check)
+    // CDN Purge (Cloudflare, Imperva, Akamai)
+    //
+    // Must run BEFORE any warming: purging afterwards discards the cache the
+    // job just spent its whole run building. Akamai reports how long its
+    // invalidation takes to propagate, so wait that out before warming —
+    // otherwise the warm races the purge and the fill is thrown away too.
+    if (targets.includes("cdn-purge")) {
+      logger.info({ jobId, urlCount: urls.length }, "Starting CDN cache purge (Cloudflare/Imperva/Akamai)");
+      const purgeResults = await purgeCdnCache(urls, (result) => {
+        saveUrlResult(jobId, result.url, `cdn-purge:${result.provider}`, result.status, result.httpStatus, result.durationMs, result.error);
+        processed++;
+        updateJobProgress(jobId, processed);
+      });
+
+      // Clamped: this value comes from a third party, and an implausible one
+      // would otherwise stall the job indefinitely. Akamai reports ~5s.
+      const MAX_PROPAGATION_WAIT_SECONDS = 60;
+      const propagationSeconds = Math.min(
+        purgeResults.reduce((max, r) => Math.max(max, r.estimatedSeconds ?? 0), 0),
+        MAX_PROPAGATION_WAIT_SECONDS
+      );
+      if (propagationSeconds > 0) {
+        logger.info({ jobId, propagationSeconds }, "Waiting for CDN purge to propagate before warming");
+        await new Promise((resolve) => setTimeout(resolve, propagationSeconds * 1000));
+      }
+    }
+
+    // Schema Validation (first of the warming phases; the purge above has to
+    // precede it, since validation fetches every page and would otherwise be
+    // invalidated straight afterwards)
     if (targets.includes("schema")) {
       logger.info({ jobId, urlCount: urls.length }, "Starting schema validation");
       await validateSchemaMarkup(urls, (result) => {
@@ -270,16 +302,6 @@ export async function processJob(jobId: string): Promise<void> {
       logger.info({ jobId, urlCount: urls.length }, "Starting Pinterest warming");
       await warmPinterest(urls, (result) => {
         saveUrlResult(jobId, result.url, "pinterest", result.status, result.httpStatus, result.durationMs, result.error);
-        processed++;
-        updateJobProgress(jobId, processed);
-      });
-    }
-
-    // CDN Purge + Warm (Cloudflare, Imperva, Akamai)
-    if (targets.includes("cdn-purge")) {
-      logger.info({ jobId, urlCount: urls.length }, "Starting CDN cache purge (Cloudflare/Imperva/Akamai)");
-      await purgeCdnCache(urls, (result) => {
-        saveUrlResult(jobId, result.url, `cdn-purge:${result.provider}`, result.status, result.httpStatus, result.durationMs, result.error);
         processed++;
         updateJobProgress(jobId, processed);
       });

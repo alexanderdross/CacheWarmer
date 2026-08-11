@@ -29,6 +29,76 @@ export interface CacheHeaders {
   cfCacheStatus?: string;
   age?: string;
   cacheControl?: string;
+  vary?: string;
+  /** Set on the second (probe) pass — see classifyCacheVerdict. */
+  verdict?: CacheVerdict;
+  verdictReason?: string;
+}
+
+/**
+ * Outcome of a warm, judged by comparing the two passes we already make.
+ *
+ * Note that MISS on the first pass is the SUCCESS signal for a warmer: it
+ * means the fill did the work. HIT on the first pass means the cache was
+ * already warm and the job changed nothing.
+ */
+export type CacheVerdict =
+  | "warmed"
+  | "already_warm"
+  | "not_cacheable"
+  | "bypassed"
+  | "zone_not_caching"
+  | "indeterminate"
+  | "unknown";
+
+function cacheState(headers: CacheHeaders): "hit" | "miss" | "bypass" | "dynamic" | "unknown" {
+  const raw = (headers.cfCacheStatus || headers.xCache || "").toUpperCase();
+  if (!raw) return Number(headers.age) > 0 ? "hit" : "unknown";
+  if (raw.includes("BYPASS")) return "bypass";
+  if (raw.includes("DYNAMIC")) return "dynamic";
+  if (raw.includes("HIT")) return "hit";
+  if (raw.includes("MISS") || raw.includes("EXPIRED")) return "miss";
+  return "unknown";
+}
+
+/**
+ * Classify the desktop pass as the fill and the mobile pass as the probe.
+ *
+ * These two requests are already made for every URL, so verification costs
+ * nothing extra. The catch is Vary: if the origin varies on User-Agent then
+ * the two passes address different cache objects and the pair proves nothing.
+ */
+export function classifyCacheVerdict(
+  fill: CacheHeaders,
+  probe: CacheHeaders,
+  probeVary?: string
+): { verdict: CacheVerdict; reason?: string } {
+  if (probeVary && /user-agent/i.test(probeVary)) {
+    return {
+      verdict: "indeterminate",
+      reason: "Origin sends Vary: User-Agent, so the two passes are separate cache entries",
+    };
+  }
+
+  const fillState = cacheState(fill);
+  const probeState = cacheState(probe);
+
+  if (fillState === "bypass" || probeState === "bypass") {
+    return { verdict: "bypassed", reason: probe.cacheControl || "Cache bypassed" };
+  }
+  if (probeState === "dynamic") {
+    return { verdict: "zone_not_caching", reason: "CDN reports the response as DYNAMIC" };
+  }
+  if (probeState === "hit") {
+    return fillState === "hit" ? { verdict: "already_warm" } : { verdict: "warmed" };
+  }
+  if (probeState === "miss") {
+    const cc = (probe.cacheControl || "").toLowerCase();
+    if (cc.includes("no-store")) return { verdict: "not_cacheable", reason: "Cache-Control: no-store" };
+    if (cc.includes("private")) return { verdict: "not_cacheable", reason: "Cache-Control: private" };
+    return { verdict: "not_cacheable", reason: "Still a miss after the fill request" };
+  }
+  return { verdict: "unknown" };
 }
 
 export interface WarmResult {
@@ -49,6 +119,7 @@ function extractCacheHeaders(response: HTTPResponse | null): CacheHeaders {
     cfCacheStatus: headers["cf-cache-status"] || undefined,
     age: headers["age"] || undefined,
     cacheControl: headers["cache-control"] || undefined,
+    vary: headers["vary"] || undefined,
   };
 }
 
@@ -140,9 +211,22 @@ export async function warmUrls(
           const desktopResult = await warmSingleUrl(page, url, desktopUA, "desktop", timeout);
           urlResults.push(desktopResult);
 
-          // Mobile request
+          // Mobile request. This doubles as the verification probe: the
+          // desktop pass filled the cache, so this one should come back a HIT.
           await page.setViewport({ width: 375, height: 812 });
           const mobileResult = await warmSingleUrl(page, url, mobileUA, "mobile", timeout);
+
+          if (desktopResult.cacheHeaders && mobileResult.cacheHeaders) {
+            const { verdict, reason } = classifyCacheVerdict(
+              desktopResult.cacheHeaders,
+              mobileResult.cacheHeaders,
+              mobileResult.cacheHeaders.vary
+            );
+            mobileResult.cacheHeaders.verdict = verdict;
+            mobileResult.cacheHeaders.verdictReason = reason;
+            logger.info({ url, verdict, reason }, "Cache warm verdict");
+          }
+
           urlResults.push(mobileResult);
 
           // Custom viewport requests (Enterprise)

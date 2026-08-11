@@ -41,19 +41,69 @@ interface JobDetailProps {
   onBack: () => void;
 }
 
+// A warming run is judged by its verdict, not by the raw cache status. On the
+// fill request MISS is the desired outcome — it means the request populated
+// the cache. Colouring HIT green and MISS amber, as this did before, marks
+// every successful warm as a warning.
+const VERDICT_STYLES: Record<string, { className: string; label: string; title: string }> = {
+  warmed: {
+    className: "bg-green-900 text-green-300",
+    label: "warmed",
+    title: "Miss on the fill request, hit on the probe — this run populated the cache",
+  },
+  already_warm: {
+    className: "bg-emerald-900 text-emerald-300",
+    label: "already warm",
+    title: "Cache was already populated before this run",
+  },
+  not_cacheable: {
+    className: "bg-red-900 text-red-300",
+    label: "not cacheable",
+    title: "Still a miss after the fill request",
+  },
+  bypassed: {
+    className: "bg-orange-900 text-orange-300",
+    label: "bypassed",
+    title: "A rule, cookie or Cache-Control header skipped the cache",
+  },
+  zone_not_caching: {
+    className: "bg-orange-900 text-orange-300",
+    label: "not cached by zone",
+    title: "The CDN reports this response as DYNAMIC",
+  },
+  indeterminate: {
+    className: "bg-gray-700 text-gray-300",
+    label: "indeterminate",
+    title: "The two passes addressed different cache entries, so nothing is proven",
+  },
+  unknown: {
+    className: "bg-gray-700 text-gray-300",
+    label: "unknown",
+    title: "No usable cache headers on the response",
+  },
+};
+
 function CacheHeaderBadge({ cacheHeadersJson }: { cacheHeadersJson: string | null }) {
   if (!cacheHeadersJson) return <span className="text-gray-600">-</span>;
   try {
     const h = JSON.parse(cacheHeadersJson);
     const cacheStatus = h.cfCacheStatus || h.xCache;
-    if (!cacheStatus) return <span className="text-gray-600">-</span>;
-    const isHit = /HIT/i.test(cacheStatus);
+    const style = h.verdict ? VERDICT_STYLES[h.verdict] : undefined;
+
+    if (!cacheStatus && !style) return <span className="text-gray-600">-</span>;
+
+    // Without a verdict this is the fill pass, where the raw status alone
+    // cannot say whether the warm worked. Stay neutral rather than guess.
     return (
-      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-        isHit ? "bg-green-900 text-green-300" : "bg-yellow-900 text-yellow-300"
-      }`}>
-        {cacheStatus}
-        {h.age ? ` (${h.age}s)` : ""}
+      <span
+        className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+          style ? style.className : "bg-gray-700 text-gray-300"
+        }`}
+        title={style ? `${style.title}${h.verdictReason ? ` — ${h.verdictReason}` : ""}` : undefined}
+      >
+        {style ? style.label : cacheStatus}
+        {cacheStatus && style ? ` (${cacheStatus})` : ""}
+        {h.age ? ` ${h.age}s` : ""}
       </span>
     );
   } catch {

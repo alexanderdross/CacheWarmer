@@ -93,7 +93,6 @@ export function createMockConfig() {
       host: "0.0.0.0",
       apiKey: "test-api-key-12345",
     },
-    redis: { host: "localhost", port: 6379 },
     database: { path: ":memory:" },
     puppeteer: {
       executablePath: "/usr/bin/chromium-browser",
