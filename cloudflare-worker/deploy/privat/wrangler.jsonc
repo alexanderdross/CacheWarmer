@@ -1,0 +1,37 @@
+{
+  // Account: alexander.dross@me.com (Alexander Dross | Privat)
+  //
+  // Satellite: warms its own account's zones and pushes summaries to the hub
+  // in Dross:Media. No D1 here — reporting is centralised so it does not
+  // fragment into three silos.
+  //
+  // Deploy: wrangler deploy --config deploy/privat/wrangler.jsonc --profile privat
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "cachewarmer-edge",
+  "main": "../../src/index.ts",
+
+  "account_id": "c1df5fbc1f923a0ea0a81889306082c5",
+
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "limits": { "subrequests": 50 },
+
+  "durable_objects": {
+    "bindings": [{ "name": "REGION_WARMER", "class_name": "RegionWarmer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RegionWarmer"] }],
+
+  // Offset from the other accounts so the three runs do not compete for the
+  // shared purge rate limit if they ever target the same origin.
+  "triggers": { "crons": ["35 3 * * *"] },
+
+  "vars": {
+    "CONFIG": "{\"account\":\"alexander.dross@me.com\",\"accountId\":\"c1df5fbc1f923a0ea0a81889306082c5\",\"hubReportUrl\":\"https://REPLACE_WITH_HUB_HOST/report\",\"sites\":[{\"id\":\"REPLACE_ME\",\"zone\":\"example.com\",\"zoneId\":\"REPLACE_WITH_ZONE_ID\",\"sitemapUrl\":\"https://example.com/sitemap.xml\",\"plan\":\"free\",\"regions\":[\"weur\"],\"maxUrls\":500,\"cf\":{\"cacheEverything\":true,\"cacheTtl\":3600}}]}"
+  }
+
+  // Secrets:
+  //   ADMIN_TOKEN     guards /warm, /status, /results and /spike
+  //   HUB_SECRET      must match the hub's value
+  //   CF_PURGE_TOKEN  only needed if a site sets purgeBeforeWarm
+}

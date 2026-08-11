@@ -1,0 +1,34 @@
+{
+  // Account: webmaster@trade.aero (Webmaster@trade.aero's Account)
+  //
+  // Satellite: warms its own account's zones and pushes summaries to the hub
+  // in Dross:Media.
+  //
+  // Deploy: wrangler deploy --config deploy/trade-aero/wrangler.jsonc --profile trade-aero
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "cachewarmer-edge",
+  "main": "../../src/index.ts",
+
+  "account_id": "34d3b942d12ae7cbcf19142fead79259",
+
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "limits": { "subrequests": 50 },
+
+  "durable_objects": {
+    "bindings": [{ "name": "REGION_WARMER", "class_name": "RegionWarmer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RegionWarmer"] }],
+
+  "triggers": { "crons": ["55 3 * * *"] },
+
+  "vars": {
+    "CONFIG": "{\"account\":\"webmaster@trade.aero\",\"accountId\":\"34d3b942d12ae7cbcf19142fead79259\",\"hubReportUrl\":\"https://REPLACE_WITH_HUB_HOST/report\",\"sites\":[{\"id\":\"trade-aero\",\"zone\":\"trade.aero\",\"zoneId\":\"REPLACE_WITH_ZONE_ID\",\"sitemapUrl\":\"https://trade.aero/sitemap.xml\",\"plan\":\"free\",\"regions\":[\"weur\",\"enam\"],\"maxUrls\":500,\"cf\":{\"cacheEverything\":true,\"cacheTtl\":3600}}]}"
+  }
+
+  // Secrets:
+  //   ADMIN_TOKEN     guards /warm, /status, /results and /spike
+  //   HUB_SECRET      must match the hub's value
+  //   CF_PURGE_TOKEN  only needed if a site sets purgeBeforeWarm
+}
