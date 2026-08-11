@@ -6,7 +6,7 @@
 
 Lohnt es sich, CacheWarmer als Cloudflare Worker zu realisieren, statt bzw. neben dem heutigen Node/Docker-Modul? Ziel ist **echtes Warming von Seiten im Cloudflare-CDN** plus Purge/Warm für andere CDNs per API.
 
-**Rahmen:** Nicht kommerziell — nur für eigene Projekte (TradeAero, AIPAero, …) im Dross:Media-Cloudflare-Account. Das Ergebnis ist eine **zusätzliche Komponente**; WordPress-Plugin, Drupal-Modul und Node/Docker-Stack bleiben unangetastet.
+**Rahmen:** Nicht kommerziell — nur für eigene Projekte (TradeAero, AIPAero, …). Diese verteilen sich auf **drei getrennte Cloudflare-Accounts** (`trade.aero`, `mail@drossmedia.de`, `alexander.dross@me.com`); nur `mail@drossmedia.de` hat Admin-Rechte auf die einzelnen Accounts. Das Ergebnis ist eine **zusätzliche Komponente**; WordPress-Plugin, Drupal-Modul und Node/Docker-Stack bleiben unangetastet.
 
 Der entscheidende Befund vorab: Der heutige Warmer feuert einen Request ab und protokolliert den HTTP-Status — er prüft **nie**, ob das CDN die Seite tatsächlich gecacht hat. Auf Workers ist genau diese Verifikation trivial. Das, nicht die Performance, ist das eigentliche Argument für den Umbau.
 
@@ -80,7 +80,19 @@ Drei Fakten aus der Cloudflare-Doku:
 
 **c) Zonenfremdes Warming ist nicht privilegiert.** *"Workers operating on behalf of different zones cannot affect each other's cache… that zone fully controls how its own content is cached within Cloudflare; you cannot override it."*
 
-Punkt (c) wäre für ein SaaS-Produkt der Showstopper gewesen. **Für den Eigenbedarf entfällt er** — die Zonen liegen im eigenen Account, also gilt der volle In-Zone-Modus. Präzise gelesen beschränkt (c) ohnehin nur die *Steuerung*, nicht das Warming selbst: Ein Request fremder Zonen läuft trotzdem durch deren Cache, und `cf-cache-status` bleibt lesbar — nur das `cf`-Objekt wird an der Grenze verworfen.
+**Punkt (c) greift hier — und zwar voll.** `trade.aero`, `mail@drossmedia.de` und `alexander.dross@me.com` sind **getrennte Cloudflare-Accounts**; nur `mail@drossmedia.de` hat Admin-Rechte auf die einzelnen Accounts. Für Workers und Cache zählt aber die **Account-Grenze, nicht die Benutzerberechtigung** — ein Admin-Login über mehrere Accounts führt sie nicht zusammen. Ein Worker in Account A, der eine Zone in Account B warmt, ist aus Cache-Sicht ein ganz gewöhnlicher externer Request.
+
+Entscheidend ist, was (c) genau verbietet. Es beschränkt die **Steuerung**, nicht das Warming:
+
+| Operation | Über Account-Grenze hinweg? |
+|---|---|
+| Seite warmen (Cache-Fill auslösen) | **Ja** — der Request läuft durch die Zone und füllt deren Cache nach deren Regeln |
+| `cf-cache-status` lesen, also verifizieren | **Ja** — ein gewöhnlicher Response-Header |
+| Purge per API | **Ja** — ein API-Token von `mail@drossmedia.de` kann alle Accounts abdecken, auf die der Benutzer Zugriff hat |
+| `cacheEverything`, `cacheTtl`, `cacheKey`, `cacheTags` setzen | **Nein** — das `cf`-Objekt wird an der Grenze verworfen |
+| Service Bindings zu einem Worker im anderen Account | **Nein** — Service Bindings sind account-intern |
+
+Die praktische Konsequenz ist angenehmer, als sie klingt: **Purge, Warming und Verifikation funktionieren accountübergreifend aus einem einzigen Worker.** Nur die Feinsteuerung des Cache-Fills braucht einen Worker im jeweiligen Account.
 
 ### Drei Stufen — und nur eine davon ist neu
 
@@ -92,9 +104,8 @@ Aus (b) folgt eine Ehrlichkeitsstufung, die man vor dem Bauen festhalten sollte:
 | **L2 Regionale Edge** | Lower Tier in N Regionen warm | Fan-out aus N Regionen | Wandelt einen Upper-Tier-Hit (~100–250 ms) in einen Lower-Tier-Hit (~10–30 ms). Real, aber inkrementell. **Nur Workers/DO können das.** |
 | **L3 Globale Edge** | Jedes Colo warm | Nicht erreichbar | Gibt es nicht. |
 
-Das ist der wichtigste Dämpfer dieser Evaluation: **L2 ist eine Latenzoptimierung auf einem bereits schnellen Pfad, keine Beseitigung von Misses.** Mit aktivem Tiered Cache hat der L1-Warm den Origin-Roundtrip schon eliminiert. Multi-Region kauft nur die Differenz zwischen Upper- und Lower-Tier-Hit — und ob die spürbar ist, muss gemessen werden (Verifikationsschritt 6), bevor man Aufwand hineinsteckt.
+Das ist der wichtigste Dämpfer dieser Evaluation: **L2 ist eine Latenzoptimierung auf einem bereits schnellen Pfad, keine Beseitigung von Misses.** Mit aktivem Tiered Cache hat der L1-Warm den Origin-Roundtrip schon eliminiert. Multi-Region kauft nur die Differenz zwischen Upper- und Lower-Tier-Hit — und ob die spürbar ist, muss gemessen werden (Verifikationsschritt 3), bevor man Aufwand hineinsteckt.
 
-> **Vor dem ersten Deploy zu prüfen:** Neben `Dross:Media` existiert ein separater Cloudflare-Account `Webmaster@trade.aero`. Liegt die Zone `trade.aero` dort statt in Dross:Media, greift für sie Punkt (c) doch — dann braucht dieser Account einen eigenen Worker-Deploy. Vorab klären, welche Zone in welchem Account hängt.
 
 ### Die eigentliche Erkenntnis: für Cache-Warming braucht es keinen Browser
 
@@ -163,6 +174,28 @@ Der reale Unterschied ist die Laufzeit. Der heutige Stack fährt Concurrency 3 m
 
 **Neue, eigenständige Komponente `cloudflare-worker/` im Monorepo.** Kein Ersatz, keine gemeinsame Codebasis mit `nodejs-docker/` — die Runtimes sind zu verschieden, ein geteilter Layer würde beide Seiten verbiegen.
 
+### Hub-and-Satellite statt Deploy-überall
+
+Weil Warming, Verifikation und Purge die Account-Grenze überqueren und nur die `cf`-Feinsteuerung nicht, ist ein Deploy in *jeden* Account unnötiger Aufwand. Besser gestuft:
+
+**Stufe 1 — nur der Hub (Start hier).** Ein einziger Worker in `mail@drossmedia.de`: Orchestrierung, D1, Reporting, Purge für alle Accounts über ein Admin-API-Token, plus L1-Warming und Verifikation für *alle* Zonen. Deckt den überwiegenden Teil des Nutzens ab, kostet einmal $5/Monat, und es gibt genau einen Ort für Code, Zustand und Secrets.
+
+**Stufe 2 — Satelliten nur dort, wo es sich messbar lohnt.** Ein baugleicher Worker im jeweiligen Account, wenn eine Zone `cacheEverything`/`cacheTtl`-Kontrolle oder regionalen Lower-Tier-Fill (L2) wirklich braucht. Der Satellit meldet Ergebnisse per HTTPS an den Hub zurück — Service Bindings gehen über Account-Grenzen nicht, also ein Endpunkt mit Shared Secret im Worker-Secret.
+
+Operativ macht **Wrangler Auth Profiles** (seit Juli 2026) das sauber: je Account ein Profil, an ein Verzeichnis gebunden, plus `account_id` in der Wrangler-Config als Fehlgriff-Sicherung — damit kann ein `deploy` nicht im falschen Account landen.
+
+```sh
+wrangler auth create trade-aero
+wrangler auth activate trade-aero ./cloudflare-worker/deploy/trade-aero
+```
+
+Was bei getrennten Accounts zu beachten ist:
+
+- **Workers Paid gilt pro Account** — $5/Monat je Satellit. Nur-Hub bleibt bei $5.
+- **Browser-Run-Kontingente sind pro Account** (10 gleichzeitige Browser, 10 Std./Monat inklusive). Getrennte Accounts heißen getrennte Töpfe — mehr Parallelität, aber auch mehrere Rechnungen.
+- **Purge-Ratenlimits sind pro Account**, hier also ein Vorteil: kein gemeinsamer Bucket, keine Konkurrenz zwischen den Projekten.
+- **D1 lebt in einem Account.** Zentral im Hub halten, nicht je Satellit — sonst zerfällt das Reporting.
+
 ```
 Cron Trigger (nachts)
    └─→ Workflow "warm-site"            ← überlebt den 15-Min-Deckel, Retry pro Step
@@ -184,7 +217,7 @@ Die wesentlichen Entscheidungen:
 - **Ein Durable Object je Zielregion**, per `locationHint` platziert, macht das Warming von dort. Das ist der Punkt, den der Docker-Container prinzipiell nicht kann. `locationHint` ist Best-Effort — als "mehrere Regionen statt einer" verstehen, nicht als Garantie.
 - **`fetch()` + HTMLRewriter als Standardpfad.** Browser Run nur pro Pfadmuster opt-in. Wenn ein Browser nötig ist, zuerst Kitesurf (Beta gratis, 3–7× günstiger) mit Fallback auf Chromium, wenn das Rendering nicht trägt.
 - **D1 für den Zustand**, Schema 1:1 aus `nodejs-docker/src/lib/db/database.ts` übernehmen (`sitemaps`, `jobs`, `url_results`, `schema_results`) plus zwei Spalten in `url_results`: `verified_status` (hit/miss/unknown) und `warm_region`.
-- **Multi-Zone von Anfang an**: Konfiguration als Liste `{zone, zoneId, sitemap, regions[], browserPaths[]}` — nicht die eine `zoneId` aus `config.yaml` nachbauen.
+- **Multi-Account und Multi-Zone von Anfang an**: Konfiguration als Liste `{account, accountId, zone, zoneId, sitemap, regions[], browserPaths[]}` — nicht die eine `zoneId` aus `config.yaml` nachbauen. Das Purge-Token wird je Account nachgeschlagen.
 - **Fremd-CDNs** (Imperva, Akamai, Fastly) bleiben reine API-Aufrufe und funktionieren per `fetch()` unverändert. Fastly wäre billig nachzurüsten (`POST /service/{id}/purge/{key}` mit `Fastly-Key`).
 
 ### Zwei Fallen bei der Akamai-Portierung
@@ -226,7 +259,8 @@ EdgeGrid nach WebCrypto zu portieren ist mechanisch — aber zwei Details erzeug
 | Browser Run wird vom Origin als Bot erkannt und liefert eine Bot-Variante | Die würde dann **im Cache landen und echten Besuchern ausgeliefert**. Vor Einsatz gegen eine echte Seite gegenprüfen. |
 | Purge-Ratenlimits gelten **pro Account**, nicht pro Job | Bei mehreren Zonen im selben Account ein globaler Token-Bucket (ein DO oder das native Rate-Limiting-Binding) — der feste `delay(500)` von heute ist kein Limiter |
 | D1 schreibt single-region; mehrere Regions-DOs schreiben quer | Im DO puffern, per `D1.batch()` je Step flushen |
-| `trade.aero` liegt in einem anderen CF-Account | Account-Zuordnung der Zonen klären; ggf. separater Deploy je Account |
+| Zonen liegen in drei getrennten Accounts | Hub-Worker deckt Warming, Verifikation und Purge accountübergreifend ab; Satelliten nur bei nachgewiesenem Bedarf. Admin-Rechte ersetzen die Account-Grenze **nicht**. |
+| Purge-Token muss drei Accounts abdecken | API-Token von `mail@drossmedia.de` mit `Zone:Cache Purge` über alle drei Accounts scopen — Tokens sind benutzer-, nicht accountgebunden |
 | `locationHint` ist Best-Effort, sam/afr/me weichen aus | Tatsächliche Colo über `request.cf.colo` protokollieren |
 | Warming-Requests verzerren Analytics | Eigener User-Agent + Header; Browser Run ist über `cf-biso-*` ohnehin markiert |
 | Kitesurf ist Beta — Preis und Verfügbarkeit können kippen | Als optionales Backend hinter einem Schalter, Chromium-Fallback |
@@ -240,11 +274,13 @@ EdgeGrid nach WebCrypto zu portieren ist mechanisch — aber zwei Details erzeug
 Reihenfolge ist wichtig — Schritt 1 entscheidet, ob der Rest sinnvoll ist.
 
 1. **Spike (halber Tag).** Minimal-Worker auf einer eigenen Zone: `fetch(url, {cf:{cacheEverything:true}})`, dann zweiter `fetch(url)`, `cf-cache-status` und `request.cf.colo` loggen. Erwartung: zweiter Request meldet HIT. **Trägt das nicht, ist der Hauptnutzen weg — dann nur die Bugs in Abschnitt 8 fixen.**
-2. **Regionstest.** Zwei DOs mit `locationHint: "weur"` und `"enam"`, dieselbe URL warmen, `colo` vergleichen. Belegt, dass Multi-Region real ist.
-3. **Purge→Warm→Verify** über 20 URLs einer echten Zone: nach dem Lauf müssen alle 20 HIT melden.
-4. **Assetpfad.** HTMLRewriter-Extraktion gegen eine echte Seite; Zahl gefundener Assets mit dem DevTools-Netzwerk-Tab abgleichen.
-5. **Lasttest.** 1.000 URLs in einem Workflow — Subrequest-Verbrauch und Laufzeit gegen die Limits messen, bevor `limits.subrequests` hochgesetzt wird.
-6. **Vergleich.** Denselben Sitemap-Lauf durch Docker-Version und Worker schicken; Dauer und Zahl verifizierter HITs gegenüberstellen. Das ist die Zahl, die die Entscheidung belegt.
+2. **Accountübergreifender Fill — der Gating-Test.** Zone in Account B purgen, aus dem Hub-Worker in `mail@drossmedia.de` warmen, erneut abrufen und auf HIT prüfen. **Scheitert das, fällt der Hub-Ansatz weg und es braucht einen Satelliten je Account** — der Unterschied zwischen einem Deploy und dreien.
+3. **Tier-Delta messen.** TTFB derselben URL in drei Zuständen vergleichen: kalt, nur Upper Tier warm (L1), Lower Tier warm (L2). **Das ist die Zahl, die entscheidet, ob Multi-Region überhaupt Aufwand verdient.** Fällt sie klein aus, reicht der Hub allein und Abschnitt 5 Stufe 2 entfällt ersatzlos.
+4. **Regionstest.** Zwei DOs mit `locationHint: "weur"` und `"enam"`, dieselbe URL warmen, tatsächliches Colo über das `cf-ray`-Suffix vergleichen. Belegt, dass die Regionsverteilung real ist und nicht nur angefragt.
+5. **Purge→Warm→Verify** über 20 URLs einer echten Zone: nach dem Lauf müssen alle 20 HIT melden. Dabei die nötige Wartezeit zwischen Fill und Probe kalibrieren (0 / 100 ms / 500 ms / 1 s).
+6. **Assetpfad.** HTMLRewriter-Extraktion gegen eine echte Seite; Zahl gefundener Assets mit dem DevTools-Netzwerk-Tab abgleichen.
+7. **Lasttest.** 1.000 URLs in einem Workflow — Subrequest-Verbrauch und Laufzeit gegen die Limits messen, bevor `limits.subrequests` hochgesetzt wird.
+8. **Vergleich.** Denselben Sitemap-Lauf durch Docker-Version und Worker schicken; Dauer und Zahl verifizierter HITs gegenüberstellen.
 
 ---
 
@@ -268,7 +304,7 @@ Diese Defekte bestehen unabhängig von der Workers-Entscheidung, sind billig zu 
 
 1. **Abschnitt 8 abarbeiten.** Höchster Nutzen pro Aufwand, keine Cloudflare-Abhängigkeit, wirkt auf alle Editionen.
 2. **Puppeteer für CDN-Warming durch `fetch()` + HTMLRewriter ersetzen** — im Node-Modul. Nimmt den Chromium-Speicherboden weg und beschleunigt um Größenordnungen. Puppeteer bleibt nur für die Social-Warmer, den einzigen legitimen Browser-Bedarf.
-3. **Spike fahren** (Verifikationsschritte 1, 2, 6). Erst danach entscheiden.
+3. **Spike fahren** (Verifikationsschritte 1–4). Erst danach entscheiden.
 4. **Falls der Spike trägt: Worker als zusätzlicher Motor** in `cloudflare-worker/`, Workflows als Spine, Regions-DOs für den Fan-out.
 
 Die unbequeme Zusammenfassung: Der Workers-Umbau ist ein legitimes *Feature* — Multi-Region-Fill und belastbare Verifikation — aber er repariert nicht, was heute kaputt ist. Ihn vor den Schritten 1 und 2 zu bauen würde die Bugs nur in eine neue Runtime umziehen.
