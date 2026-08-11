@@ -2,7 +2,13 @@
 
 ## Overview
 
-The CacheWarmer Drupal module processes XML sitemaps, validates structured data (schema.org) on every page, and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X), submits URLs to search engines (Google, Bing, IndexNow), and can directly purge CDN caches via Cloudflare, Imperva, and Akamai APIs (Enterprise).
+The CacheWarmer Drupal module processes XML sitemaps and systematically warms CDN edge caches, social media scraper caches (Facebook, LinkedIn, Twitter/X, Pinterest) and submits URLs to search engines (Google, Bing, IndexNow).
+
+> **Not available in this edition.** Structured-data (schema.org) validation and
+> direct CDN cache purging via the Cloudflare, Imperva and Akamai APIs are
+> implemented in the Node.js module; CDN purge additionally in the WordPress
+> plugin. Neither exists in the Drupal module. Earlier revisions of this
+> document described both as present — they never were.
 
 ---
 
@@ -132,38 +138,6 @@ Batch-submits up to 10,000 URLs per request. Supported by Bing, Yandex, Seznam, 
 2. Create a text file at `https://yoursite.com/{key}.txt` containing the key
 3. Enter the key and key location URL in settings
 
-### CDN Cache Purge (Enterprise)
-
-Directly purge CDN caches via provider APIs before re-warming. All three providers are configured independently.
-
-#### Cloudflare
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Enabled | No | Toggle Cloudflare cache purge |
-| API Token | — | Cloudflare API Token with Zone:Cache Purge permission |
-| Zone ID | — | Cloudflare Zone ID (32-char hex string) |
-
-#### Imperva (Incapsula)
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Enabled | No | Toggle Imperva cache purge |
-| API ID | — | Imperva API ID |
-| API Key | — | Imperva API Key |
-| Site ID | — | Imperva Site ID (numeric) |
-
-#### Akamai
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Enabled | No | Toggle Akamai Fast Purge |
-| Host | — | Akamai API hostname (e.g. `akaa-xxxxx.luna.akamaiapis.net`) |
-| Client Token | — | EdgeGrid client_token |
-| Client Secret | — | EdgeGrid client_secret |
-| Access Token | — | EdgeGrid access_token |
-| Network | production | `production` or `staging` |
-
 ### Scheduled Warming
 
 | Setting | Default | Description |
@@ -190,7 +164,7 @@ The module adds three admin pages under **Configuration** → **Development** �
 ### Dashboard Tab
 
 - **Status cards**: Shows counts of Queued, Running, Completed, Failed jobs and total processed URLs
-- **Warm form**: Enter a sitemap URL, select targets (Schema Validation, CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow), and start warming
+- **Warm form**: Enter a sitemap URL, select targets (CDN, Facebook, LinkedIn, Twitter/X, Google, Bing, IndexNow, Pinterest), and start warming
 - **Jobs table**: Shows recent 20 jobs with status badge, progress bar, target tags, and actions (Details, Delete)
 - **Job detail modal**: Shows full job info with per-target result breakdown (success/failed/skipped counts)
 - **Auto-refresh**: Dashboard polls every 10 seconds for updated job status
@@ -296,7 +270,7 @@ The module creates 3 custom tables via `hook_schema()`:
 | `id` | VARCHAR(36) | UUID primary key |
 | `job_id` | VARCHAR(36) | FK to jobs |
 | `url` | TEXT | Warmed URL |
-| `target` | VARCHAR(50) | schema / cdn / facebook / linkedin / twitter / google / bing / indexnow / cdn-purge:cloudflare / cdn-purge:imperva / cdn-purge:akamai |
+| `target` | VARCHAR(50) | cdn / facebook / linkedin / twitter / google / bing / indexnow / pinterest |
 | `status` | VARCHAR(20) | success / failed / skipped / pending |
 | `http_status` | INT | HTTP response code |
 | `duration_ms` | INT | Duration in milliseconds |
@@ -322,7 +296,11 @@ All services are registered in `cachewarmer.services.yml` and use Drupal's depen
 | `cachewarmer.google_indexer` | `GoogleIndexer` | Google Indexing API |
 | `cachewarmer.bing_indexer` | `BingIndexer` | Bing Webmaster API |
 | `cachewarmer.indexnow` | `IndexNow` | IndexNow protocol |
-| `cachewarmer.cdn_purge_warmer` | `CdnPurgeWarmer` | CDN cache purge (Cloudflare, Imperva, Akamai) |
+| `cachewarmer.pinterest_warmer` | `PinterestWarmer` | Pinterest Rich Pins |
+| `cachewarmer.license` | `CacheWarmerLicense` | License validation and feature gating |
+| `cachewarmer.sitemap_detector` | `CacheWarmerSitemapDetector` | Local sitemap auto-detection |
+| `cachewarmer.webhooks` | `CacheWarmerWebhooks` | Webhook notifications |
+| `cachewarmer.email` | `CacheWarmerEmail` | Email notifications |
 | `cachewarmer.job_manager` | `CacheWarmerJobManager` | Job orchestration |
 
 ### Background Processing
@@ -385,7 +363,11 @@ drupal-module/cachewarmer/
 │       ├── GoogleIndexer.php                   # Google indexing service
 │       ├── BingIndexer.php                     # Bing indexing service
 │       ├── IndexNow.php                        # IndexNow service
-│       └── CdnPurgeWarmer.php                  # CDN purge (Cloudflare, Imperva, Akamai)
+│       ├── PinterestWarmer.php                 # Pinterest Rich Pins
+│       ├── CacheWarmerLicense.php              # License validation
+│       ├── CacheWarmerSitemapDetector.php      # Sitemap auto-detection
+│       ├── CacheWarmerWebhooks.php             # Webhook notifications
+│       └── CacheWarmerEmail.php                # Email notifications
 ├── templates/
 │   ├── cachewarmer-dashboard.html.twig         # Dashboard template
 │   └── cachewarmer-sitemaps.html.twig          # Sitemaps template
@@ -411,9 +393,6 @@ drupal-module/cachewarmer/
 | **Google** | Service Account JSON | [Google Cloud Console](https://console.cloud.google.com) — Enable Indexing API |
 | **Bing** | Webmaster API Key | [Bing Webmaster Tools](https://www.bing.com/webmasters) |
 | **IndexNow** | Self-generated key | Generate UUID + host as text file on your domain |
-| **Cloudflare** | API Token + Zone ID | [Cloudflare Dashboard](https://dash.cloudflare.com) — API Token with Zone:Cache Purge |
-| **Imperva** | API ID + API Key + Site ID | [Imperva Console](https://my.imperva.com) — Account Settings → API |
-| **Akamai** | EdgeGrid Credentials | [Akamai Control Center](https://control.akamai.com) — Identity & Access → API Clients |
 
 ---
 

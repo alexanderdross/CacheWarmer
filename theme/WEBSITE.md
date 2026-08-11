@@ -350,8 +350,8 @@ Lucide Icons (konsistent mit pdfviewer.drossmedia.de):
 │                    │  │                    │  │                    │
 │  WordPress Plugin  │  │  Drupal Module    │  │  Self-Hosted       │
 │                    │  │                    │  │                    │
-│  WordPress 5.8+    │  │  Drupal 10/11     │  │  Node.js 20+       │
-│  PHP 7.4+          │  │  PHP 8.1+         │  │  TypeScript        │
+│  WordPress 6.0+    │  │  Drupal 10/11     │  │  Node.js 20+       │
+│  PHP 8.0+          │  │  PHP 8.1+         │  │  TypeScript        │
 │  One-click install │  │  Composer install  │  │  Docker ready      │
 │                    │  │                    │  │                    │
 │  [Get Plugin →]    │  │  [Get Module →]    │  │  [View on GitHub →]│
@@ -369,10 +369,10 @@ Lucide Icons (konsistent mit pdfviewer.drossmedia.de):
 │                    │  │  ★ MOST POPULAR   │  │                    │
 │  FREE              │  │                    │  │  ENTERPRISE        │
 │                    │  │  PREMIUM           │  │                    │
-│  €0                │  │                    │  │  ab €499/yr        │
-│  forever           │  │  €79/yr            │  │                    │
+│  €0                │  │                    │  │  ab €599/yr        │
+│  forever           │  │  €99/yr            │  │                    │
 │                    │  │                    │  │  Unlimited sites   │
-│  · CDN Warming     │  │  · All 7 targets   │  │  · Multi-Site      │
+│  · CDN Warming     │  │  · All 12 targets  │  │  · Multi-Site      │
 │  · IndexNow        │  │  · 10,000 URLs     │  │  · Webhooks        │
 │  · 50 URLs/job     │  │  · 25 Sitemaps     │  │  · White-Label     │
 │  · 2 Sitemaps      │  │  · Scheduler       │  │  · Custom Cron     │
@@ -408,7 +408,7 @@ A: Yes. CacheWarmer supports adding multiple external XML sitemaps from any doma
 A: Most IndexNow plugins only notify search engines. CacheWarmer goes far beyond that — it also warms your CDN edge cache (desktop + mobile), refreshes Facebook/LinkedIn/Twitter previews, and submits to Google's Indexing API. It's a complete cache management solution, not just a search engine notifier.
 
 **Q: Does CacheWarmer slow down my website?**
-A: No. Warming runs in the background via WP-Cron (WordPress), Drupal Queue (Drupal), or BullMQ (Node.js). It makes outbound requests — it doesn't affect your site's frontend performance.
+A: No. Warming runs in the background via WP-Cron (WordPress), the Queue API (Drupal), or an in-process job runner (Node.js). It makes outbound requests — it doesn't affect your site's frontend performance.
 
 **Q: What data do you collect?**
 A: CacheWarmer stores job and URL result data locally in your own database. No data is sent to our servers. The only external requests are to the warming targets (CDN, Facebook, etc.) on your behalf.
@@ -451,8 +451,8 @@ A: CacheWarmer stores job and URL result data locally in your own database. No d
 **Requirements Box:**
 ```
 Requirements:
-· WordPress 5.8+
-· PHP 7.4+
+· WordPress 6.0+
+· PHP 8.0+
 · Optional: Yoast SEO (for enhanced XML sitemap detection)
 ```
 
@@ -522,7 +522,7 @@ CacheWarmer → Sitemaps
 ```
 Ready to warm your WordPress caches?
 
-[Download Free from wordpress.org]    [Get Premium for €79/year →]
+[Download Free from wordpress.org]    [Get Premium for €99/year →]
 ```
 
 ---
@@ -599,7 +599,7 @@ CacheWarmer → Sitemaps tab
 ```
 Ready to warm your Drupal caches?
 
-[Download from drupal.org]    [Get Premium for €99/year →]
+[Download from drupal.org]    [Get Premium for €129/year →]
 ```
 
 ---
@@ -628,7 +628,7 @@ Ready to warm your Drupal caches?
 
 ```bash
 # Clone & start with Docker
-git clone https://github.com/drossmedia/cachewarmer.git
+git clone https://github.com/alexanderdross/CacheWarmer.git
 cd cachewarmer
 docker-compose up -d
 
@@ -652,7 +652,7 @@ curl -X POST http://localhost:3000/api/warm \
 │                     (Node.js / TypeScript)                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  REST API ──→ BullMQ Job Queue (Redis) ──→ Workers              │
+│  REST API ──→ In-process job runner ──→ Warming phases          │
 │  POST /warm    │                            │                    │
 │  GET  /jobs    ├─ Schema Worker (Validator)  ├─ JSON-LD/RDFa     │
 │  GET  /status  ├─ CDN Worker (Puppeteer)    ├─ Desktop + Mobile │
@@ -672,9 +672,9 @@ curl -X POST http://localhost:3000/api/warm \
 |-------------|-------|
 | Node.js 20+ | Runtime |
 | TypeScript | Type-safe codebase |
-| Fastify | Web framework (lightweight, fast) |
+| Next.js 16 (App Router) | Web framework and dashboard UI |
 | Puppeteer + Chromium | Headless browser for CDN warming |
-| BullMQ + Redis | Async job queue with rate limiting |
+| In-process job runner | Sequential per-target execution; no broker |
 | SQLite (better-sqlite3) | Local database — no external DB needed |
 | Docker | Containerized deployment |
 
@@ -1282,8 +1282,13 @@ Documentation
 
 ### Format
 
+> **Authoritative history:** `wordpress-plugin/CHANGELOG.md`. The shipped
+> versions are 1.0.0 (2026-02-25), 1.1.0 (2026-03-08) and 1.1.1 (2026-05-18).
+> The 1.2.0 entry below was never released — the CDN purge providers it
+> describes shipped in 1.0.0. It is kept as a layout example only.
+
 ```
-## v1.2.0 — 2026-03-02
+## v1.2.0 — unreleased (layout example)
 
 ### New Warming Targets (Enterprise)
 - **Imperva (Incapsula) Cache Purge + Warm** — purge site cache via
@@ -1301,13 +1306,13 @@ Documentation
 - Updated feature flags and license tiers across all platforms
 
 ### Platforms
-- WordPress 5.8+ / PHP 7.4+
-- Drupal 10+ / PHP 8.1+
+- WordPress 6.0+ / PHP 8.0+
+- Drupal 10/11 / PHP 8.1+
 - Node.js 20+ / TypeScript
 
 ---
 
-## v1.1.0 — 2026-03-02
+## v1.1.0 — 2026-03-08
 
 ### New Warming Target
 - **Schema Validation** — validates structured data (JSON-LD, Microdata,
@@ -1370,13 +1375,13 @@ Documentation
   with documented event schema
 
 ### Platforms
-- WordPress 5.8+ / PHP 7.4+
-- Drupal 10+ / PHP 8.1+
+- WordPress 6.0+ / PHP 8.0+
+- Drupal 10/11 / PHP 8.1+
 - Node.js 20+ / TypeScript
 
 ---
 
-## v1.0.0 — 2026-03-15
+## v1.0.0 — 2026-02-25
 
 ### Added
 - Initial release with 7 warming targets (CDN, Facebook, LinkedIn,
@@ -1386,11 +1391,11 @@ Documentation
 - Self-hosted Node.js microservice with Docker, Redis, and SQLite
 - REST API for all three platforms
 - Multi-sitemap support (local + external)
-- Scheduled warming via WP-Cron, Drupal Cron, and BullMQ
+- Scheduled warming via WP-Cron, Drupal Cron, and a built-in scheduler
 
 ### Platforms
-- WordPress 5.8+ / PHP 7.4+
-- Drupal 10+ / PHP 8.1+
+- WordPress 6.0+ / PHP 8.0+
+- Drupal 10/11 / PHP 8.1+
 - Node.js 20+ / TypeScript
 ```
 
@@ -1555,15 +1560,15 @@ Datenschutzerklärung
     {
       "@type": "Offer",
       "name": "Premium",
-      "price": "79",
+      "price": "99",
       "priceCurrency": "EUR",
       "billingIncrement": "P1Y",
-      "description": "All 7 warming targets, 10,000 URLs, scheduler, REST API"
+      "description": "All Premium warming targets, 10,000 URLs, scheduler, REST API"
     },
     {
       "@type": "Offer",
       "name": "Enterprise",
-      "price": "499",
+      "price": "599",
       "priceCurrency": "EUR",
       "billingIncrement": "P1Y",
       "description": "Up to 5 sites, priority support, all warming targets"

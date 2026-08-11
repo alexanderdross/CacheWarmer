@@ -19,7 +19,7 @@ All notable changes to the CacheWarmer WordPress plugin will be documented in th
 ## [1.0.0] - 2026-02-25
 
 ### Added
-- CDN edge cache warming via headless browser (desktop + mobile viewports).
+- CDN edge cache warming via the WordPress HTTP API (desktop + mobile user agents). This edition has never used a headless browser; earlier wording here was copied from the Node.js changelog.
 - Facebook Sharing Debugger integration (OG tag cache refresh).
 - LinkedIn Post Inspector integration (card cache refresh).
 - Twitter/X Card Validator integration.
