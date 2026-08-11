@@ -31,6 +31,7 @@ jobs:
   php-lint:
     name: PHP syntax (php ${{ matrix.php }})
     runs-on: self-hosted
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -55,6 +56,7 @@ jobs:
   composer-validate:
     name: Composer validate (license-manager)
     runs-on: self-hosted
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2

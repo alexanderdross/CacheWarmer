@@ -23,6 +23,7 @@ jobs:
   lint:
     name: Lint (ESLint)
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -41,6 +42,7 @@ jobs:
   typecheck:
     name: Typecheck (tsc)
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -59,6 +61,7 @@ jobs:
   test-unit:
     name: Unit Tests
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -77,6 +80,7 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -95,6 +99,7 @@ jobs:
   test-security:
     name: Security Tests
     runs-on: self-hosted
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -113,6 +118,7 @@ jobs:
   build:
     name: Build (Next.js)
     runs-on: self-hosted
+    timeout-minutes: 20
     needs: [lint, typecheck]
     steps:
       - uses: actions/checkout@v4
@@ -132,6 +138,7 @@ jobs:
   coverage:
     name: Test Coverage
     runs-on: self-hosted
+    timeout-minutes: 20
     needs: [test-unit, test-integration]
     steps:
       - uses: actions/checkout@v4
@@ -158,6 +165,7 @@ jobs:
   audit:
     name: Dependency Audit
     runs-on: self-hosted
+    timeout-minutes: 20
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
