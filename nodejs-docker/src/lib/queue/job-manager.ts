@@ -11,7 +11,11 @@ import { submitToGoogle } from "@/lib/services/google-indexer";
 import { submitToBing } from "@/lib/services/bing-indexer";
 import { warmPinterest } from "@/lib/services/pinterest-warmer";
 import { purgeCdnCache } from "@/lib/services/cdn-purge-warm";
-import { validateSchemaMarkup } from "@/lib/services/schema-validator";
+import {
+  validateSchemaHtml,
+  validateSchemaMarkup,
+  type SchemaValidationResult,
+} from "@/lib/services/schema-validator";
 import { sendWebhook } from "@/lib/services/webhooks";
 import { sendJobCompletedEmail } from "@/lib/services/email-notifications";
 import logger from "@/lib/logger";
@@ -198,38 +202,56 @@ export async function processJob(jobId: string): Promise<void> {
       }
     }
 
-    // Schema Validation (first of the warming phases; the purge above has to
-    // precede it, since validation fetches every page and would otherwise be
-    // invalidated straight afterwards)
-    if (targets.includes("schema")) {
+    const wantsSchema = targets.includes("schema");
+    const wantsCdn = targets.includes("cdn");
+
+    const recordSchemaResult = (result: SchemaValidationResult) => {
+      saveSchemaResult(
+        jobId, result.url, result.status, result.schemas,
+        result.errors, result.warnings, result.durationMs, result.error
+      );
+      saveUrlResult(
+        jobId, result.url, "schema",
+        result.status === "errors" ? "failed" : "success",
+        undefined, result.durationMs,
+        result.errors.length > 0 ? `${result.errors.length} schema error(s)` : result.error
+      );
+      processed++;
+      updateJobProgress(jobId, processed);
+    };
+
+    // Schema validation without CDN warming: nobody else is loading the pages,
+    // so it has to fetch them itself.
+    if (wantsSchema && !wantsCdn) {
       logger.info({ jobId, urlCount: urls.length }, "Starting schema validation");
-      await validateSchemaMarkup(urls, (result) => {
-        saveSchemaResult(
-          jobId, result.url, result.status, result.schemas,
-          result.errors, result.warnings, result.durationMs, result.error
-        );
-        saveUrlResult(
-          jobId, result.url, "schema",
-          result.status === "errors" ? "failed" : "success",
-          undefined, result.durationMs,
-          result.errors.length > 0 ? `${result.errors.length} schema error(s)` : result.error
-        );
-        processed++;
-        updateJobProgress(jobId, processed);
-      });
+      await validateSchemaMarkup(urls, recordSchemaResult);
     }
 
     // CDN Warming
-    if (targets.includes("cdn")) {
-      logger.info({ jobId, urlCount: urls.length }, "Starting CDN warming");
-      await warmUrls(urls, (result) => {
-        saveUrlResult(
-          jobId, result.url, "cdn", result.status, result.httpStatus,
-          result.durationMs, result.error, result.viewport, result.cacheHeaders
-        );
-        processed++;
-        updateJobProgress(jobId, processed);
-      });
+    if (wantsCdn) {
+      logger.info(
+        { jobId, urlCount: urls.length, withSchema: wantsSchema },
+        "Starting CDN warming"
+      );
+
+      // When schema validation is also requested it rides along on the HTML the
+      // browser has already loaded, instead of fetching every page again.
+      await warmUrls(
+        urls,
+        (result) => {
+          saveUrlResult(
+            jobId, result.url, "cdn", result.status, result.httpStatus,
+            result.durationMs, result.error, result.viewport, result.cacheHeaders
+          );
+          processed++;
+          updateJobProgress(jobId, processed);
+        },
+        wantsSchema
+          ? async (url, html) => {
+              recordSchemaResult(await validateSchemaHtml(url, html));
+            }
+          : undefined
+      );
       await closeBrowser();
     }
 

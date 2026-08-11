@@ -39,7 +39,7 @@ Funktional deckt sich das fast vollständig mit CacheWarmer Free/Premium. Der ei
 ## 2. Ist-Zustand — was der Code wirklich tut
 
 > **Historisch.** Dieser Abschnitt hält den Befund vom 2026-08-11 fest, so wie
-> der Code damals vorgefunden wurde. Die Punkte 1–8 aus Abschnitt 8 sind
+> der Code damals vorgefunden wurde. Die Punkte aus Abschnitt 8 sind
 > inzwischen behoben; die Beschreibung bleibt als Begründung der
 > Architekturentscheidung stehen.
 
@@ -355,7 +355,7 @@ Reihenfolge ist wichtig — Schritt 1 entscheidet, ob der Rest sinnvoll ist.
 
 ## 8. Vorher: Fixes am Ist-Zustand
 
-Diese Defekte bestehen unabhängig von der Workers-Entscheidung und wirken in **allen drei Editionen** — auch für Projekte, die nie auf Cloudflare laufen. Stand 2026-08-11 sind 8 von 9 erledigt:
+Diese Defekte bestehen unabhängig von der Workers-Entscheidung und wirken in **allen drei Editionen** — auch für Projekte, die nie auf Cloudflare laufen. Stand 2026-08-11 sind alle 9 erledigt:
 
 1. ~~`cdn-purge` vor dem CDN-Warming ausführen~~ — **erledigt**
 2. ~~Priority-Sortierung reparieren~~ — **erledigt**
@@ -365,7 +365,7 @@ Diese Defekte bestehen unabhängig von der Workers-Entscheidung und wirken in **
 6. ~~Cloudflare-Purge-Batch von 30 auf 100 anheben~~ — **erledigt**
 7. ~~`bullmq`/`ioredis` und den Redis-Container entfernen~~ — **erledigt**
 8. ~~Warm-then-Verify einführen und das Badge korrigieren~~ — **erledigt** (der bereits vorhandene Mobile-Pass dient als Probe, keine Zusatzrequests)
-9. **Offen:** doppelten Fetch in `schema-validator.ts` abschaffen — das bereits geladene HTML weiterreichen. Keine Ein-Zeilen-Korrektur: `structured-data-testing-tool` lädt die Seite selbst, das HTML müsste aus der Puppeteer-Navigation durchgereicht und die Phasenfolge umgebaut werden.
+9. ~~Doppelten Fetch in `schema-validator.ts` abschaffen~~ — **erledigt**. Der CDN-Warmer reicht das bereits geladene HTML per `onHtml` weiter, die Validierung läuft darauf ohne eigenen Request. Nebenbei zeigte sich, dass `structuredDataTest(url)` die Seite **zweimal** lud; über `structuredDataTestHtml` entfällt das. Damit sinken die Seitenladungen je URL von 4 auf 2, bei Schema ohne CDN-Warming von 2 auf 1.
 
 ---
 

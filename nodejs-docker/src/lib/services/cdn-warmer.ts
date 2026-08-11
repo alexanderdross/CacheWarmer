@@ -160,9 +160,18 @@ async function warmSingleUrl(
   }
 }
 
+/**
+ * Warm a list of URLs.
+ *
+ * `onHtml` receives the document from the desktop pass. The browser has the
+ * HTML in hand already, so passing it out lets schema validation run without
+ * fetching every page a second time. It is awaited, so nothing accumulates in
+ * memory across a large sitemap.
+ */
 export async function warmUrls(
   urls: string[],
-  onProgress?: (result: WarmResult) => void
+  onProgress?: (result: WarmResult) => void,
+  onHtml?: (url: string, html: string) => Promise<void> | void
 ): Promise<WarmResult[]> {
   const config = getConfig();
   const { concurrency, timeout, userAgents } = config.cdnWarming;
@@ -210,6 +219,19 @@ export async function warmUrls(
           // Desktop request
           const desktopResult = await warmSingleUrl(page, url, desktopUA, "desktop", timeout);
           urlResults.push(desktopResult);
+
+          // Hand the loaded document to whoever asked for it, before the page
+          // navigates away on the mobile pass.
+          if (onHtml && desktopResult.status === "success") {
+            try {
+              await onHtml(url, await page.content());
+            } catch (err) {
+              logger.warn(
+                { url, error: err instanceof Error ? err.message : String(err) },
+                "HTML consumer failed"
+              );
+            }
+          }
 
           // Mobile request. This doubles as the verification probe: the
           // desktop pass filled the cache, so this one should come back a HIT.
