@@ -577,7 +577,7 @@ $t->assertContains('Settings: references cachewarmer.settings', $sf, "'cachewarm
 $t->assertContains('Settings: buildForm method', $sf, 'public function buildForm(');
 $t->assertContains('Settings: submitForm method', $sf, 'public function submitForm(');
 
-$sections = ['general', 'cdn', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'logging', 'cloudflare', 'imperva', 'akamai', 'pinterest'];
+$sections = ['general', 'cdn', 'cdn_advanced', 'facebook', 'linkedin', 'twitter', 'google', 'bing', 'indexnow', 'scheduler', 'logging', 'cloudflare', 'imperva', 'akamai', 'pinterest'];
 foreach ($sections as $section) {
   $t->assertContains("Settings section: {$section}", $sf, "\$form['{$section}']");
 }
@@ -898,6 +898,65 @@ $noStore = $warmerClass::classifyVerdict(
   ['cfCacheStatus' => 'MISS', 'cacheControl' => 'no-store, max-age=0']
 );
 $t->assertEqual('Verdict: names Cache-Control as the reason', 'Cache-Control: no-store', $noStore['reason']);
+
+// ============================================================================
+// 11b. Unit Tests — Enterprise CDN request shaping
+// ============================================================================
+
+$t->suite('11b. Unit Tests — Enterprise CDN request shaping');
+
+// These four settings were read by CdnWarmer but existed nowhere else: no
+// default, no schema, no form field. Every one of them resolved to NULL, so
+// four sold Enterprise features did nothing at all. A target or setting the
+// code reads is only real once config/install carries it — the same trap that
+// left `pinterest` inert.
+foreach (['custom_user_agent', 'custom_headers', 'custom_viewports', 'auth_cookies'] as $key) {
+  $t->assertContains("CDN advanced: {$key} has a default", $defaults, "  {$key}:");
+  $t->assertContains("CDN advanced: {$key} in the schema", $schema, "        {$key}:");
+  $t->assertContains("CDN advanced: {$key} has a form field", $sf, "'cdn_{$key}'");
+  $t->assertContains("CDN advanced: {$key} is written on submit", $sf, "'cdn.{$key}'");
+}
+
+// The plain user_agent setting shipped in config and in the form from the
+// start, but the warmer ignored it and always used its own constant.
+$t->assertContains('CDN advanced: the plain user agent setting is honoured', $cdn, "\$config->get('cdn.user_agent')");
+
+// Each of the four is gated at runtime, not merely hidden behind the CSS
+// overlay the settings form uses.
+foreach (['custom_user_agent', 'custom_headers', 'custom_viewports', 'authenticated_warming'] as $feature) {
+  $t->assertContains("CDN advanced: {$feature} checked against the licence", $cdn, "can('{$feature}')");
+}
+
+// Multi-line settings are parsed, not passed through whole.
+$parseLines = new ReflectionMethod($warmerClass, 'parseLines');
+$parseLines->setAccessible(TRUE);
+$t->assertEqual(
+  'CDN advanced: blank lines and padding are dropped',
+  ['a', 'b'],
+  $parseLines->invoke(NULL, "  a  \n\n b \n   ")
+);
+$t->assertEqual('CDN advanced: an unset setting yields no lines', [], $parseLines->invoke(NULL, NULL));
+$t->assertEqual('CDN advanced: an empty setting yields no lines', [], $parseLines->invoke(NULL, '   '));
+
+// Authentication cookies accept the WordPress edition's JSON form so a value
+// can be moved between the two without being rewritten.
+$t->assertEqual(
+  'CDN advanced: JSON cookies become a Cookie header',
+  'session=abc; role=admin',
+  $warmerClass::cookieHeader('[{"name":"session","value":"abc"},{"name":"role","value":"admin"}]')
+);
+$t->assertEqual(
+  'CDN advanced: a ready-made cookie header passes through',
+  'session=abc; role=admin',
+  $warmerClass::cookieHeader('session=abc; role=admin')
+);
+$t->assertEqual('CDN advanced: no cookies configured means no header', '', $warmerClass::cookieHeader(''));
+$t->assertEqual('CDN advanced: an unset cookie setting means no header', '', $warmerClass::cookieHeader(NULL));
+$t->assertEqual(
+  'CDN advanced: malformed JSON entries are skipped, not sent',
+  'ok=1',
+  $warmerClass::cookieHeader('[{"name":"ok","value":"1"},{"nope":true}]')
+);
 
 // ============================================================================
 // 12. Unit Tests — CDN Purge

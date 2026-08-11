@@ -4,6 +4,10 @@ cdn:
   concurrency: 3
   timeout: 30
   user_agent: 'Mozilla/5.0 (compatible; CacheWarmer/1.0)'
+  custom_user_agent: ''
+  custom_headers: ''
+  custom_viewports: ''
+  auth_cookies: ''
 facebook:
   enabled: false
   app_id: ''

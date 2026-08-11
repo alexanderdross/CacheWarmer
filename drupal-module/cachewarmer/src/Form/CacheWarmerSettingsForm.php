@@ -85,6 +85,48 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
       '#maxlength' => 512,
     ];
 
+    // Advanced CDN warming (Enterprise).
+    $form['cdn_advanced'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Advanced CDN Warming'),
+      '#description' => $this->t('Custom request shaping is available with an Enterprise license only.'),
+      '#open' => FALSE,
+    ];
+    if ($is_not_ent) {
+      $form['cdn_advanced']['#open'] = TRUE;
+      $form['cdn_advanced']['#prefix'] = '<div class="cw-locked-wrapper">';
+      $form['cdn_advanced']['#attributes']['class'][] = 'cw-ent-locked';
+      $form['cdn_advanced']['#suffix'] = '<div class="cw-pro-upgrade-overlay"><span class="cw-lock-icon"></span><strong>' . $this->t('Enterprise Feature') . '</strong><p>' . $this->t('Shape the warming requests: custom user agents, extra headers, additional passes and authenticated warming behind a login.') . '</p><a href="' . $pricing_url . '" target="_blank" rel="noopener" class="button button--primary">' . $this->t('Upgrade to Enterprise') . '</a></div></div>';
+    }
+    $form['cdn_advanced']['cdn_custom_user_agent'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Custom User Agent'),
+      '#description' => $this->t('Overrides the user agent on every pass, including the mobile one. Leave empty to keep the built-in desktop and mobile agents.'),
+      '#default_value' => $config->get('cdn.custom_user_agent'),
+      '#maxlength' => 512,
+    ];
+    $form['cdn_advanced']['cdn_custom_headers'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Custom HTTP Headers'),
+      '#description' => $this->t('One header per line, as <em>Name: Value</em>. Sent on every warming request.'),
+      '#default_value' => $config->get('cdn.custom_headers'),
+      '#rows' => 4,
+    ];
+    $form['cdn_advanced']['cdn_custom_viewports'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Additional Passes'),
+      '#description' => $this->t('One pass per line, as <em>Label|User-Agent</em>. Each line adds another request per URL, recorded under that label. Omit the user agent to reuse the desktop one.'),
+      '#default_value' => $config->get('cdn.custom_viewports'),
+      '#rows' => 4,
+    ];
+    $form['cdn_advanced']['cdn_auth_cookies'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Authentication Cookies'),
+      '#description' => $this->t('Sent as a Cookie header so pages behind a login can be warmed. Either a ready-made cookie header (<em>a=1; b=2</em>) or the JSON form used by the WordPress edition (<em>[{"name":"a","value":"1"}]</em>).'),
+      '#default_value' => $config->get('cdn.auth_cookies'),
+      '#rows' => 3,
+    ];
+
     // Facebook (Premium).
     $form['facebook'] = [
       '#type' => 'details',
@@ -590,6 +632,13 @@ class CacheWarmerSettingsForm extends ConfigFormBase {
     $config->set('cdn.concurrency', (int) $form_state->getValue('cdn_concurrency'));
     $config->set('cdn.timeout', (int) $form_state->getValue('cdn_timeout'));
     $config->set('cdn.user_agent', $form_state->getValue('cdn_user_agent'));
+
+    // Advanced CDN warming. Stored regardless of tier so a lapsed licence does
+    // not silently discard the values; CdnWarmer decides whether to apply them.
+    $config->set('cdn.custom_user_agent', (string) $form_state->getValue('cdn_custom_user_agent'));
+    $config->set('cdn.custom_headers', (string) $form_state->getValue('cdn_custom_headers'));
+    $config->set('cdn.custom_viewports', (string) $form_state->getValue('cdn_custom_viewports'));
+    $config->set('cdn.auth_cookies', (string) $form_state->getValue('cdn_auth_cookies'));
 
     $config->set('facebook.enabled', (bool) $form_state->getValue('facebook_enabled'));
     $config->set('facebook.app_id', $form_state->getValue('facebook_app_id'));

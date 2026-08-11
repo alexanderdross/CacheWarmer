@@ -43,9 +43,11 @@ class CdnWarmer {
     $config = $this->configFactory->get('cachewarmer.settings');
     $timeout = (int) ($config->get('cdn.timeout') ?: 30);
 
-    // Custom user agent (Enterprise).
-    $desktopUa = self::DESKTOP_UA;
+    // Base user agents: the plain setting applies to every tier.
+    $desktopUa = $config->get('cdn.user_agent') ?: self::DESKTOP_UA;
     $mobileUa = self::MOBILE_UA;
+
+    // Custom user agent (Enterprise) overrides both passes.
     if ($this->licenseService->can('custom_user_agent')) {
       $customUa = $config->get('cdn.custom_user_agent');
       if (!empty($customUa)) {
@@ -60,31 +62,40 @@ class CdnWarmer {
       ['ua' => $mobileUa, 'viewport' => 'mobile'],
     ];
 
-    // Custom viewports (Enterprise).
+    // Custom viewports (Enterprise): one "Label|User-Agent" per line.
     if ($this->licenseService->can('custom_viewports')) {
-      $customViewports = $config->get('cdn.custom_viewports');
-      if (!empty($customViewports) && is_array($customViewports)) {
-        foreach ($customViewports as $cvp) {
-          $vpName = $cvp['name'] ?? 'custom';
-          $vpUa = $cvp['user_agent'] ?? $desktopUa;
-          $viewports[] = ['ua' => $vpUa, 'viewport' => $vpName];
+      foreach (self::parseLines($config->get('cdn.custom_viewports')) as $line) {
+        [$vpName, $vpUa] = array_pad(explode('|', $line, 2), 2, NULL);
+        $vpName = trim((string) $vpName);
+        if ($vpName === '') {
+          continue;
         }
+        $viewports[] = [
+          'ua' => trim((string) $vpUa) ?: $desktopUa,
+          'viewport' => $vpName,
+        ];
       }
     }
 
-    // Custom headers (Enterprise).
+    // Custom headers (Enterprise): one "Header: Value" per line.
     $customHeaders = [];
     if ($this->licenseService->can('custom_headers')) {
-      $rawHeaders = $config->get('cdn.custom_headers');
-      if (!empty($rawHeaders) && is_array($rawHeaders)) {
-        $customHeaders = $rawHeaders;
+      foreach (self::parseLines($config->get('cdn.custom_headers')) as $line) {
+        if (!str_contains($line, ':')) {
+          continue;
+        }
+        [$name, $value] = explode(':', $line, 2);
+        $name = trim($name);
+        if ($name !== '') {
+          $customHeaders[$name] = trim($value);
+        }
       }
     }
 
     // Authenticated warming (Enterprise): Cookie header.
     $authCookies = '';
     if ($this->licenseService->can('authenticated_warming')) {
-      $authCookies = $config->get('cdn.auth_cookies') ?: '';
+      $authCookies = self::cookieHeader($config->get('cdn.auth_cookies'));
     }
 
     $concurrency = max(1, (int) ($config->get('cdn.concurrency') ?: 3));
@@ -136,6 +147,43 @@ class CdnWarmer {
         }
       }
     }
+  }
+
+  /**
+   * Split a multi-line setting into trimmed, non-empty lines.
+   */
+  protected static function parseLines($raw): array {
+    if (!is_string($raw) || trim($raw) === '') {
+      return [];
+    }
+    return array_values(array_filter(array_map('trim', explode("\n", $raw)), static fn($l) => $l !== ''));
+  }
+
+  /**
+   * Build a Cookie header from the authenticated-warming setting.
+   *
+   * Accepts the WordPress edition's JSON form — [{"name":…,"value":…}] — so a
+   * value can be moved between the two without editing, and falls back to
+   * treating the setting as a ready-made Cookie header.
+   */
+  public static function cookieHeader($raw): string {
+    if (!is_string($raw) || trim($raw) === '') {
+      return '';
+    }
+    $raw = trim($raw);
+
+    $decoded = json_decode($raw, TRUE);
+    if (is_array($decoded)) {
+      $pairs = [];
+      foreach ($decoded as $cookie) {
+        if (is_array($cookie) && isset($cookie['name'], $cookie['value'])) {
+          $pairs[] = $cookie['name'] . '=' . $cookie['value'];
+        }
+      }
+      return implode('; ', $pairs);
+    }
+
+    return $raw;
   }
 
   /**

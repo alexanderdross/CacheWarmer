@@ -21,6 +21,18 @@ cachewarmer.settings:
         user_agent:
           type: string
           label: 'User Agent'
+        custom_user_agent:
+          type: string
+          label: 'Custom User Agent (Enterprise)'
+        custom_headers:
+          type: string
+          label: 'Custom HTTP Headers (Enterprise)'
+        custom_viewports:
+          type: string
+          label: 'Custom Viewports (Enterprise)'
+        auth_cookies:
+          type: string
+          label: 'Authentication Cookies (Enterprise)'
     facebook:
       type: mapping
       label: 'Facebook Sharing Debugger'
