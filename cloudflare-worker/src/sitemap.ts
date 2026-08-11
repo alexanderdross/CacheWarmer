@@ -94,6 +94,13 @@ export interface FetchSitemapOptions {
   timeoutMs: number;
   /** Guard against a sitemap index that fans out further than expected. */
   maxDepth: number;
+  /**
+   * Safety ceiling on how many entries to collect, NOT the per-run limit.
+   *
+   * Collect generously and let the caller sort by priority before slicing —
+   * truncating here would drop high-priority pages simply because they appear
+   * late in the document.
+   */
   maxUrls: number;
 }
 

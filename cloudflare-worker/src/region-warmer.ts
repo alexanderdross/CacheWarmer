@@ -39,6 +39,10 @@ export interface JobProgress {
   error?: string;
 }
 
+/** Chunk retries before a job is declared failed. */
+const MAX_CHUNK_ATTEMPTS = 3;
+const RETRY_BACKOFF_MS = 5_000;
+
 const EMPTY_VERDICTS: Record<Verdict, number> = {
   warmed: 0,
   already_warm: 0,
@@ -53,6 +57,12 @@ export class RegionWarmer extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     ctx.blockConcurrencyWhile(async () => {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS urls (
+          idx INTEGER PRIMARY KEY,
+          url TEXT NOT NULL
+        )
+      `);
       this.ctx.storage.sql.exec(`
         CREATE TABLE IF NOT EXISTS results (
           url TEXT PRIMARY KEY,
@@ -77,6 +87,15 @@ export class RegionWarmer extends DurableObject<Env> {
     }
 
     this.ctx.storage.sql.exec("DELETE FROM results");
+    this.ctx.storage.sql.exec("DELETE FROM urls");
+
+    // Stored as rows rather than in one storage value: a single value is
+    // capped at 128 KiB, which a few thousand URLs would exceed.
+    spec.urls.forEach((url, index) => {
+      this.ctx.storage.sql.exec("INSERT INTO urls (idx, url) VALUES (?, ?)", index, url);
+    });
+    const urlCount = spec.urls.length;
+    const storedSpec: WarmJobSpec = { ...spec, urls: [] };
 
     const progress: JobProgress = {
       jobId: spec.jobId,
@@ -90,7 +109,7 @@ export class RegionWarmer extends DurableObject<Env> {
       startedAt: new Date().toISOString(),
     };
 
-    await this.ctx.storage.put({ spec, progress, cursor: 0 });
+    await this.ctx.storage.put({ spec: storedSpec, progress, cursor: 0, urlCount });
     await this.ctx.storage.setAlarm(Date.now());
     return progress;
   }
@@ -121,7 +140,15 @@ export class RegionWarmer extends DurableObject<Env> {
 
     if (!spec || !progress) return;
 
-    const slice = spec.urls.slice(cursor, cursor + URLS_PER_CHUNK);
+    const slice = this.ctx.storage.sql
+      .exec<{ url: string }>(
+        "SELECT url FROM urls WHERE idx >= ? ORDER BY idx LIMIT ?",
+        cursor,
+        URLS_PER_CHUNK,
+      )
+      .toArray()
+      .map((row) => row.url);
+
     if (slice.length === 0) {
       await this.finish(spec, progress);
       return;
@@ -136,13 +163,25 @@ export class RegionWarmer extends DurableObject<Env> {
       this.record(results, progress);
 
       progress.processed = cursor + slice.length;
-      await this.ctx.storage.put({ progress, cursor: progress.processed });
+      // Reset the retry counter: this chunk got through.
+      await this.ctx.storage.put({ progress, cursor: progress.processed, attempts: 0 });
 
       // Chain straight into the next chunk; the alarm resets the budget.
       await this.ctx.storage.setAlarm(Date.now());
     } catch (err) {
+      // Retry the same chunk a few times with backoff before giving up: a
+      // single timeout should not strand the rest of the sitemap.
+      const attempts = ((await this.ctx.storage.get<number>("attempts")) ?? 0) + 1;
+      const message = err instanceof Error ? err.message : String(err);
+
+      if (attempts < MAX_CHUNK_ATTEMPTS) {
+        await this.ctx.storage.put({ attempts });
+        await this.ctx.storage.setAlarm(Date.now() + attempts * RETRY_BACKOFF_MS);
+        return;
+      }
+
       progress.status = "failed";
-      progress.error = err instanceof Error ? err.message : String(err);
+      progress.error = `${message} (after ${attempts} attempts)`;
       progress.completedAt = new Date().toISOString();
       await this.ctx.storage.put({ progress });
       await this.report(spec, progress);

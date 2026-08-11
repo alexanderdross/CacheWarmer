@@ -59,15 +59,20 @@ async function dispatch(
 }
 
 async function runSite(env: Env, site: SiteConfig, hubReportUrl?: string) {
+  const limit = site.maxUrls ?? 1000;
+
   const { entries, sitemapsFetched, truncated } = await fetchSitemapUrls(site.sitemapUrl, {
     userAgent: DEFAULT_WARM_OPTIONS.userAgent,
     timeoutMs: DEFAULT_WARM_OPTIONS.timeoutMs,
     maxDepth: 3,
-    maxUrls: site.maxUrls ?? 1000,
+    // Collect beyond the run limit so the sort below can actually reorder;
+    // slicing during the fetch would cut in document order instead.
+    maxUrls: Math.max(limit * 10, limit),
   });
 
-  // Sort before slicing, so a truncated run still covers the important pages.
-  const urls = sortByPriority(entries).map((e) => e.loc);
+  // Sort first, then slice — a shortened run then still covers the pages that
+  // matter most.
+  const urls = sortByPriority(entries).slice(0, limit).map((e) => e.loc);
 
   // Purge first. The Node module does this last and throws away the cache it
   // just built.
@@ -89,7 +94,7 @@ async function runSite(env: Env, site: SiteConfig, hubReportUrl?: string) {
     zone: site.zone,
     urls: urls.length,
     sitemapsFetched,
-    truncated,
+    truncated: truncated || entries.length > limit,
     chunks: chunk(urls, URLS_PER_CHUNK).length,
     purge,
     regions: dispatched,
@@ -224,8 +229,17 @@ export default {
       const siteId = url.searchParams.get("site");
       const sites = siteId ? config.sites.filter((s) => s.id === siteId) : config.sites;
       if (sites.length === 0) return json({ error: `unknown site: ${siteId}` }, 404);
+      // Report per site rather than failing the whole call: one site whose
+      // regions are still busy must not hide the others' results, and a purge
+      // that already ran needs to stay visible.
       const started = await Promise.all(
-        sites.map((site) => runSite(env, site, config.hubReportUrl)),
+        sites.map(async (site) => {
+          try {
+            return await runSite(env, site, config.hubReportUrl);
+          } catch (err) {
+            return { site: site.id, error: err instanceof Error ? err.message : String(err) };
+          }
+        }),
       );
       return json({ started });
     }

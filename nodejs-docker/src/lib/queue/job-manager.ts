@@ -236,6 +236,11 @@ export async function processJob(jobId: string): Promise<void> {
 
       // When schema validation is also requested it rides along on the HTML the
       // browser has already loaded, instead of fetching every page again.
+      // onHtml only fires for URLs whose desktop pass succeeded, so track which
+      // ones were validated; the rest still need a schema row or they vanish
+      // from the report entirely.
+      const schemaValidated = new Set<string>();
+
       await warmUrls(
         urls,
         (result) => {
@@ -248,10 +253,26 @@ export async function processJob(jobId: string): Promise<void> {
         },
         wantsSchema
           ? async (url, html) => {
+              schemaValidated.add(url);
               recordSchemaResult(await validateSchemaHtml(url, html));
             }
           : undefined
       );
+
+      if (wantsSchema) {
+        for (const url of urls) {
+          if (schemaValidated.has(url)) continue;
+          recordSchemaResult({
+            url,
+            status: "failed",
+            schemas: [],
+            errors: [],
+            warnings: [],
+            durationMs: 0,
+            error: "Page could not be loaded, so its markup was not validated",
+          });
+        }
+      }
       await closeBrowser();
     }
 

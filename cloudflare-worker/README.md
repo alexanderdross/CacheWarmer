@@ -65,6 +65,7 @@ src/
 ├── region-warmer.ts  Durable Object; chains 25-URL chunks across alarms
 ├── config.ts         Site config, bindings, budget constants
 └── index.ts          Cron, HTTP endpoints, spike harness
+schema.sql            D1 tables for the hub's /report endpoint
 deploy/
 ├── drossmedia/       hub  — pins account_id, binds D1
 ├── privat/           satellite
@@ -116,6 +117,8 @@ wrangler auth create drossmedia            # pick the account in the OAuth flow
 wrangler auth activate drossmedia .
 
 wrangler d1 create cachewarmer-reports     # hub only; paste the id into the config
+wrangler d1 execute cachewarmer-reports --remote \
+  --config deploy/drossmedia/wrangler.jsonc --file schema.sql
 wrangler secret put ADMIN_TOKEN --config deploy/drossmedia/wrangler.jsonc
 wrangler secret put HUB_SECRET --config deploy/drossmedia/wrangler.jsonc
 wrangler secret put CF_PURGE_TOKEN --config deploy/drossmedia/wrangler.jsonc

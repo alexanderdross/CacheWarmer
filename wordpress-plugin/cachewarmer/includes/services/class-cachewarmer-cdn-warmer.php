@@ -151,7 +151,11 @@ class CacheWarmer_CDN_Warmer {
      * Reduce a CDN cache header to a coarse state.
      */
     private static function cache_state( array $headers ): string {
-        $raw = strtoupper( $headers['cfCacheStatus'] ?? $headers['xCache'] ?? '' );
+        // Fastly reports both tiers comma-separated ("MISS, HIT"); only the
+        // last segment describes the edge that answered us.
+        $source = $headers['cfCacheStatus'] ?? $headers['xCache'] ?? '';
+        $parts  = explode( ',', $source );
+        $raw    = strtoupper( trim( (string) end( $parts ) ) );
         if ( '' === $raw ) {
             return (int) ( $headers['age'] ?? 0 ) > 0 ? 'hit' : 'unknown';
         }
@@ -161,7 +165,9 @@ class CacheWarmer_CDN_Warmer {
         if ( str_contains( $raw, 'DYNAMIC' ) ) {
             return 'dynamic';
         }
-        if ( str_contains( $raw, 'HIT' ) ) {
+        // REVALIDATED, STALE and UPDATING are all served from cache.
+        if ( str_contains( $raw, 'HIT' ) || str_contains( $raw, 'REVALIDATED' )
+            || str_contains( $raw, 'STALE' ) || str_contains( $raw, 'UPDATING' ) ) {
             return 'hit';
         }
         if ( str_contains( $raw, 'MISS' ) || str_contains( $raw, 'EXPIRED' ) ) {
@@ -232,6 +238,14 @@ class CacheWarmer_CDN_Warmer {
      */
     private function fetch_batch( array $urls, string $user_agent, string $viewport ): array {
         $requests_class = $this->requests_class();
+
+        // Going through Requests directly bypasses WP_Http, and with it
+        // WP_HTTP_BLOCK_EXTERNAL, pre_http_request, http_request_args and
+        // https_ssl_verify. Where a site relies on any of those, correctness
+        // matters more than parallelism — fall back to wp_remote_get.
+        if ( $this->must_use_wp_http() ) {
+            $requests_class = null;
+        }
 
         if ( count( $urls ) < 2 || null === $requests_class ) {
             $results = array();
@@ -330,6 +344,26 @@ class CacheWarmer_CDN_Warmer {
         }
 
         return $results;
+    }
+
+    /**
+     * Whether this install depends on WP_Http behaviour the concurrent path
+     * cannot honour.
+     *
+     * WP_HTTP_BLOCK_EXTERNAL is a hard rule — silently ignoring it would let
+     * the warmer reach hosts the site owner has forbidden. The filters are
+     * checked because a site that hooks them expects them to apply.
+     */
+    private function must_use_wp_http(): bool {
+        if ( defined( 'WP_HTTP_BLOCK_EXTERNAL' ) && WP_HTTP_BLOCK_EXTERNAL ) {
+            return true;
+        }
+        foreach ( array( 'pre_http_request', 'http_request_args', 'https_ssl_verify' ) as $filter ) {
+            if ( function_exists( 'has_filter' ) && has_filter( $filter ) ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

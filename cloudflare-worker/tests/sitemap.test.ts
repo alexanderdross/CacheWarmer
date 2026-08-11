@@ -30,6 +30,20 @@ describe("sortByPriority", () => {
   });
 });
 
+describe("priority ordering under a run limit", () => {
+  it("keeps high-priority pages that appear late in the document", () => {
+    // Slicing during the fetch would cut in document order, dropping the
+    // important page purely because it is listed last.
+    const entries = [
+      entry("/low-a", 0.1),
+      entry("/low-b", 0.1),
+      entry("/important", 0.9),
+    ];
+    const kept = sortByPriority(entries).slice(0, 2).map((e) => e.loc);
+    expect(kept).toContain("/important");
+  });
+});
+
 describe("changedSince", () => {
   it("keeps only entries whose lastmod moved", () => {
     const previous = new Map([

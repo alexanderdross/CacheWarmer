@@ -210,7 +210,11 @@ class CdnWarmer {
    * Reduce a CDN cache header to a coarse state.
    */
   protected static function cacheState(array $headers): string {
-    $raw = strtoupper($headers['cfCacheStatus'] ?? $headers['xCache'] ?? '');
+    // Fastly reports both tiers comma-separated ("MISS, HIT"); only the last
+    // segment describes the edge that answered us.
+    $source = $headers['cfCacheStatus'] ?? $headers['xCache'] ?? '';
+    $parts = explode(',', $source);
+    $raw = strtoupper(trim((string) end($parts)));
     if ($raw === '') {
       return (int) ($headers['age'] ?? 0) > 0 ? 'hit' : 'unknown';
     }
@@ -220,7 +224,9 @@ class CdnWarmer {
     if (str_contains($raw, 'DYNAMIC')) {
       return 'dynamic';
     }
-    if (str_contains($raw, 'HIT')) {
+    // REVALIDATED, STALE and UPDATING are all served from cache.
+    if (str_contains($raw, 'HIT') || str_contains($raw, 'REVALIDATED')
+      || str_contains($raw, 'STALE') || str_contains($raw, 'UPDATING')) {
       return 'hit';
     }
     if (str_contains($raw, 'MISS') || str_contains($raw, 'EXPIRED')) {

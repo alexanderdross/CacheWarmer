@@ -52,11 +52,17 @@ export type CacheVerdict =
   | "unknown";
 
 function cacheState(headers: CacheHeaders): "hit" | "miss" | "bypass" | "dynamic" | "unknown" {
-  const raw = (headers.cfCacheStatus || headers.xCache || "").toUpperCase();
+  // Fastly reports both tiers comma-separated ("MISS, HIT"); only the last
+  // segment describes the edge that answered us. Matching the whole string
+  // would read "HIT, MISS" as a hit.
+  const source = headers.cfCacheStatus || headers.xCache || "";
+  const raw = (source.split(",").pop() ?? "").trim().toUpperCase();
   if (!raw) return Number(headers.age) > 0 ? "hit" : "unknown";
   if (raw.includes("BYPASS")) return "bypass";
   if (raw.includes("DYNAMIC")) return "dynamic";
-  if (raw.includes("HIT")) return "hit";
+  // REVALIDATED, STALE and UPDATING are all served from cache; treating them
+  // as unknown would report genuinely cached pages as unverified.
+  if (raw.includes("HIT") || raw.includes("REVALIDATED") || raw.includes("STALE") || raw.includes("UPDATING")) return "hit";
   if (raw.includes("MISS") || raw.includes("EXPIRED")) return "miss";
   return "unknown";
 }

@@ -422,6 +422,27 @@ $t->assertEqual(
     $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'HIT' ), 'Accept-Encoding' )
 );
 
+// Fastly reports both tiers comma-separated; only the last segment describes
+// the edge that answered. Matching the whole string read "HIT, MISS" as a hit.
+$t->assertEqual( 'Verdict: two-tier "MISS, HIT" is a hit', 'warmed', $cw_verdict( array( 'xCache' => 'MISS, MISS' ), array( 'xCache' => 'MISS, HIT' ) ) );
+$t->assertEqual( 'Verdict: two-tier "HIT, MISS" is a miss', 'not_cacheable', $cw_verdict( array( 'xCache' => 'HIT, MISS' ), array( 'xCache' => 'HIT, MISS' ) ) );
+
+// These are all served from cache; treating them as unknown would report
+// genuinely cached pages as unverified.
+$t->assertEqual( 'Verdict: REVALIDATED counts as cached', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'REVALIDATED' ) ) );
+$t->assertEqual( 'Verdict: STALE counts as cached', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'STALE' ) ) );
+$t->assertEqual( 'Verdict: UPDATING counts as cached', 'warmed', $cw_verdict( array( 'cfCacheStatus' => 'MISS' ), array( 'cfCacheStatus' => 'UPDATING' ) ) );
+
+// The concurrent path bypasses WP_Http, so installs relying on it must fall
+// back rather than have the setting silently ignored.
+$cdn_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-warmer.php' );
+$t->assertContains( 'Concurrency: honours WP_HTTP_BLOCK_EXTERNAL', $cdn_src, 'WP_HTTP_BLOCK_EXTERNAL' );
+$t->assertContains( 'Concurrency: honours pre_http_request', $cdn_src, 'pre_http_request' );
+
+// admin_init never fires for cron or REST, so the migration must not hang off it.
+$init_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer.php' );
+$t->assertContains( 'Upgrade: runs on plugins_loaded', $init_src, "add_action( 'plugins_loaded', array( \$this->database, 'maybe_upgrade' ) )" );
+
 $cw_no_store = CacheWarmer_CDN_Warmer::classify_cache_verdict(
     array( 'cfCacheStatus' => 'MISS' ),
     array( 'cfCacheStatus' => 'MISS', 'cacheControl' => 'no-store, max-age=0' )

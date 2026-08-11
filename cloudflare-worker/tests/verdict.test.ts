@@ -61,6 +61,14 @@ describe("normaliseCacheState", () => {
     expect(normaliseCacheState({ xCache: "Miss from cloudfront" })).toBe("miss");
   });
 
+  it("treats REVALIDATED, STALE and UPDATING as served from cache", () => {
+    // The PHP editions once let these fall through to unknown, reporting
+    // genuinely cached pages as unverified.
+    expect(normaliseCacheState({ cfCacheStatus: "REVALIDATED" })).toBe("revalidated");
+    expect(normaliseCacheState({ cfCacheStatus: "STALE" })).toBe("stale");
+    expect(normaliseCacheState({ cfCacheStatus: "UPDATING" })).toBe("updating");
+  });
+
   it("prefers cf-cache-status when both headers are present", () => {
     expect(normaliseCacheState({ cfCacheStatus: "MISS", xCache: "TCP_HIT" })).toBe("miss");
   });

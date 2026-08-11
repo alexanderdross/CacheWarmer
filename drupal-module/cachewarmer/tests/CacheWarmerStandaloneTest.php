@@ -949,6 +949,21 @@ $t->assertContains('Config: pinterest.enabled exists', $install, 'pinterest:');
 $t->assertContains('JM: cdn-purge enabled when any provider is', $jm, "\$config->get('cloudflare.enabled')");
 $t->assertContains('JM: cdn-purge checks the licence', $jm, "isTargetAllowed('cdn-purge')");
 
+// Purging is destructive and must never be implied by a plain warm request.
+$ajax = file_get_contents("{$moduleDir}/src/Controller/CacheWarmerAjaxController.php");
+$t->assert(
+  'AJAX: cdn-purge is not a default target',
+  !str_contains($ajax, "'indexnow', 'pinterest', 'cdn-purge']")
+);
+$t->assertContains('AJAX: default targets still include pinterest', $ajax, "'indexnow', 'pinterest']");
+
+// Fastly reports both tiers comma-separated; only the last segment counts.
+$verdictTwoTier = fn(array $f, array $p) => $warmerClass::classifyVerdict($f, $p)['verdict'];
+$t->assertEqual('Verdict: two-tier "MISS, HIT" is a hit', 'warmed', $verdictTwoTier(['xCache' => 'MISS, MISS'], ['xCache' => 'MISS, HIT']));
+$t->assertEqual('Verdict: two-tier "HIT, MISS" is a miss', 'not_cacheable', $verdictTwoTier(['xCache' => 'HIT, MISS'], ['xCache' => 'HIT, MISS']));
+$t->assertEqual('Verdict: REVALIDATED counts as cached', 'warmed', $verdictTwoTier(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'REVALIDATED']));
+$t->assertEqual('Verdict: STALE counts as cached', 'warmed', $verdictTwoTier(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'STALE']));
+
 // EdgeGrid signing — behavioural, not string matching.
 require_once "{$moduleDir}/src/Service/CdnPurgeWarmer.php";
 $purgeClass = 'Drupal\\cachewarmer\\Service\\CdnPurgeWarmer';
