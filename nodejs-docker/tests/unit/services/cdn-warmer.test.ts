@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  resetTestConfig,
-} from "../../helpers";
+import { resetTestConfig, testConfig } from "../../helpers";
 
 vi.mock("@/lib/config", async () => {
   const helpers = await import("../../helpers");
@@ -30,9 +28,11 @@ vi.mock("puppeteer-core", () => ({
   },
 }));
 
-describe("CDN Warmer", () => {
+describe("CDN Warmer (browser engine)", () => {
   beforeEach(() => {
     resetTestConfig();
+    // Chromium is no longer the default path; these tests are about it.
+    testConfig.cdnWarming.engine = "browser";
 
     // Reset specific mock behaviors without clearing the mock factory
     mockGoto.mockReset().mockResolvedValue({ status: () => 200, headers: () => ({}) });

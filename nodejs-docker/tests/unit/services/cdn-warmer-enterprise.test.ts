@@ -28,9 +28,10 @@ vi.mock("puppeteer-core", () => ({
   },
 }));
 
-describe("CDN Warmer - Enterprise Features", () => {
+describe("CDN Warmer - Enterprise Features (browser engine)", () => {
   beforeEach(() => {
     resetTestConfig();
+    testConfig.cdnWarming.engine = "browser";
     mockGoto.mockReset().mockResolvedValue({ status: () => 200, headers: () => ({}) });
     mockSetUserAgent.mockReset().mockResolvedValue(undefined);
     mockSetViewport.mockReset().mockResolvedValue(undefined);

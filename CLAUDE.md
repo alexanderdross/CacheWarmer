@@ -250,7 +250,8 @@ drupal-module/cachewarmer/
 | UI | React 19, Tailwind CSS 4 |
 | Database | SQLite via better-sqlite3 |
 | Job Execution | In-process from the API route; no broker |
-| Browser | puppeteer-core |
+| Browser | puppeteer-core (LinkedIn and Twitter/X only) |
+| CDN Warming | `fetch()` plus a subresource scanner; Chromium is opt-in |
 | Sitemap Parsing | fast-xml-parser |
 | Google API | googleapis |
 | Logging | pino + pino-pretty |
@@ -307,7 +308,8 @@ nodejs-docker/src/
     │   └── job-manager.ts      # Job orchestration (in-process, no broker)
     └── services/
         ├── sitemap-parser.ts       # XML sitemap parser
-        ├── cdn-warmer.ts           # CDN edge cache warming
+        ├── cdn-warmer.ts           # CDN edge cache warming (fetch or browser engine)
+        ├── subresources.ts         # Extracts CSS/JS/image URLs from warmed HTML
         ├── cdn-purge-warm.ts       # CDN purge (Cloudflare/Imperva/Akamai)
         ├── facebook-warmer.ts      # Facebook Graph API
         ├── linkedin-warmer.ts      # LinkedIn Post Inspector
@@ -321,8 +323,22 @@ nodejs-docker/src/
         └── email-notifications.ts  # Email notifications
 ```
 
+### CDN warming engine
+
+`cdnWarming.engine` selects how a page is requested:
+
+| Engine | What it does | When to use it |
+|--------|--------------|----------------|
+| `fetch` (default) | Plain HTTP requests, plus the subresources found in the returned HTML (`maxAssetsPerPage`, capped to the page's own host and any `assetHosts`) | Everything, normally |
+| `browser` | Drives Chromium via puppeteer-core | Pages that assemble their real content client-side, where fetch would warm a shell |
+
+An edge cache observes neither layout nor script execution, so the only thing
+the browser contributed to warming was implicit subresource loading —
+`subresources.ts` does that explicitly and without a browser process. Chromium
+is still required for the LinkedIn and Twitter/X warmers either way.
+
 ### Configuration
-Central config via `nodejs-docker/config.yaml`. Supports all warming services, SQLite path, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
+Central config via `nodejs-docker/config.yaml`. Supports all warming services, SQLite path, the CDN warming engine, Puppeteer settings, rate limits, CDN purge providers, scheduler, logging, and notification settings. See the file for full schema.
 
 ### Docker Deployment
 - **Dockerfile:** Multi-stage build (Node.js 20-slim + Chromium), runs as non-root `nextjs` user
@@ -594,7 +610,7 @@ Setup guide: `docs/API_KEYS_SETUP.md`
 ### Prerequisites
 - Node.js 20+
 - pnpm 10.29+
-- Chromium (for Puppeteer CDN warming)
+- Chromium (for the LinkedIn and Twitter/X warmers, and for `cdnWarming.engine: browser`)
 
 ### Commands (run from `nodejs-docker/`)
 ```bash

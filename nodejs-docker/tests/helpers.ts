@@ -102,6 +102,9 @@ export function createMockConfig() {
     cdnWarming: {
       enabled: true,
       concurrency: 2,
+      engine: "fetch",
+      maxAssetsPerPage: 20,
+      assetHosts: [],
       waitUntil: "networkidle0",
       timeout: 10000,
       userAgents: {

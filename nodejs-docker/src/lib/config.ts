@@ -19,6 +19,23 @@ export interface AppConfig {
   cdnWarming: {
     enabled: boolean;
     concurrency: number;
+    /**
+     * How a page is requested. "fetch" issues plain HTTP requests and warms
+     * the subresources it finds in the HTML; "browser" drives Chromium. Fetch
+     * is the default: it is what actually reaches the CDN, and a browser costs
+     * roughly two orders of magnitude more memory to add layout and script
+     * execution that no edge cache observes.
+     */
+    engine?: "fetch" | "browser";
+    /** Subresources warmed per document, in fetch mode. 0 disables. */
+    maxAssetsPerPage?: number;
+    /**
+     * Extra hosts whose assets may be warmed. The document's own host is
+     * always allowed; everything else is skipped, since warming a third
+     * party's CDN achieves nothing.
+     */
+    assetHosts?: string[];
+    /** Puppeteer only. */
     waitUntil: string;
     timeout: number;
     userAgents: {
