@@ -10,6 +10,10 @@
 require_once __DIR__ . '/bootstrap.php';
 
 // Load plugin classes.
+// The CDN warmer consults the license class in its constructor, so it has to
+// be loaded first — without it the suite fataled at the CDN Warmer section and
+// every test after it never ran.
+require_once CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-license.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/class-cachewarmer-sitemap-parser.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-warmer.php';
 require_once CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-facebook-warmer.php';
@@ -306,6 +310,83 @@ $cdn_warmer->warm(
     }
 );
 $t->assertEqual( 'CDN: callback invoked for each result', 2, count( $callback_results ) );
+
+// ──────────────────────────────────────────────
+// Unit Tests — CDN Warmer concurrency
+// ──────────────────────────────────────────────
+$t->suite( '2. Unit Tests — CDN Warmer concurrency' );
+
+// Everything above ran through the sequential wp_remote_get fallback, since
+// no Requests class exists in this stub environment. Defining one now lets the
+// concurrent path be exercised — and records how it was called.
+if ( ! class_exists( '\WpOrg\Requests\Requests' ) ) {
+    eval(
+        'namespace WpOrg\Requests;
+        class Requests {
+            public static array $calls = array();
+            public static function request_multiple( array $requests, array $options = array() ) {
+                self::$calls[] = array_map( static function ( $r ) { return $r["url"]; }, $requests );
+                $responses = array();
+                foreach ( $requests as $key => $request ) {
+                    $response = new \stdClass();
+                    $response->status_code = 200;
+                    $response->headers = array( "cf-cache-status" => "HIT" );
+                    $response->url = $request["url"];
+                    $responses[ $key ] = $response;
+                }
+                return $responses;
+            }
+        }'
+    );
+}
+
+$requests_stub = '\WpOrg\Requests\Requests';
+$requests_stub::$calls = array();
+
+update_option( 'cachewarmer_cdn_concurrency', 3 );
+$concurrent_warmer = new CacheWarmer_CDN_Warmer();
+$concurrent_results = $concurrent_warmer->warm(
+    array( 'https://example.com/a', 'https://example.com/b', 'https://example.com/c' ),
+    'test-job-concurrent'
+);
+
+// The bug: array_chunk() produced batches, then a plain foreach walked them
+// one URL at a time, so the concurrency setting changed nothing. Real
+// parallelism means one call carrying the whole batch, not three calls of one.
+$t->assertEqual( 'CDN concurrency: one batched call per pass, not per URL', 2, count( $requests_stub::$calls ) );
+$t->assertEqual( 'CDN concurrency: desktop pass carries all 3 URLs at once', 3, count( $requests_stub::$calls[0] ) );
+$t->assertEqual( 'CDN concurrency: mobile pass carries all 3 URLs at once', 3, count( $requests_stub::$calls[1] ) );
+$t->assertEqual( 'CDN concurrency: 6 results for 3 URLs (desktop+mobile)', 6, count( $concurrent_results ) );
+
+// Ordering has to survive parallelism: the desktop pass fills the cache, so
+// every desktop request must precede every mobile one.
+$t->assertEqual( 'CDN concurrency: desktop results come first', 'desktop', $concurrent_results[0]['viewport'] );
+$t->assertEqual( 'CDN concurrency: desktop pass covers the batch', 'desktop', $concurrent_results[2]['viewport'] );
+$t->assertEqual( 'CDN concurrency: mobile pass follows', 'mobile', $concurrent_results[3]['viewport'] );
+$t->assertEqual( 'CDN concurrency: cache headers captured', 'HIT', $concurrent_results[0]['cache_headers']['cfCacheStatus'] );
+
+// Concurrency splits the work into rounds rather than one giant batch.
+$requests_stub::$calls = array();
+update_option( 'cachewarmer_cdn_concurrency', 2 );
+$chunked_warmer = new CacheWarmer_CDN_Warmer();
+$chunked_warmer->warm(
+    array( 'https://example.com/a', 'https://example.com/b', 'https://example.com/c' ),
+    'test-job-chunked'
+);
+// 3 URLs at concurrency 2 gives chunks of [a,b] and [c]. The pair is batched
+// once per pass; the trailing single URL has nothing to parallelise and takes
+// the sequential path, so only 2 batched calls are made.
+$t->assertEqual( 'CDN concurrency: only multi-URL chunks are batched', 2, count( $requests_stub::$calls ) );
+$t->assertEqual( 'CDN concurrency: first chunk holds 2 URLs', 2, count( $requests_stub::$calls[0] ) );
+$t->assertEqual( 'CDN concurrency: second pass repeats the same 2 URLs', 2, count( $requests_stub::$calls[1] ) );
+
+// A single URL has nothing to parallelise, so it takes the sequential path.
+$requests_stub::$calls = array();
+$single = $chunked_warmer->warm( array( 'https://example.com/page1' ), 'test-job-single' );
+$t->assertEqual( 'CDN concurrency: single URL skips the batch path', 0, count( $requests_stub::$calls ) );
+$t->assertEqual( 'CDN concurrency: single URL still warmed twice', 2, count( $single ) );
+
+update_option( 'cachewarmer_cdn_concurrency', 3 );
 
 // ──────────────────────────────────────────────
 // Unit Tests — Facebook Warmer

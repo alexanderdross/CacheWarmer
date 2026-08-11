@@ -1,6 +1,6 @@
 # CacheWarmer auf Cloudflare Workers — Evaluation & Architektur
 
-**Stand:** 2026-08-11 · **Status:** Entscheidungsvorlage, noch nicht umgesetzt
+**Stand:** 2026-08-11 · **Status:** Architektur entschieden; Abschnitt-8-Fixes umgesetzt, Worker als erster Baustein in `cloudflare-worker/`, noch nichts gegen eine echte Zone gemessen
 
 ## Ausgangsfrage
 
@@ -37,6 +37,11 @@ Funktional deckt sich das fast vollständig mit CacheWarmer Free/Premium. Der ei
 ---
 
 ## 2. Ist-Zustand — was der Code wirklich tut
+
+> **Historisch.** Dieser Abschnitt hält den Befund vom 2026-08-11 fest, so wie
+> der Code damals vorgefunden wurde. Die Punkte 1–8 aus Abschnitt 8 sind
+> inzwischen behoben; die Beschreibung bleibt als Begründung der
+> Architekturentscheidung stehen.
 
 Verifiziert durch Lesen von `nodejs-docker/src/`, nicht aus der Doku übernommen:
 
@@ -350,17 +355,17 @@ Reihenfolge ist wichtig — Schritt 1 entscheidet, ob der Rest sinnvoll ist.
 
 ## 8. Vorher: Fixes am Ist-Zustand
 
-Diese Defekte bestehen unabhängig von der Workers-Entscheidung, sind billig zu beheben und wirken in **allen drei Editionen** — auch für Projekte, die nie auf Cloudflare laufen:
+Diese Defekte bestehen unabhängig von der Workers-Entscheidung und wirken in **allen drei Editionen** — auch für Projekte, die nie auf Cloudflare laufen. Stand 2026-08-11 sind 8 von 9 erledigt:
 
-1. `cdn-purge` **vor** dem CDN-Warming ausführen (`nodejs-docker/src/lib/queue/job-manager.ts:191` vs. `:279`). Aktuell zerstört der Purge den gerade aufgebauten Cache.
-2. Priority-Sortierung reparieren — `sitemapUrls` sortieren, *bevor* `urls` daraus abgeleitet wird (`:148` / `:163`).
-3. **WordPress-Concurrency echt machen** — `class-cachewarmer-cdn-warmer.php:88` chunked, iteriert aber sequentiell. Ohne `Requests::request_multiple()` o. ä. ist die Einstellung wirkungslos.
-4. Akamai-EdgeGrid-Timestamp auf `yyyyMMddTHH:mm:ss+0000` korrigieren.
-5. Akamais `estimatedSeconds` auswerten statt nur zu loggen (`cdn-purge-warm.ts:301`) — vor dem Re-Warming so lange warten.
-6. Cloudflare-Purge-Batch von 30 auf 100 anheben.
-7. `bullmq` und `ioredis` aus `package.json` entfernen, Redis aus `docker-compose.yml` — oder tatsächlich verwenden. Aktuell nur irreführender Ballast.
-8. Warm-then-Verify einführen und das Badge korrigieren: MISS auf dem Füll-Request ist der Erfolg, nicht der Fehler.
-9. Doppelten Fetch in `schema-validator.ts` abschaffen — das bereits geladene HTML weiterreichen statt jede Seite ein zweites Mal zu holen.
+1. ~~`cdn-purge` vor dem CDN-Warming ausführen~~ — **erledigt**
+2. ~~Priority-Sortierung reparieren~~ — **erledigt**
+3. ~~WordPress-Concurrency echt machen~~ — **erledigt** (parallel via `Requests::request_multiple()`, sequentieller Fallback erhalten)
+4. ~~Akamai-EdgeGrid-Timestamp korrigieren~~ — **erledigt**
+5. ~~Akamais `estimatedSeconds` auswerten~~ — **erledigt** (auf 60 s gedeckelt)
+6. ~~Cloudflare-Purge-Batch von 30 auf 100 anheben~~ — **erledigt**
+7. ~~`bullmq`/`ioredis` und den Redis-Container entfernen~~ — **erledigt**
+8. ~~Warm-then-Verify einführen und das Badge korrigieren~~ — **erledigt** (der bereits vorhandene Mobile-Pass dient als Probe, keine Zusatzrequests)
+9. **Offen:** doppelten Fetch in `schema-validator.ts` abschaffen — das bereits geladene HTML weiterreichen. Keine Ein-Zeilen-Korrektur: `structured-data-testing-tool` lädt die Seite selbst, das HTML müsste aus der Puppeteer-Navigation durchgereicht und die Phasenfolge umgebaut werden.
 
 ---
 
