@@ -148,7 +148,7 @@ Damit wird aus "200 URLs angefragt" ein "187 von 200 nachweislich im Edge-Cache,
 | Job-Durability | Keine (Restart = hängende Jobs) | Queues/Workflows mit Retry |
 | Betrieb | VPS, Docker, Chromium-Updates | Kein Server |
 | Schema-Validierung | `structured-data-testing-tool` (Node-only) | **Muss neu geschrieben werden** (HTMLRewriter + JSON-LD-Parser) |
-| Free-Tier-Tauglichkeit | Uneingeschränkt | Nur 50 externe Subrequests/Invocation → Paid ($5/Mon.) faktisch Pflicht |
+| Free-Tier-Tauglichkeit | Uneingeschränkt | Tragfähig — 50 Subrequests und 10 ms CPU je Invocation erzwingen kleine Chunks (siehe unten) |
 
 ### Kosten
 
@@ -158,7 +158,30 @@ Damit wird aus "200 URLs angefragt" ein "187 von 200 nachweislich im Edge-Cache,
 | 10.000 URLs/Mon. | $0 | $0 (Beta) | ~$0,75 | €5–20/Mon. |
 | 100.000 URLs/Mon. | $0 | $0 (Beta) | ~$7,50 | €10–40/Mon. |
 
-**Achtung, Sockel × 3:** Workers Paid ist accountgebunden, drei Deploys heißen also **$15/Monat Grundkosten**, nicht $5. Die Verbrauchsspalten oben bleiben davon unberührt — sie verteilen sich nur auf drei Rechnungen, und die Browser-Run-Freikontingente verdreifachen sich mit.
+### Free reicht zum Start — Paid ist keine Voraussetzung
+
+| | Workers Free | Workers Paid |
+|---|---|---|
+| Requests | 100.000/Tag | unbegrenzt |
+| **CPU-Zeit je Invocation** | **10 ms** | 5 min |
+| **Subrequests je Invocation** | **50** (harte Obergrenze, nicht anhebbar) | 10.000, bis 10 Mio. |
+| Gleichzeitige ausgehende Verbindungen | 6 | **6 — identisch** |
+| Cron Triggers je Account | 5 | 250 |
+| Durable Objects | **ja**, SQLite-backed | ja |
+| Browser Run | 10 Min/Tag, 3 gleichzeitig | 10 Std./Mon., 120 gleichzeitig |
+
+Zwei Punkte wiegen schwerer als der Preis:
+
+- **Durable Objects gibt es auf Free** (SQLite-backed, seit April 2025). Der regionale Fan-out — der einzige Teil, den Workers exklusiv beitragen — kostet also nichts.
+- **Die 6 gleichzeitigen Verbindungen sind auf beiden Plänen gleich.** Paid kauft keine höhere echte Parallelität je Invocation, nur mehr Subrequests nacheinander. Das Durchsatzargument für Paid ist damit weitgehend entwertet.
+
+Rechnung: 50 Subrequests je Invocation, Warm + Verify sind zwei je URL → **25 URLs pro Invocation**. Das Limit gilt *pro Invocation*, nicht global, und ein DO-Alarm ist eine eigene Invocation mit eigenem Budget. 500 URLs sind also 20 Alarm-Zyklen — bei 100.000 Requests/Tag unkritisch. Diese Zerstückelung will man ohnehin, weil sie den Lauf resilient macht; Free erzwingt nur, was gutes Design nahelegt.
+
+Der tatsächliche Engpass ist die **CPU-Zeit von 10 ms**, nicht die Subrequests. Fetch plus Header lesen und klassifizieren kostet Bruchteile einer Millisekunde; HTMLRewriter-Assetextraktion über mehrere Seiten in derselben Invocation wird knapp. Das ist die Grenze, an die man zuerst stößt.
+
+**Empfehlung: alle drei Accounts auf Free starten**, Grundkosten $0 statt $15/Monat. Auf Paid wechseln, wenn ein Account konkret klemmt — ein Plan-Upgrade, keine Architekturänderung, weil die 25er-Chunks bleiben.
+
+> **Offene Unschärfe:** Die Doku sagt an einer Stelle „maximum number of subrequests **per Workflow instance**", an anderer „per **invocation**". Ob ein Workflow-*Step* ein frisches Budget erhält, ist daraus nicht eindeutig — auf Free (50) entscheidet das über brauchbar oder unbrauchbar. **DO-Alarme haben das Problem nicht**, jeder Alarm ist sicher eine eigene Invocation. Solange das nicht gemessen ist, ist die DO-Alarm-Kette der sichere Weg und Workflows die Optimierung danach.
 
 Basis: $0,09/Browser-Stunde, ~3 s je Seite. Der Duration-Anteil ist marginal — der Kostentreiber bei Browser Run ist die **Concurrency** ($2,00 je Browser über die 10 inklusive; 30 parallel = +$40/Mon.). Bei drei Accounts stehen 30 gleichzeitige Browser ohne Aufpreis zur Verfügung, sofern die Läufe je Account getrennt bleiben. Anders gesagt: mit den 10 inklusive Browsern dauern 10.000 Seiten ~50 Minuten, was für einen Nachtlauf reicht und nichts extra kostet — man muss den Lauf nur über Workflows stückeln, weil ein Cron-Trigger nach 15 Minuten endet.
 
@@ -209,7 +232,7 @@ wrangler deploy --profile trade-aero
 
 Was bei drei Accounts zu beachten ist:
 
-- **Workers Paid gilt pro Account** — 3 × $5 = **$15/Monat** gesamt.
+- **Plan gilt pro Account.** Start auf Free: **$0**. Falls später nötig, kostet Paid 3 × $5 = $15/Monat — und lässt sich je Account einzeln entscheiden.
 - **Browser-Run-Kontingente sind pro Account** (10 gleichzeitige Browser, 10 Std./Monat inklusive). Drei getrennte Töpfe heißt dreifache Parallelität ohne Aufpreis — hier ist die Trennung ein Vorteil.
 - **Purge-Ratenlimits sind pro Account**, ebenfalls ein Vorteil: kein gemeinsamer Bucket, keine Konkurrenz zwischen den Projekten.
 - **D1 lebt in einem Account** — zentral im Hub, nicht je Satellit, sonst zerfällt das Reporting in drei Silos.
