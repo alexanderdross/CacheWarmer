@@ -202,8 +202,11 @@ class CacheWarmerJobManager {
           continue;
         }
 
-        $targetOnResult = function (string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error) use ($jobId, $target, &$processedCount) {
-          $this->database->insertUrlResult($jobId, $url, $target, $status, $httpStatus, $durationMs, $error);
+        // The CDN warmer supplies a viewport and cache headers; the other
+        // targets do not. Both were previously absent from this signature, so
+        // PHP discarded them and the cache headers never reached the database.
+        $targetOnResult = function (string $url, string $status, ?int $httpStatus, int $durationMs, ?string $error, ?string $viewport = NULL, ?array $cacheHeaders = NULL) use ($jobId, $target, &$processedCount) {
+          $this->database->insertUrlResult($jobId, $url, $target, $status, $httpStatus, $durationMs, $error, $viewport, $cacheHeaders);
           $processedCount++;
           $this->database->updateJob($jobId, [
             'processed_urls' => $processedCount,

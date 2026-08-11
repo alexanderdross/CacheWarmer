@@ -369,6 +369,43 @@ Diese Defekte bestehen unabhängig von der Workers-Entscheidung und wirken in **
 
 ---
 
+## 8b. Nachtrag: Befunde aus dem Editionsabgleich
+
+Beim Angleichen von Drupal und WordPress kamen weitere Defekte zutage, die in
+Abschnitt 8 nicht standen, weil sie nur das Node-Modul betrachtet hatte:
+
+- **Akamai EdgeGrid war in beiden PHP- und JS-Implementierungen falsch — aber
+  unterschiedlich falsch.** Node verstümmelte den Timestamp (behoben);
+  WordPress dekodierte den Signing-Key vor dem zweiten HMAC
+  (`base64_decode( $signing_key )`, ebenfalls behoben). Die beiden erzeugten
+  nachweislich verschiedene Signaturen, konnten also nicht beide stimmen. Die
+  Referenzclients von Akamai (`edgegrid-python`, `akamai-edgegrid`) reichen den
+  **Base64-String** in den HMAC, nicht seine dekodierten Bytes — Nodes Variante
+  war insofern richtig. **Gegen ein echtes Akamai-Konto ungetestet.**
+- **Cloudflare-Purge-Batch 30 statt 100** bestand identisch im WordPress-Plugin
+  (behoben).
+- **Drupal verwarf die Cache-Header vollständig.** Der `CdnWarmer` sammelte
+  sie, der Callback im Job-Manager nahm aber nur fünf Parameter und die Tabelle
+  hatte gar keine Spalte dafür. Behoben inkl. `hook_update_N`.
+- **Drupal las `cdn.concurrency` nie.** Die Einstellung stand in der Config,
+  die Requests liefen in einer verschachtelten `foreach`. Jetzt Guzzle-Pool.
+- **Drupals Priority-Sortierung war als einzige von Anfang an korrekt.**
+
+### Offen: CDN-Purge fehlt in Drupal komplett
+
+`Drupal.md` und `CLAUDE.md` führen einen Service `cachewarmer.cdn_purge_warmer`
+mit Cloudflare, Imperva und Akamai. **Er existiert nicht** — keine Klasse, kein
+Eintrag in `cachewarmer.services.yml`, kein Target, kein Feld im
+Einstellungsformular, nichts in der Config. Das ist keine Fehlfunktion, sondern
+ein nie gebautes Feature, das die Doku als vorhanden beschreibt.
+
+Portierung wäre machbar (das WordPress-Plugin liefert die PHP-Vorlage), umfasst
+aber Service, Config-Schema, neun Formularfelder, Target-Registrierung und
+Tests. Solange keine Zugangsdaten zum Testen vorliegen, wäre es eine dritte
+ungetestete Implementierung derselben heiklen HMAC-Signatur — genau der Grund,
+warum die beiden bestehenden je einen unbemerkten Fehler trugen. Entweder
+bauen und gegen echte Konten verifizieren, oder die Doku ehrlich machen.
+
 ## 9. Empfehlung in Reihenfolge
 
 1. **Abschnitt 8 abarbeiten.** Höchster Nutzen pro Aufwand, keine Cloudflare-Abhängigkeit, wirkt auf alle Editionen.

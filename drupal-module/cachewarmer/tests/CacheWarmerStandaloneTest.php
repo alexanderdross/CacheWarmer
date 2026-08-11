@@ -804,6 +804,99 @@ $t->assertContains('Hook: theme cachewarmer_sitemaps', $module, "'cachewarmer_si
 $t->assertContains('Hook: template reference', $module, "'template' => 'cachewarmer-dashboard'");
 
 // ============================================================================
+// 11. Unit Tests — CDN Warmer concurrency & verdicts
+// ============================================================================
+
+$t->suite('11. Unit Tests — CDN Warmer concurrency & verdicts');
+
+// Concurrency: the setting existed in config but the warmer never read it, and
+// the requests ran in a plain nested foreach.
+$t->assertContains('CDN: reads the concurrency setting', $cdn, "cdn.concurrency");
+$t->assertContains('CDN: uses a Guzzle pool', $cdn, 'new Pool(');
+$t->assertContains('CDN: passes concurrency to the pool', $cdn, "'concurrency' => \$concurrency");
+$t->assert('CDN: no nested per-URL request loop remains', !str_contains($cdn, "foreach (\$urls as \$url) {\n      foreach (\$viewports"));
+
+// Cache headers used to be collected and then dropped, because neither the job
+// manager callback nor the database column existed to receive them.
+$t->assertContains('DB: url results accept a viewport', $db, 'string $viewport = NULL');
+$t->assertContains('DB: url results accept cache headers', $db, 'array $cacheHeaders = NULL');
+$t->assertContains('DB: cache headers stored as JSON', $db, 'json_encode($cacheHeaders)');
+$t->assertContains('Job manager: callback forwards cache headers', $jm, '$viewport, $cacheHeaders');
+$t->assertContains('Install: cache_headers column exists', $install, "'cache_headers'");
+$t->assertContains('Install: update hook adds the columns', $install, 'function cachewarmer_update_10001');
+
+// Behavioural checks on the verdict classifier. The class is namespaced and
+// its dependencies are only referenced by typed properties, so it loads
+// without Drupal or Guzzle present as long as it is not instantiated.
+require_once "{$moduleDir}/src/Service/CdnWarmer.php";
+$warmerClass = 'Drupal\\cachewarmer\\Service\\CdnWarmer';
+
+$verdict = fn(array $fill, array $probe, ?string $vary = NULL) =>
+  $warmerClass::classifyVerdict($fill, $probe, $vary)['verdict'];
+
+$t->assertEqual(
+  'Verdict: miss then hit is "warmed"',
+  'warmed',
+  $verdict(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'HIT'])
+);
+$t->assertEqual(
+  'Verdict: hit then hit is "already_warm"',
+  'already_warm',
+  $verdict(['cfCacheStatus' => 'HIT'], ['cfCacheStatus' => 'HIT'])
+);
+$t->assertEqual(
+  'Verdict: expired then hit counts as warmed',
+  'warmed',
+  $verdict(['cfCacheStatus' => 'EXPIRED'], ['cfCacheStatus' => 'HIT'])
+);
+$t->assertEqual(
+  'Verdict: miss twice is "not_cacheable"',
+  'not_cacheable',
+  $verdict(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'MISS'])
+);
+$t->assertEqual(
+  'Verdict: BYPASS is reported as bypassed',
+  'bypassed',
+  $verdict(['cfCacheStatus' => 'BYPASS'], ['cfCacheStatus' => 'MISS'])
+);
+$t->assertEqual(
+  'Verdict: DYNAMIC means the zone does not cache it',
+  'zone_not_caching',
+  $verdict(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'DYNAMIC'])
+);
+$t->assertEqual(
+  'Verdict: Vary on User-Agent makes the pair meaningless',
+  'indeterminate',
+  $verdict(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'HIT'], 'Accept-Encoding, User-Agent')
+);
+$t->assertEqual(
+  'Verdict: a harmless Vary still allows a judgement',
+  'warmed',
+  $verdict(['cfCacheStatus' => 'MISS'], ['cfCacheStatus' => 'HIT'], 'Accept-Encoding')
+);
+$t->assertEqual(
+  'Verdict: Akamai TCP_ headers are understood',
+  'warmed',
+  $verdict(['xCache' => 'TCP_MISS'], ['xCache' => 'TCP_HIT'])
+);
+$t->assertEqual(
+  'Verdict: a non-zero Age implies a hit',
+  'warmed',
+  $verdict(['age' => '0'], ['age' => '42'])
+);
+$t->assertEqual(
+  'Verdict: no cache headers yields "unknown"',
+  'unknown',
+  $verdict([], [])
+);
+
+$noStore = $warmerClass::classifyVerdict(
+  ['cfCacheStatus' => 'MISS'],
+  ['cfCacheStatus' => 'MISS', 'cacheControl' => 'no-store, max-age=0']
+);
+$t->assertEqual('Verdict: names Cache-Control as the reason', 'Cache-Control: no-store', $noStore['reason']);
+
+// ============================================================================
 // Done
 // ============================================================================
 

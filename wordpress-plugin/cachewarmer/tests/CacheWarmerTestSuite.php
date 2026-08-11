@@ -389,6 +389,37 @@ $t->assertEqual( 'CDN concurrency: single URL still warmed twice', 2, count( $si
 update_option( 'cachewarmer_cdn_concurrency', 3 );
 
 // ──────────────────────────────────────────────
+// Unit Tests — CDN Purge (Akamai EdgeGrid, Cloudflare batching)
+// ──────────────────────────────────────────────
+$t->suite( '2. Unit Tests — CDN Purge' );
+
+$purge_src = file_get_contents( CACHEWARMER_PLUGIN_DIR . 'includes/services/class-cachewarmer-cdn-purge-warmer.php' );
+
+// Akamai's reference clients feed the base64 signing key straight into the
+// second HMAC. Decoding it first yields a valid-looking but wrong signature,
+// which the API rejects with a 401 and no useful detail.
+$t->assert(
+    'Akamai: signing key is not base64-decoded before signing',
+    ! str_contains( $purge_src, 'base64_decode( $signing_key )' )
+);
+$t->assertContains(
+    'Akamai: signature keyed on the base64 string',
+    $purge_src,
+    "hash_hmac( 'sha256', \$data_to_sign, \$signing_key, true )"
+);
+
+// The timestamp keeps the colons in the time portion — this implementation
+// always had it right, unlike the Node one.
+$t->assertContains( 'Akamai: timestamp format yyyyMMddTHH:mm:ss+0000', $purge_src, "gmdate( 'Ymd\\TH:i:s+0000' )" );
+$t->assert(
+    'Akamai: timestamp really contains colons',
+    (bool) preg_match( '/^\d{8}T\d{2}:\d{2}:\d{2}\+0000$/', gmdate( 'Ymd\TH:i:s+0000' ) )
+);
+
+$t->assertContains( 'Cloudflare: purge batches at 100 per request', $purge_src, '$batch_size = 100;' );
+$t->assert( 'Cloudflare: no longer batches at 30', ! str_contains( $purge_src, '$batch_size = 30;' ) );
+
+// ──────────────────────────────────────────────
 // Unit Tests — Facebook Warmer
 // ──────────────────────────────────────────────
 $t->suite( '2. Unit Tests — Facebook Warmer' );

@@ -185,6 +185,18 @@ function cachewarmer_schema() {
         'not null' => FALSE,
         'description' => 'Error message if failed.',
       ],
+      'viewport' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+        'description' => 'Which pass produced this result: desktop, mobile or a custom viewport.',
+      ],
+      'cache_headers' => [
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+        'description' => 'JSON blob of CDN cache headers plus the warm verdict.',
+      ],
       'created_at' => [
         'type' => 'varchar',
         'length' => 20,
@@ -201,6 +213,37 @@ function cachewarmer_schema() {
   ];
 
   return $schema;
+}
+
+/**
+ * Add viewport and cache_headers to URL results.
+ *
+ * The CDN warmer collected cache headers and the job manager dropped them,
+ * because there was nowhere to put them. Without these columns a warm cannot
+ * be shown to have worked.
+ */
+function cachewarmer_update_10001(): string {
+  $schema = \Drupal::database()->schema();
+
+  if (!$schema->fieldExists('cachewarmer_url_results', 'viewport')) {
+    $schema->addField('cachewarmer_url_results', 'viewport', [
+      'type' => 'varchar',
+      'length' => 50,
+      'not null' => FALSE,
+      'description' => 'Which pass produced this result: desktop, mobile or a custom viewport.',
+    ]);
+  }
+
+  if (!$schema->fieldExists('cachewarmer_url_results', 'cache_headers')) {
+    $schema->addField('cachewarmer_url_results', 'cache_headers', [
+      'type' => 'text',
+      'size' => 'normal',
+      'not null' => FALSE,
+      'description' => 'JSON blob of CDN cache headers plus the warm verdict.',
+    ]);
+  }
+
+  return 'Added viewport and cache_headers columns to cachewarmer_url_results.';
 }
 
 /**

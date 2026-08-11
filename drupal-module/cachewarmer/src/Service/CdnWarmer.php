@@ -4,9 +4,15 @@ namespace Drupal\cachewarmer\Service;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Warms CDN edge caches by requesting URLs with desktop and mobile user agents.
+ *
+ * Requests within a pass run concurrently, and the desktop pass doubles as the
+ * fill while the mobile pass acts as the probe that proves the fill landed.
  */
 class CdnWarmer {
 
@@ -81,44 +87,198 @@ class CdnWarmer {
       $authCookies = $config->get('cdn.auth_cookies') ?: '';
     }
 
-    foreach ($urls as $url) {
-      foreach ($viewports as $vp) {
-        $start = microtime(TRUE);
-        try {
-          $headers = array_merge(['User-Agent' => $vp['ua']], $customHeaders);
-          if (!empty($authCookies)) {
-            $headers['Cookie'] = $authCookies;
-          }
+    $concurrency = max(1, (int) ($config->get('cdn.concurrency') ?: 3));
 
-          $response = $this->httpClient->request('GET', $url, [
-            'timeout' => $timeout,
-            'headers' => $headers,
-            'http_errors' => FALSE,
-          ]);
+    // One round per pass, URLs inside a round running together. Parallelising
+    // across passes instead would race the fill against the probe.
+    foreach (array_chunk($urls, $concurrency) as $batch) {
+      $fills = [];
 
-          $statusCode = $response->getStatusCode();
-          $durationMs = (int) ((microtime(TRUE) - $start) * 1000);
-          $status = $statusCode < 400 ? 'success' : 'failed';
-
-          $cacheHeaders = array_filter([
-            'xCache' => $response->getHeaderLine('x-cache') ?: NULL,
-            'cfCacheStatus' => $response->getHeaderLine('cf-cache-status') ?: NULL,
-            'age' => $response->getHeaderLine('age') ?: NULL,
-            'cacheControl' => $response->getHeaderLine('cache-control') ?: NULL,
-          ]);
-
-          if ($onResult) {
-            $onResult($url, $status, $statusCode, $durationMs, $status === 'failed' ? "HTTP {$statusCode}" : NULL, $vp['viewport'], !empty($cacheHeaders) ? $cacheHeaders : NULL);
-          }
+      foreach ($viewports as $index => $vp) {
+        $headers = array_merge(['User-Agent' => $vp['ua']], $customHeaders);
+        if (!empty($authCookies)) {
+          $headers['Cookie'] = $authCookies;
         }
-        catch (\Exception $e) {
-          $durationMs = (int) ((microtime(TRUE) - $start) * 1000);
+
+        $observations = $this->requestBatch($batch, $headers, $timeout, $concurrency);
+
+        foreach ($batch as $url) {
+          $observation = $observations[$url];
+
+          // The first pass fills the cache; every later pass can be compared
+          // against it to see whether the fill actually landed.
+          if ($index === 0) {
+            $fills[$url] = $observation['cacheHeaders'];
+          }
+          elseif (!empty($observation['cacheHeaders'])) {
+            $verdict = self::classifyVerdict(
+              $fills[$url] ?? [],
+              $observation['cacheHeaders'],
+              $observation['cacheHeaders']['vary'] ?? NULL
+            );
+            $observation['cacheHeaders']['verdict'] = $verdict['verdict'];
+            if (isset($verdict['reason'])) {
+              $observation['cacheHeaders']['verdictReason'] = $verdict['reason'];
+            }
+          }
+
           if ($onResult) {
-            $onResult($url, 'failed', NULL, $durationMs, $e->getMessage(), $vp['viewport'], NULL);
+            $onResult(
+              $url,
+              $observation['status'],
+              $observation['httpStatus'],
+              $observation['durationMs'],
+              $observation['error'],
+              $vp['viewport'],
+              !empty($observation['cacheHeaders']) ? $observation['cacheHeaders'] : NULL
+            );
           }
         }
       }
     }
+  }
+
+  /**
+   * Issue one request per URL concurrently and collect the observations.
+   *
+   * @return array
+   *   Keyed by URL: status, httpStatus, durationMs, error, cacheHeaders.
+   */
+  protected function requestBatch(array $urls, array $headers, int $timeout, int $concurrency): array {
+    $start = microtime(TRUE);
+    $results = [];
+
+    $requests = function () use ($urls, $headers) {
+      foreach ($urls as $url) {
+        yield $url => new Request('GET', $url, $headers);
+      }
+    };
+
+    $pool = new Pool($this->httpClient, $requests(), [
+      'concurrency' => $concurrency,
+      'options' => [
+        'timeout' => $timeout,
+        'http_errors' => FALSE,
+      ],
+      'fulfilled' => function (ResponseInterface $response, string $url) use (&$results, $start) {
+        $statusCode = $response->getStatusCode();
+        $results[$url] = [
+          'status' => $statusCode < 400 ? 'success' : 'failed',
+          'httpStatus' => $statusCode,
+          'durationMs' => (int) ((microtime(TRUE) - $start) * 1000),
+          'error' => $statusCode >= 400 ? "HTTP {$statusCode}" : NULL,
+          'cacheHeaders' => array_filter([
+            'xCache' => $response->getHeaderLine('x-cache') ?: NULL,
+            'cfCacheStatus' => $response->getHeaderLine('cf-cache-status') ?: NULL,
+            'age' => $response->getHeaderLine('age') ?: NULL,
+            'cacheControl' => $response->getHeaderLine('cache-control') ?: NULL,
+            'vary' => $response->getHeaderLine('vary') ?: NULL,
+          ]),
+        ];
+      },
+      'rejected' => function ($reason, string $url) use (&$results, $start) {
+        $results[$url] = [
+          'status' => 'failed',
+          'httpStatus' => NULL,
+          'durationMs' => (int) ((microtime(TRUE) - $start) * 1000),
+          'error' => $reason instanceof \Throwable ? $reason->getMessage() : (string) $reason,
+          'cacheHeaders' => [],
+        ];
+      },
+    ]);
+
+    $pool->promise()->wait();
+
+    // A URL the pool never reported on must still produce a row, or the job's
+    // progress count silently drifts from the URL count.
+    foreach ($urls as $url) {
+      if (!isset($results[$url])) {
+        $results[$url] = [
+          'status' => 'failed',
+          'httpStatus' => NULL,
+          'durationMs' => (int) ((microtime(TRUE) - $start) * 1000),
+          'error' => 'No response recorded for this URL',
+          'cacheHeaders' => [],
+        ];
+      }
+    }
+
+    return $results;
+  }
+
+  /**
+   * Reduce a CDN cache header to a coarse state.
+   */
+  protected static function cacheState(array $headers): string {
+    $raw = strtoupper($headers['cfCacheStatus'] ?? $headers['xCache'] ?? '');
+    if ($raw === '') {
+      return (int) ($headers['age'] ?? 0) > 0 ? 'hit' : 'unknown';
+    }
+    if (str_contains($raw, 'BYPASS')) {
+      return 'bypass';
+    }
+    if (str_contains($raw, 'DYNAMIC')) {
+      return 'dynamic';
+    }
+    if (str_contains($raw, 'HIT')) {
+      return 'hit';
+    }
+    if (str_contains($raw, 'MISS') || str_contains($raw, 'EXPIRED')) {
+      return 'miss';
+    }
+    return 'unknown';
+  }
+
+  /**
+   * Judge a fill/probe pair.
+   *
+   * For a warmer a MISS on the fill is the success signal — it means the
+   * request populated the cache. A HIT there means the cache was already warm
+   * and the run changed nothing.
+   *
+   * @return array
+   *   'verdict' and optionally 'reason'.
+   */
+  public static function classifyVerdict(array $fill, array $probe, ?string $probeVary = NULL): array {
+    // The passes send different user agents. If the origin varies on that
+    // header they address separate cache entries, so the pair proves nothing.
+    if (!empty($probeVary) && stripos($probeVary, 'user-agent') !== FALSE) {
+      return [
+        'verdict' => 'indeterminate',
+        'reason' => 'Origin sends Vary: User-Agent, so the two passes are separate cache entries',
+      ];
+    }
+
+    $fillState = self::cacheState($fill);
+    $probeState = self::cacheState($probe);
+
+    if ($fillState === 'bypass' || $probeState === 'bypass') {
+      return [
+        'verdict' => 'bypassed',
+        'reason' => $probe['cacheControl'] ?? 'Cache bypassed',
+      ];
+    }
+    if ($probeState === 'dynamic') {
+      return [
+        'verdict' => 'zone_not_caching',
+        'reason' => 'CDN reports the response as DYNAMIC',
+      ];
+    }
+    if ($probeState === 'hit') {
+      return ['verdict' => $fillState === 'hit' ? 'already_warm' : 'warmed'];
+    }
+    if ($probeState === 'miss') {
+      $cacheControl = strtolower($probe['cacheControl'] ?? '');
+      if (str_contains($cacheControl, 'no-store')) {
+        return ['verdict' => 'not_cacheable', 'reason' => 'Cache-Control: no-store'];
+      }
+      if (str_contains($cacheControl, 'private')) {
+        return ['verdict' => 'not_cacheable', 'reason' => 'Cache-Control: private'];
+      }
+      return ['verdict' => 'not_cacheable', 'reason' => 'Still a miss after the fill request'];
+    }
+
+    return ['verdict' => 'unknown'];
   }
 
 }
