@@ -18,8 +18,6 @@ import pathlib
 import re
 import sys
 
-import yaml
-
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
@@ -35,13 +33,36 @@ def required_major(engines: str) -> int:
     return int(match.group(1))
 
 
+def top_level_working_directory(text: str) -> str | None:
+    """Read `defaults.run.working-directory` without a YAML parser.
+
+    PyYAML is not installed on the self-hosted runner, and installing it would
+    be one more bet on the runner's environment — the exact class of surprise
+    this check exists to catch. So the top-level `defaults:` block is read by
+    hand: from its column-0 key to the next column-0 key. A per-step
+    `working-directory:` sits deeper inside a job and must not match, which is
+    why the scan is bounded to that block.
+    """
+    in_defaults = False
+    for line in text.splitlines():
+        if re.match(r"^defaults:\s*(#.*)?$", line):
+            in_defaults = True
+            continue
+        if in_defaults:
+            if re.match(r"^\S", line):  # next top-level key ends the block
+                break
+            match = re.match(r"\s+working-directory:\s*(\S+)", line)
+            if match:
+                return match.group(1).strip().strip("\"'")
+    return None
+
+
 def main() -> int:
     problems: list[str] = []
     checked = 0
 
     for path in sorted(WORKFLOWS.glob("*.yml")):
-        doc = yaml.safe_load(path.read_text()) or {}
-        workdir = (doc.get("defaults") or {}).get("run", {}).get("working-directory")
+        workdir = top_level_working_directory(path.read_text())
         if not workdir:
             print(f"skip  {path.name}: no top-level working-directory")
             continue
