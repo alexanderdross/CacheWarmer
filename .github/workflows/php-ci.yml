@@ -90,3 +90,47 @@ jobs:
       - name: Validate composer.json
         working-directory: cachewarmer-license-manager
         run: composer validate --no-check-lock --no-check-publish
+
+  # The suites below exist but nothing ran them: this workflow only ever did
+  # `php -l` and `composer validate`, so 758 assertions sat unexecuted. Both
+  # already exit non-zero on failure, so wiring them up is all that was needed.
+  drupal-tests:
+    name: Drupal test suite
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Repair sudo for root
+        # Same reason as above: without this, setup-php hangs instead of failing.
+        run: |
+          if [ "$(id -u)" = "0" ] && ! sudo -n true 2>/dev/null; then
+            echo 'root ALL=(ALL:ALL) ALL' >> /etc/sudoers
+          fi
+          sudo -n true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+      - name: Run the standalone suite
+        working-directory: drupal-module/cachewarmer
+        run: php tests/CacheWarmerStandaloneTest.php
+
+  wordpress-tests:
+    name: WordPress test suite
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Repair sudo for root
+        run: |
+          if [ "$(id -u)" = "0" ] && ! sudo -n true 2>/dev/null; then
+            echo 'root ALL=(ALL:ALL) ALL' >> /etc/sudoers
+          fi
+          sudo -n true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          coverage: none
+      - name: Run the test suite
+        working-directory: wordpress-plugin/cachewarmer
+        run: php tests/CacheWarmerTestSuite.php
