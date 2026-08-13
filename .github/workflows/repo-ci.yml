@@ -48,3 +48,27 @@ jobs:
       # read is declared and every service reference resolves.
       - name: Config keys declared, service references resolve
         run: python3 .github/scripts/check-drupal-consistency.py
+
+  actionlint:
+    name: Lint workflows
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # A pinned release binary rather than the rhysd/actionlint action, go run,
+      # or docker: no go toolchain, no third-party action, no container — only
+      # curl and a GitHub-release download, both of which the runner already
+      # does (it fetches Node tarballs from github releases). v1.7.7's verdicts
+      # were verified locally: clean on all five workflows, and it fails on a
+      # broken one.
+      - name: actionlint
+        run: |
+          set -euo pipefail
+          VER=1.7.7
+          curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${VER}/actionlint_${VER}_linux_amd64.tar.gz" -o /tmp/actionlint.tgz
+          tar -xzf /tmp/actionlint.tgz -C /tmp actionlint
+          # shellcheck/pyflakes off on purpose: actionlint silently skips them
+          # when absent, so leaving them on would make the result depend on
+          # whatever the runner happens to have. No path arg — actionlint
+          # discovers .github/workflows itself.
+          /tmp/actionlint -shellcheck= -pyflakes=
