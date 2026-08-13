@@ -61,6 +61,7 @@ license_key: ''
 license_tier: 'free'
 license_activated_at: 0
 license_expires_at: 0
+license_dashboard_url: ''
 auto_warm_on_publish: false
 auto_warm_targets:
   - cdn

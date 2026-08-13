@@ -204,6 +204,9 @@ cachewarmer.settings:
     license_expires_at:
       type: integer
       label: 'License expiry timestamp (0 = never)'
+    license_dashboard_url:
+      type: string
+      label: 'License dashboard URL (empty = product default)'
     auto_warm_on_publish:
       type: boolean
       label: 'Auto-warm on content publish'
