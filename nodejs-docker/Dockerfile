@@ -28,7 +28,9 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
+# next.config gates standalone output on this env; without it `pnpm build`
+# produces no .next/standalone and the COPY in the runner stage fails.
+RUN STANDALONE=true pnpm build
 
 # Production
 FROM base AS runner

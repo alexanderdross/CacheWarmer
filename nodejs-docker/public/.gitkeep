@@ -1,0 +1,2 @@
+# Next.js standalone serves static assets from here; the Docker build copies
+# this directory, so it must exist even when empty.
