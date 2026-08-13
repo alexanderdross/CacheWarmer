@@ -11,11 +11,13 @@ on:
     paths:
       - ".github/**"
       - "**/package.json"
+      - "drupal-module/**"
   push:
     branches: [main]
     paths:
       - ".github/**"
       - "**/package.json"
+      - "drupal-module/**"
 
 concurrency:
   group: repo-ci-${{ github.workflow }}-${{ github.ref }}
@@ -33,3 +35,16 @@ jobs:
       # warning, so it reaches CI and dies there instead of failing the install.
       - name: Every node-version satisfies its package's engines
         run: python3 .github/scripts/check-node-versions.py
+
+  drupal-consistency:
+    name: Drupal config & service references
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # The Drupal module has repeatedly read config keys and injected services
+      # that existed nowhere — five dead Enterprise settings, an undefined
+      # logger channel, an inert pinterest target. This asserts every settings
+      # read is declared and every service reference resolves.
+      - name: Config keys declared, service references resolve
+        run: python3 .github/scripts/check-drupal-consistency.py
