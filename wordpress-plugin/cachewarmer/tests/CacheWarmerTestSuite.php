@@ -79,19 +79,33 @@ class TestRunner {
         );
     }
 
-    public function summary(): int {
+    /**
+     * @param int $minimum Assertions this suite must have run.
+     *
+     * This suite once died partway through — CacheWarmer_License was never
+     * loaded — and 208 assertions silently never ran while everything before
+     * the fatal still reported a pass. A floor turns that into a failure.
+     * Pass zero to disable it.
+     */
+    public function summary( int $minimum = 0 ): int {
+        $short = $minimum > 0 && $this->total < $minimum;
+
         echo "\n\033[1;35m" . str_repeat( '━', 60 ) . "\033[0m\n";
         echo "\033[1m  Results: $this->passed passed, $this->failed failed, $this->total total\033[0m\n";
+        if ( $short ) {
+            echo "\033[31m  Only $this->total assertions ran, expected at least $minimum.\033[0m\n";
+            echo "\033[31m  A section was skipped or died early — this is not a pass.\033[0m\n";
+        }
         if ( $this->failed > 0 ) {
             echo "\033[31m  FAILURES:\033[0m\n";
             foreach ( $this->failures as $f ) {
                 echo "    \033[31m• $f\033[0m\n";
             }
-        } else {
+        } elseif ( ! $short ) {
             echo "\033[32m  All tests passed!\033[0m\n";
         }
         echo "\033[1;35m" . str_repeat( '━', 60 ) . "\033[0m\n\n";
-        return $this->failed > 0 ? 1 : 0;
+        return ( $this->failed > 0 || $short ) ? 1 : 0;
     }
 }
 
@@ -886,4 +900,4 @@ $t->assertContains( 'Sec: Settings registered with sanitize_callback', $admin_co
 // ──────────────────────────────────────────────
 // SUMMARY
 // ──────────────────────────────────────────────
-exit( $t->summary() );
+exit( $t->summary( 259 ) );

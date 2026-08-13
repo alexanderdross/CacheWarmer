@@ -1,0 +1,35 @@
+name: Repo CI
+
+# Repository-wide consistency checks that belong to no single package.
+#
+# There is deliberately no top-level `working-directory` here: the node-version
+# check reads every workflow's own working-directory to decide which
+# package.json applies, and giving this workflow one would make it skip itself.
+
+on:
+  pull_request:
+    paths:
+      - ".github/**"
+      - "**/package.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/**"
+      - "**/package.json"
+
+concurrency:
+  group: repo-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-versions:
+    name: Workflow Node versions
+    runs-on: self-hosted
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # `node-version: 20` was copied into two workflows whose package needs 22,
+      # and wrangler refused to start both times. pnpm reports the mismatch as a
+      # warning, so it reaches CI and dies there instead of failing the install.
+      - name: Every node-version satisfies its package's engines
+        run: python3 .github/scripts/check-node-versions.py

@@ -61,17 +61,30 @@ class TestRunner {
       "Expected < {$threshold}, got {$value}");
   }
 
-  public function summary(): void {
+  /**
+   * @param int $minimum
+   *   Assertions this suite must have run. A fatal partway through leaves the
+   *   remaining sections silently unexecuted while everything reached so far
+   *   still reports a pass — which is how 208 assertions in the WordPress
+   *   suite went unnoticed. Passing zero disables the floor.
+   */
+  public function summary(int $minimum = 0): void {
     $total = $this->passed + $this->failed;
+    $short = $minimum > 0 && $total < $minimum;
+
     echo "\n\033[1;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n";
     echo "\033[1m  Results: {$this->passed} passed, {$this->failed} failed, {$total} total\033[0m\n";
-    if ($this->failed === 0) {
+    if ($short) {
+      echo "\033[31m  Only {$total} assertions ran, expected at least {$minimum}.\033[0m\n";
+      echo "\033[31m  A section was skipped or died early — this is not a pass.\033[0m\n";
+    }
+    elseif ($this->failed === 0) {
       echo "\033[32m  All tests passed!\033[0m\n";
     } else {
       echo "\033[31m  {$this->failed} test(s) failed!\033[0m\n";
     }
     echo "\033[1;35m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n";
-    exit($this->failed > 0 ? 1 : 0);
+    exit($this->failed > 0 || $short ? 1 : 0);
   }
 }
 
@@ -1085,4 +1098,4 @@ $t->assert(
 // Done
 // ============================================================================
 
-$t->summary();
+$t->summary(499);
