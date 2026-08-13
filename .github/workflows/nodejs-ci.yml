@@ -182,21 +182,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level=critical
 
-  # The Dockerfile is the documented deploy path (`docker compose up`) but was
-  # gated by nothing, and had rotted into an unbuildable state (fixed in #109).
-  # This keeps it building — on the self-hosted runner, at no Actions-minute
-  # cost. That runner has no Docker daemon (#109's `docker build` died on a
-  # missing /var/run/docker.sock), so we build with Podman instead: it is
-  # daemonless, docker-compatible, and apt-installable on the runner (noble).
-  # --storage-driver=vfs sidesteps the fuse/overlay privileges a container
-  # runner typically lacks. The build happens inside the image, so no host Node.
-  docker-build:
-    name: Docker image builds
-    runs-on: self-hosted
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Podman
-        run: apt-get update && apt-get install -y --no-install-recommends podman
-      - name: Build the image
-        run: podman build --storage-driver=vfs -t cachewarmer:ci .
+  # No docker-build gate here on purpose. The self-hosted runner has no Docker
+  # daemon (#109: missing /var/run/docker.sock), and it is itself an
+  # unprivileged user-namespaced container with nested userns disabled
+  # ("user namespaces are not enabled in
+  # /proc/sys/kernel/unprivileged_userns_clone"), so no daemonless builder
+  # (podman/buildah/kaniko) can build there either. A gate would therefore need
+  # a GitHub-hosted runner (Actions minutes, declined) or a runner-infra change
+  # (a container builder / nested userns). Until then the Dockerfile is kept
+  # buildable by review, not CI. The deps-stage build toolchain fix that this
+  # branch carries is orthogonal and stays regardless.
