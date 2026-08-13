@@ -20,6 +20,13 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
+# better-sqlite3 compiles a native addon; node:20-slim ships no toolchain, so
+# its install script dies with "gyp ERR! find Python". Provide it here. This
+# stays in the deps stage only — the final runner stage copies the prebuilt
+# .node binary via .next/standalone and never needs the compiler.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 

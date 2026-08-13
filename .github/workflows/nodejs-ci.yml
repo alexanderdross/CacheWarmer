@@ -181,3 +181,14 @@ jobs:
         run: apt-get update && apt-get install -y --no-install-recommends build-essential
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level=critical
+
+  # No docker-build gate here on purpose. The self-hosted runner has no Docker
+  # daemon (#109: missing /var/run/docker.sock), and it is itself an
+  # unprivileged user-namespaced container with nested userns disabled
+  # ("user namespaces are not enabled in
+  # /proc/sys/kernel/unprivileged_userns_clone"), so no daemonless builder
+  # (podman/buildah/kaniko) can build there either. A gate would therefore need
+  # a GitHub-hosted runner (Actions minutes, declined) or a runner-infra change
+  # (a container builder / nested userns). Until then the Dockerfile is kept
+  # buildable by review, not CI. The deps-stage build toolchain fix that this
+  # branch carries is orthogonal and stays regardless.
