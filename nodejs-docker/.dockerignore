@@ -1,0 +1,9 @@
+node_modules
+.next
+data
+credentials
+coverage
+.git
+config.local.yaml
+Dockerfile
+.dockerignore
