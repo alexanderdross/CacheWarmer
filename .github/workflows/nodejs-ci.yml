@@ -181,3 +181,18 @@ jobs:
         run: apt-get update && apt-get install -y --no-install-recommends build-essential
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level=critical
+
+  # The Dockerfile is the documented deploy path (`docker compose up`) but was
+  # gated by nothing, and had rotted into an unbuildable state (fixed in #109).
+  # This keeps it building. It runs on a GitHub-hosted runner because the
+  # self-hosted one has no Docker daemon — #109's docker-build attempt failed
+  # there with "cannot connect to /var/run/docker.sock". Costs Actions minutes;
+  # accepted deliberately. The build happens inside the image, so no host Node.
+  docker-build:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t cachewarmer:ci .
