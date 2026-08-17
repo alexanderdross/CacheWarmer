@@ -1,6 +1,14 @@
 # CacheWarmer auf Cloudflare Workers — Evaluation & Architektur
 
-**Stand:** 2026-08-11 · **Status:** Architektur entschieden; Abschnitt-8-Fixes umgesetzt, Worker als erster Baustein in `cloudflare-worker/`, noch nichts gegen eine echte Zone gemessen
+**Stand:** 2026-08-17 · **Status:** Architektur entschieden; Abschnitt-8-Fixes umgesetzt, Worker als erster Baustein in `cloudflare-worker/`, noch nichts gegen eine echte Zone gemessen
+
+> **Nächster offener Schritt:** Der Spike (Abschnitt 7, Schritt 1) ist als
+> Worker-Harness (`cloudflare-worker/src/spike.ts`) und als CI-Workflow
+> (`.github/workflows/edge-spike.yml`) fertig verdrahtet und lief grün bis zur
+> Credential-Prüfung — er hängt allein am fehlenden Repo-Secret
+> `CLOUDFLARE_API_TOKEN` (Scopes: Workers Scripts:Edit, D1:Edit, Zone:Read,
+> Account Settings:Read). Secret setzen → Workflow erneut auslösen → die vier
+> Messwerte auswerten. Erst danach sind die Schritte 2–8 sinnvoll.
 
 ## Ausgangsfrage
 
@@ -341,6 +349,11 @@ EdgeGrid nach WebCrypto zu portieren ist mechanisch — aber zwei Details erzeug
 ## 7. Verifikationsplan
 
 Reihenfolge ist wichtig — Schritt 1 entscheidet, ob der Rest sinnvoll ist.
+
+> **Aktueller Stand:** Schritt 1 ist gebaut und CI-verdrahtet, aber noch nicht
+> ausgeführt — der Workflow `edge-spike.yml` wartet nur auf das Repo-Secret
+> `CLOUDFLARE_API_TOKEN` (siehe Kopf dieses Dokuments). Schritte 2–8 sind bis
+> dahin blockiert.
 
 1. **Spike (halber Tag).** Minimal-Worker auf einer eigenen Zone: `fetch(url, {cf:{cacheEverything:true}})`, dann zweiter `fetch(url)`, `cf-cache-status` und `request.cf.colo` loggen. Erwartung: zweiter Request meldet HIT. **Trägt das nicht, ist der Hauptnutzen weg — dann nur die Bugs in Abschnitt 8 fixen.**
 2. **Accountübergreifender Fill (optional).** Zone in Account B purgen, aus `mail@drossmedia.de` warmen, erneut abrufen und auf HIT prüfen. Seit die Entscheidung auf drei Deploys gefallen ist, gatet dieser Test nichts mehr — er klärt nur, ob ein Notfall-Fallback aus dem Hub heraus möglich wäre, wenn ein Satellit ausfällt.

@@ -11,6 +11,37 @@ The product is commercially distributed in three tiers: **Free**, **Premium**, a
 
 ---
 
+## Status & Open Steps
+
+Snapshot of what still needs doing (last updated 2026-08-17). Everything not
+listed here is complete and on `main`.
+
+- **CacheWarmer Edge — run the spike (needs one secret).** The Cloudflare
+  Worker is built and unit-tested but has never run against a live zone. The
+  Edge Spike workflow (`.github/workflows/edge-spike.yml`) is wired and passes
+  green up to its credential check, then stops because the repository secret
+  **`CLOUDFLARE_API_TOKEN`** is unset (scopes: Workers Scripts:Edit, D1:Edit,
+  Zone:Read, Account Settings:Read — an admin action only the owner can do).
+  Add it → re-dispatch → evaluate the four spike measurements → fill in the
+  `REPLACE_WITH_*` zone IDs → deploy the three accounts. Detail:
+  `cloudflare-worker/README.md` and `docs/CLOUDFLARE-WORKERS-EVALUATION.md` §7.
+- **CI — Docker build gate (deferred, needs infra).** `nodejs-docker/`'s
+  Dockerfile builds but is not gated in CI: the self-hosted runner has no Docker
+  daemon and, being an unprivileged user-namespaced container with nested
+  userns disabled, can't run a daemonless builder (podman/buildah) either. A
+  gate needs a runner-infra change (a container builder, or `unprivileged_userns_clone`
+  + `/dev/fuse`) or a GitHub-hosted runner (Actions-minute cost). Rationale is
+  recorded in a comment in `.github/workflows/nodejs-ci.yml`.
+- **CI — `pnpm audit` is non-blocking.** The `audit` job in `nodejs-ci.yml` runs
+  with `continue-on-error: true` by design (a newly-disclosed CVE shouldn't
+  break unrelated PRs). Revisit only if it should become a hard gate.
+
+Product-roadmap items for the Edge worker (asset warming, smart warming,
+non-Cloudflare purge, Workflows) are tracked in `cloudflare-worker/README.md`
+under "Not implemented yet".
+
+---
+
 ## Repository Components
 
 This monorepo contains **6 components**:

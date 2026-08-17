@@ -10,7 +10,16 @@ than a request count.
 
 Status: **first increment.** The warm/verify core, sitemap parsing, purge and
 the regional fan-out are implemented and unit-tested. Nothing has been deployed
-or measured against a live zone yet — see [Spike](#spike-run-this-first).
+or measured against a live zone yet.
+
+**Next step — blocked on one secret.** The Edge Spike workflow
+(`.github/workflows/edge-spike.yml`) is wired and runs cleanly up to its
+credential check, then stops because the repository secret
+`CLOUDFLARE_API_TOKEN` is unset. Add it (scopes: Workers Scripts:Edit,
+D1:Edit, Zone:Read, Account Settings:Read), then re-run the workflow: it
+deploys, measures, and writes the four spike answers into the run summary. A
+successful run also enables the nightly cron. See
+[Spike](#spike-run-this-first).
 
 See [`../docs/CLOUDFLARE-WORKERS-EVALUATION.md`](../docs/CLOUDFLARE-WORKERS-EVALUATION.md)
 for why this exists and what it is expected to be worth.
@@ -145,6 +154,14 @@ easiest way is the **Edge Spike** workflow
 deploys, measures and writes the results into the run summary. It needs one
 repository secret, `CLOUDFLARE_API_TOKEN` (scopes: Workers Scripts:Edit,
 D1:Edit, Zone:Read, Account Settings:Read).
+
+> **Current status:** the workflow has been dispatched and runs green through
+> the whole code path (including a Node-22 `wrangler --dry-run`), then stops at
+> the credential check because `CLOUDFLARE_API_TOKEN` is empty — no Cloudflare
+> resource is touched yet. Adding the secret and re-dispatching is the only
+> remaining action to unblock every measurement below. Once the four answers
+> come back as expected, fill in the `REPLACE_WITH_*` zone IDs (the run summary
+> prints the resolved zone id) and deploy the three accounts.
 
 By hand it is:
 
